@@ -10,7 +10,7 @@ import useGetFee from "../hooks/useGetFee";
 
 function NewFee() {
   const fetchFee = useGetFee();
-  const feeData = useSelector((state) => state.fee.data);
+  const feeData = useSelector((state) => state.fee.data).filter((data)=>data.status==="new");
 
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -90,7 +90,7 @@ function NewFee() {
           >
             Reject
           </Button>
-          <Button
+          {/* <Button
             variant="outlined"
             size="small"
             color="secondary"
@@ -98,7 +98,7 @@ function NewFee() {
             onClick={() => handlePrint(row)}
           >
             Print
-          </Button>
+          </Button> */}
         </div>
       ),
     },

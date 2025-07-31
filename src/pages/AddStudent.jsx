@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Loader2, CheckCircle, XCircle } from "lucide-react";
+import {
+  Home,
+  ChevronRight,
+  Loader2,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import useGetTechnology from "../hooks/useGetTechnology";
 import useGetTranning from "../hooks/useGetTranning";
 import axios from "../axiosInstance";
 import useGetEducations from "../hooks/useGetEducations";
+import axiosInstance from "../axiosInstance";
 
 function AddStudent() {
-const admin= useSelector((state) => state.auth.user);
-  // State for loading and feedback
-  console.log(admin.id);
-  
+  const admin = useSelector((state) => state.auth.user);
+
   const [isLoading, setIsLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState({
     success: null,
-    message: ""
+    message: "",
   });
-  
+
   // Fetch data from Redux store and hooks
   const Trainings = useSelector((state) => state.tranning.data);
   const fetchTranningData = useGetTranning();
@@ -34,7 +39,7 @@ const admin= useSelector((state) => state.auth.user);
           fetchTranningData(),
           fetchTechnology(),
           fetchEducation(),
-          fetchCollegeNames()
+          fetchCollegeNames(),
         ]);
       } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -47,8 +52,9 @@ const admin= useSelector((state) => state.auth.user);
   }, []);
 
   const [collegeNames, setCollegeNames] = useState([]);
+
   const [TechnologiesData, setTechnologiesData] = useState([]);
-  
+
   const fetchCollegeNames = async () => {
     try {
       const response = await axios.get("/college");
@@ -73,61 +79,61 @@ const admin= useSelector((state) => state.auth.user);
     amount: 0,
     totalFee: 0,
     paymentMethod: "cash",
-    paymentStatus: "pending",
+    // paymentStatus: "pending",
     remark: "",
     couponCode: "",
-    discountApplied: false
+    discountApplied: false,
   });
 
   const [errors, setErrors] = useState({});
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.mobile || formData.mobile.length !== 10) {
       newErrors.mobile = "Valid 10-digit mobile number is required";
     }
-    
+
     if (!formData.studentName) {
       newErrors.studentName = "Student name is required";
     }
-    
+
     if (!formData.training) {
       newErrors.training = "Training selection is required";
     }
-    
+
     if (!formData.technology) {
       newErrors.technology = "Technology selection is required";
     }
-    
+
     if (!formData.education) {
       newErrors.education = "Education selection is required";
     }
-    
+
     if (!formData.eduYear) {
       newErrors.eduYear = "Education year is required";
     }
-    
+
     if (!formData.fatherName) {
       newErrors.fatherName = "Father's name is required";
     }
-    
+
     if (!formData.collegeName) {
       newErrors.collegeName = "College name is required";
     }
-    
+
     if (formData.email && !/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
-    
+
     if (formData.alternateMobile && formData.alternateMobile.length !== 10) {
       newErrors.alternateMobile = "Alternate mobile must be 10 digits";
     }
-    
-    if (!formData.amount || isNaN(formData.amount) ){
+
+    if (!formData.amount || isNaN(formData.amount)) {
       newErrors.amount = "Valid amount is required";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -158,7 +164,7 @@ const admin= useSelector((state) => state.auth.user);
           ...prev,
           amount: amount.toString(),
           technology: "", // Reset technology when training changes
-          discountApplied: false // Reset discount when training changes
+          discountApplied: false, // Reset discount when training changes
         }));
       }
     } catch (error) {
@@ -175,8 +181,8 @@ const admin= useSelector((state) => state.auth.user);
 
     // Clear error when field is updated
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = {...prev};
+      setErrors((prev) => {
+        const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
@@ -190,29 +196,29 @@ const admin= useSelector((state) => state.auth.user);
 
   const handleApplyCoupon = () => {
     if (!formData.couponCode) return;
-    
+
     // Example coupon logic - replace with your actual validation
     if (formData.couponCode === "DISCOUNT10") {
       const discountAmount = Math.min(100, formData.amount * 0.1); // 10% discount up to 100
       const newAmount = Math.max(0, formData.amount - discountAmount);
-      
-      setFormData(prev => ({
+
+      setFormData((prev) => ({
         ...prev,
         amount: newAmount.toString(),
-        discountApplied: true
+        discountApplied: true,
       }));
-      
+
       setRegistrationStatus({
         success: true,
-        message: "Coupon applied successfully!"
+        message: "Coupon applied successfully!",
       });
     } else {
       setRegistrationStatus({
         success: false,
-        message: "Invalid coupon code"
+        message: "Invalid coupon code",
       });
     }
-    
+
     // Clear message after 3 seconds
     setTimeout(() => {
       setRegistrationStatus({ success: null, message: "" });
@@ -234,21 +240,21 @@ const admin= useSelector((state) => state.auth.user);
       paymentType: "registration",
       amount: 0,
       totalFee: 0,
-      paymentStatus: "pending",
+      // paymentStatus: "pending",
       remark: "",
       paymentMethod: "cash",
       couponCode: "",
-      discountApplied: false
+      discountApplied: false,
     });
     setErrors({});
   };
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
     setRegistrationStatus({ success: null, message: "" });
-    
+
     const registrationData = {
       training: formData.training,
       technology: formData.technology,
@@ -265,42 +271,79 @@ const admin= useSelector((state) => state.auth.user);
       totalFee: Number(formData.totalFee),
       registeredBy: admin.id,
       paymentMethod: formData.paymentMethod,
-      paymentStatus: formData.paymentStatus,
+      // paymentStatus: formData.paymentStatus,
       remark: formData.remark || undefined,
       password: formData.mobile, // Using mobile as password
-      couponCode: formData.couponCode || undefined
+      couponCode: formData.couponCode || undefined,
     };
-    
+
     try {
-      const res = await axios.post(
-        `/registration/register`,
-        registrationData
-      );
+      const res = await axios.post(`/registration/register`, registrationData);
       console.log("Registration response:", res.data);
       setRegistrationStatus({
         success: true,
-        message: "Student registered successfully!"
+        message: "Student registered successfully!",
       });
-      
+
       // Reset form after successful registration
       resetForm();
     } catch (error) {
       console.error("Registration error:", error);
       setRegistrationStatus({
         success: false,
-        message: error.response?.data?.message || "Registration failed. Please try again."
+        message:
+          error.response?.data?.message ||
+          "Registration failed. Please try again.",
       });
     } finally {
       setIsLoading(false);
       fetchEducation();
-      
+
       // Clear message after 5 seconds
       setTimeout(() => {
         setRegistrationStatus({ success: null, message: "" });
       }, 5000);
     }
   };
-console.log("AddStudent Form Data:", formData);
+
+  const getRegStu = async () => {
+    try {
+      const res = await axiosInstance.get(
+        `/registration/get/user/${formData.mobile}`
+      );
+      if (res.data && res.data.data) {
+        const stu = res.data.data;
+        // console.log(stu);
+        if (stu.training) {
+          await fetchtechnologybytrainingid(stu.training);
+        }
+        setFormData((prev) => ({
+          ...prev,
+          studentName: stu.studentName || "",
+          fatherName: stu.fatherName || "",
+          email: stu.email || "",
+          alternateMobile: stu.alternateMobile || "",
+          collegeName: stu.collegeName || "",
+          education: stu.education,
+          eduYear: stu.eduYear || "",
+          training: stu.training,
+          technology: stu.technology,
+          totalFee: stu.totalFee || "",
+          paymentType: stu.paymentType || "registration",
+          paymentMethod: stu.paymentMethod || "cash",
+          // paymentStatus: stu.paymentStatus || "pending",
+          remark: stu.remark || "",
+          couponCode: stu.couponCode || "",
+          discountApplied: stu.discountApplied || false,
+        }));
+      } else {
+        resetForm();
+      }
+    } catch (error) {
+      console.log(error);
+      // resetForm();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -322,7 +365,13 @@ console.log("AddStudent Form Data:", formData);
 
         {/* Status Message */}
         {registrationStatus.message && (
-          <div className={`mb-6 p-4 rounded-lg ${registrationStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              registrationStatus.success
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
             <div className="flex items-center">
               {registrationStatus.success ? (
                 <CheckCircle className="w-5 h-5 mr-2" />
@@ -343,14 +392,19 @@ console.log("AddStudent Form Data:", formData);
                 Student Mobile Number *
               </label>
               <input
-                type="tel"
+                type="number"
                 placeholder="Enter 10-digit mobile number"
-                className={`w-full px-4 py-3 border ${errors.mobile ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.mobile ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.mobile}
                 onChange={(e) => handleInputChange("mobile", e.target.value)}
                 maxLength="10"
+                onBlur={() => getRegStu()}
               />
-              {errors.mobile && <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>}
+              {errors.mobile && (
+                <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>
+              )}
             </div>
 
             {/* Student Name */}
@@ -361,11 +415,19 @@ console.log("AddStudent Form Data:", formData);
               <input
                 type="text"
                 placeholder="Enter Student Name"
-                className={`w-full px-4 py-3 border ${errors.studentName ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.studentName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.studentName}
-                onChange={(e) => handleInputChange("studentName", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("studentName", e.target.value)
+                }
               />
-              {errors.studentName && <p className="mt-1 text-sm text-red-600">{errors.studentName}</p>}
+              {errors.studentName && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.studentName}
+                </p>
+              )}
             </div>
 
             {/* Choose Training */}
@@ -374,7 +436,9 @@ console.log("AddStudent Form Data:", formData);
                 Choose Training *
               </label>
               <select
-                className={`w-full px-4 py-3 border ${errors.training ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.training ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.training}
                 onChange={(e) => handleInputChange("training", e.target.value)}
                 disabled={isLoading}
@@ -386,7 +450,9 @@ console.log("AddStudent Form Data:", formData);
                   </option>
                 ))}
               </select>
-              {errors.training && <p className="mt-1 text-sm text-red-600">{errors.training}</p>}
+              {errors.training && (
+                <p className="mt-1 text-sm text-red-600">{errors.training}</p>
+              )}
             </div>
 
             {/* Choose Technology */}
@@ -395,10 +461,14 @@ console.log("AddStudent Form Data:", formData);
                 Choose Technology *
               </label>
               <select
-                className={`w-full px-4 py-3 border ${errors.technology ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.technology ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.technology}
-                onChange={(e) => handleInputChange("technology", e.target.value)}
-                disabled={!formData.training || isLoading}
+                onChange={(e) =>
+                  handleInputChange("technology", e.target.value)
+                }
+                // disabled={!formData.training || isLoading}
               >
                 <option value="">-Choose Technology-</option>
                 {TechnologiesData?.map((tech, index) => (
@@ -407,7 +477,9 @@ console.log("AddStudent Form Data:", formData);
                   </option>
                 ))}
               </select>
-              {errors.technology && <p className="mt-1 text-sm text-red-600">{errors.technology}</p>}
+              {errors.technology && (
+                <p className="mt-1 text-sm text-red-600">{errors.technology}</p>
+              )}
             </div>
 
             {/* Select Your Education */}
@@ -416,7 +488,9 @@ console.log("AddStudent Form Data:", formData);
                 Select Your Education *
               </label>
               <select
-                className={`w-full px-4 py-3 border ${errors.education ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.education ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.education}
                 onChange={(e) => handleInputChange("education", e.target.value)}
                 disabled={isLoading}
@@ -428,7 +502,9 @@ console.log("AddStudent Form Data:", formData);
                   </option>
                 ))}
               </select>
-              {errors.education && <p className="mt-1 text-sm text-red-600">{errors.education}</p>}
+              {errors.education && (
+                <p className="mt-1 text-sm text-red-600">{errors.education}</p>
+              )}
             </div>
 
             {/* Select eduyear */}
@@ -437,7 +513,9 @@ console.log("AddStudent Form Data:", formData);
                 Select Year *
               </label>
               <select
-                className={`w-full px-4 py-3 border ${errors.eduYear ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.eduYear ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.eduYear}
                 onChange={(e) => handleInputChange("eduYear", e.target.value)}
                 disabled={isLoading}
@@ -448,7 +526,9 @@ console.log("AddStudent Form Data:", formData);
                 <option value="3rd">3rd Year</option>
                 <option value="4th">4th Year</option>
               </select>
-              {errors.eduYear && <p className="mt-1 text-sm text-red-600">{errors.eduYear}</p>}
+              {errors.eduYear && (
+                <p className="mt-1 text-sm text-red-600">{errors.eduYear}</p>
+              )}
             </div>
 
             {/* Student Father's Name */}
@@ -459,11 +539,17 @@ console.log("AddStudent Form Data:", formData);
               <input
                 type="text"
                 placeholder="Enter Student Father's Name"
-                className={`w-full px-4 py-3 border ${errors.fatherName ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.fatherName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.fatherName}
-                onChange={(e) => handleInputChange("fatherName", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("fatherName", e.target.value)
+                }
               />
-              {errors.fatherName && <p className="mt-1 text-sm text-red-600">{errors.fatherName}</p>}
+              {errors.fatherName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fatherName}</p>
+              )}
             </div>
 
             {/* Student Email ID */}
@@ -474,11 +560,15 @@ console.log("AddStudent Form Data:", formData);
               <input
                 type="email"
                 placeholder="Enter Student Email ID"
-                className={`w-full px-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
               />
-              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
 
             {/* Student Alternate Mobile */}
@@ -489,12 +579,20 @@ console.log("AddStudent Form Data:", formData);
               <input
                 type="tel"
                 placeholder="Enter 10-digit alternate mobile"
-                className={`w-full px-4 py-3 border ${errors.alternateMobile ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.alternateMobile ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.alternateMobile}
-                onChange={(e) => handleInputChange("alternateMobile", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("alternateMobile", e.target.value)
+                }
                 maxLength="10"
               />
-              {errors.alternateMobile && <p className="mt-1 text-sm text-red-600">{errors.alternateMobile}</p>}
+              {errors.alternateMobile && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.alternateMobile}
+                </p>
+              )}
             </div>
 
             {/* Student College Name */}
@@ -506,16 +604,24 @@ console.log("AddStudent Form Data:", formData);
                 type="text"
                 list="collegeNames"
                 placeholder="Enter Student College Name"
-                className={`w-full px-4 py-3 border ${errors.collegeName ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${
+                  errors.collegeName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.collegeName}
-                onChange={(e) => handleInputChange("collegeName", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("collegeName", e.target.value)
+                }
               />
               <datalist id="collegeNames">
                 {collegeNames.map((name, index) => (
                   <option key={index} value={name} />
                 ))}
               </datalist>
-              {errors.collegeName && <p className="mt-1 text-sm text-red-600">{errors.collegeName}</p>}
+              {errors.collegeName && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.collegeName}
+                </p>
+              )}
             </div>
 
             {/* Total Amount */}
@@ -527,13 +633,19 @@ console.log("AddStudent Form Data:", formData);
                 <span className="absolute left-3 top-3 text-gray-500">₹</span>
                 <input
                   type="number"
-                  className={`w-full pl-8 px-4 py-3 border ${errors.totalFee ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  className={`w-full pl-8 px-4 py-3 border ${
+                    errors.totalFee ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   value={formData.totalFee}
-                  onChange={(e) => handleInputChange("totalFee", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("totalFee", e.target.value)
+                  }
                   disabled={isLoading}
                 />
               </div>
-              {errors.totalFee && <p className="mt-1 text-sm text-red-600">{errors.totalFee}</p>}
+              {errors.totalFee && (
+                <p className="mt-1 text-sm text-red-600">{errors.totalFee}</p>
+              )}
               {formData.discountApplied && (
                 <p className="mt-1 text-sm text-green-600">Discount applied!</p>
               )}
@@ -547,18 +659,22 @@ console.log("AddStudent Form Data:", formData);
                 <span className="absolute left-3 top-3 text-gray-500">₹</span>
                 <input
                   type="number"
-                  className={`w-full pl-8 px-4 py-3 border ${errors.amount ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  className={`w-full pl-8 px-4 py-3 border ${
+                    errors.amount ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   value={formData.amount}
                   onChange={(e) => handleInputChange("amount", e.target.value)}
                   disabled={isLoading}
                 />
               </div>
-              {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
+              {errors.amount && (
+                <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+              )}
               {formData.discountApplied && (
                 <p className="mt-1 text-sm text-green-600">Discount applied!</p>
               )}
             </div>
-{/* Payment Type */}
+            {/* Payment Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Type
@@ -570,7 +686,9 @@ console.log("AddStudent Form Data:", formData);
                     name="paymentType"
                     value="registration"
                     checked={formData.paymentType === "registration"}
-                    onChange={(e) => handleInputChange("paymentType", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("paymentType", e.target.value)
+                    }
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     disabled={isLoading}
                   />
@@ -584,7 +702,9 @@ console.log("AddStudent Form Data:", formData);
                     name="paymentType"
                     value="full"
                     checked={formData.paymentType === "full"}
-                    onChange={(e) => handleInputChange("paymentType", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("paymentType", e.target.value)
+                    }
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     disabled={isLoading}
                   />
@@ -592,7 +712,7 @@ console.log("AddStudent Form Data:", formData);
                 </label>
               </div>
             </div>
-{/* Payment paymentMethod */}
+            {/* Payment paymentMethod */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Method
@@ -604,13 +724,13 @@ console.log("AddStudent Form Data:", formData);
                     name="paymentMethod"
                     value="cash"
                     checked={formData.paymentMethod === "cash"}
-                    onChange={(e) => handleInputChange("paymentMethod", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("paymentMethod", e.target.value)
+                    }
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     disabled={isLoading}
                   />
-                  <span className="ml-2 text-sm text-gray-700">
-                    Cash
-                  </span>
+                  <span className="ml-2 text-sm text-gray-700">Cash</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -618,7 +738,9 @@ console.log("AddStudent Form Data:", formData);
                     name="paymentMethod"
                     value="online"
                     checked={formData.paymentMethod === "online"}
-                    onChange={(e) => handleInputChange("paymentMethod", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("paymentMethod", e.target.value)
+                    }
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                     disabled={isLoading}
                   />
@@ -627,36 +749,23 @@ console.log("AddStudent Form Data:", formData);
               </div>
             </div>
             {/* Payment Status */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Status
               </label>
               <select
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.paymentStatus}
-                onChange={(e) => handleInputChange("paymentStatus", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("paymentStatus", e.target.value)
+                }
                 disabled={isLoading}
               >
                 <option value="pending">Pending</option>
                 <option value="completed">Completed</option>
                 <option value="failed">Failed</option>
               </select>
-            </div>
-
-            {/* Remark */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Remark
-              </label>
-              <textarea
-                placeholder="Enter Remark"
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                value={formData.remark}
-                onChange={(e) => handleInputChange("remark", e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
+            </div> */}
 
             {/* Tnx ID */}
             <div>
@@ -681,11 +790,26 @@ console.log("AddStudent Form Data:", formData);
                 type="password"
                 className="w-full px-4 py-3 border border-gray-300 rounded-md bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.tnxPassword}
-                onChange={(e) => handleInputChange("tnxPassword", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("tnxPassword", e.target.value)
+                }
                 disabled={isLoading}
               />
             </div>
-
+            {/* Remark */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Remark
+              </label>
+              <textarea
+                placeholder="Enter Remark"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                value={formData.remark}
+                onChange={(e) => handleInputChange("remark", e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
             {/* Discount Coupon Code */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -697,20 +821,28 @@ console.log("AddStudent Form Data:", formData);
                   placeholder="Enter Coupon Code"
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={formData.couponCode}
-                  onChange={(e) => handleInputChange("couponCode", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("couponCode", e.target.value)
+                  }
                   disabled={isLoading || formData.discountApplied}
                 />
                 <button
                   type="button"
                   onClick={handleApplyCoupon}
-                  disabled={isLoading || formData.discountApplied || !formData.couponCode}
+                  disabled={
+                    isLoading ||
+                    formData.discountApplied ||
+                    !formData.couponCode
+                  }
                   className={`px-6 py-3 rounded-md transition-colors duration-200 font-medium ${
-                    isLoading || formData.discountApplied || !formData.couponCode
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-green-500 hover:bg-green-600 text-white'
+                    isLoading ||
+                    formData.discountApplied ||
+                    !formData.couponCode
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-green-500 hover:bg-green-600 text-white"
                   }`}
                 >
-                  {isLoading ? 'Applying...' : 'Apply'}
+                  {isLoading ? "Applying..." : "Apply"}
                 </button>
               </div>
             </div>

@@ -195,7 +195,7 @@ function Receipt() {
             <img src="/img/DigiCoders-Logo-Black.png" width={250} alt="" />
           </div>
           <p className="text-xs">
-            B-36, Sector 0, Near Ram Ram Bank Chauraha, Aliganj, Lucknow Uttar
+            B-36, Sector O, Near Ram Ram Bank Chauraha, Aliganj, Lucknow Uttar
             Pradesh 226021
           </p>
           <p className="text-xs">info@digicoders.in, www.thedigicoders.com</p>
@@ -223,14 +223,13 @@ function Receipt() {
           <div className="mb-3 flex gap-4">
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Course:</span>
-              <span className="flex-1 block min-w-0 border-b border-black pl-2 pb-0.5">
-                {feeData.registrationId.education.name} (
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId.education.name} (
                 {feeData.registrationId.technology.name})
               </span>
             </div>
             <div className="flex items-center w-[30%]">
               <span className="font-semibold w-10 shrink-0">Year:</span>
-              <span className="flex-1 block min-w-0 border-b border-black pl-2 pb-0.5">
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
                 {feeData.registrationId.eduYear}
               </span>
             </div>
@@ -312,8 +311,8 @@ function Receipt() {
                 ₹
               </span>
               <div className="border border-slate-500 bg-sky-50 w-40 p-2">
-                {" "}
-                2000
+                {feeData.amount}
+                
               </div>
             </div>
             <div>

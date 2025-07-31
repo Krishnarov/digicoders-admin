@@ -123,7 +123,7 @@ function DataTable({ columns, data }) {
         <Table>
           <TableHead className="bg-slate-50">
             <TableRow>
-              {columns.map((col) => (
+              {columns.filter((col)=>col.show !== false).map((col) => (
                 <TableCell  key={col.accessor}>
                   <TableSortLabel
                   className="font-bold"
@@ -141,7 +141,7 @@ function DataTable({ columns, data }) {
           <TableBody>
             {paginatedData.map((row, idx) => (
               <TableRow key={idx}>
-                {columns.map((col) => (
+                {columns.filter((col)=>col.show !== false).map((col) => (
                   <TableCell key={col.accessor}>{col.Cell ? col.Cell({ row }) : row[col.accessor]}</TableCell>
                 ))}
               </TableRow>

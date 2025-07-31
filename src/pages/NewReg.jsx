@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 
 function NewReg() {
-  const students = useSelector((state) => state.student.data);
+  const students = useSelector((state) => state.student.data).filter((data)=>data.status==="new");
   const fetchTechnology = useGetTechnology();
   useGetStudents();
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Eye } from "lucide-react";
+import { Home, ChevronRight, Edit2, Eye ,Printer} from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, TextField, Chip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -10,9 +10,11 @@ import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 
 function AcceptReg() {
-  const students = useSelector((state) => state.student.data);
-  useGetStudents();
-  
+  const acceptedStudents = useSelector((state) => state.student.data).filter(
+    (student) => student.status === "accepted"
+  );
+  const featchStudent = useGetStudents();
+
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -25,43 +27,44 @@ function AcceptReg() {
     alternateMobile: "",
     collegeName: "",
     eduYear: "",
-    remark: ""
+    remark: "",
   });
 
-  // Filter only accepted students
-  const acceptedStudents = students.filter(student => student.status === 'accepted');
-
+  useEffect(() => {
+    featchStudent();
+  }, []);
   const columns = [
     { label: "ID", accessor: "userid", filter: false },
-    { label: "Student Name", accessor: "studentName", filter: true },
-    { label: "Father Name", accessor: "fatherName", filter: true },
-    { label: "Mobile", accessor: "mobile", filter: true },
+    { label: "Student Name", accessor: "studentName", filter: false },
+    { label: "Father Name", accessor: "fatherName", filter: false },
+    { label: "Mobile", accessor: "mobile", filter: false },
     { label: "College Name", accessor: "collegeName", filter: true },
     { label: "Edu Year", accessor: "eduYear", filter: true },
+    { label: "Tranning", accessor: "training.name", filter: true, show: false },
     {
       label: "Payment Status",
       accessor: "paymentStatus",
       Cell: ({ row }) => (
-        <Chip 
-          label={row.paymentStatus} 
-          color={row.paymentStatus === 'success' ? 'success' : 'warning'}
+        <Chip
+          label={row.paymentStatus}
+          color={row.paymentStatus === "paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
         />
       ),
     },
-    {
-      label: "Status",
-      accessor: "status",
-      Cell: ({ row }) => (
-        <Chip 
-          label={row.status} 
-          color="success"
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
+    // {
+    //   label: "Status",
+    //   accessor: "status",
+    //   Cell: ({ row }) => (
+    //     <Chip
+    //       label={row.status}
+    //       color="success"
+    //       variant="outlined"
+    //       size="small"
+    //     />
+    //   ),
+    // },
     {
       label: "Action",
       accessor: "action",
@@ -85,11 +88,23 @@ function AcceptReg() {
           >
             Edit
           </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color="secondary"
+            startIcon={<Printer size={16} />}
+            onClick={() => handlePrint(row)}
+          >
+            Print
+          </Button>
         </div>
       ),
     },
   ];
 
+   const handlePrint = (student) => {
+    window.open(`/receipt/${student._id}`, "_blank");
+  };
   const handleView = (row) => {
     setSelectedStudent(row);
     setViewModalOpen(true);
@@ -105,21 +120,27 @@ function AcceptReg() {
       alternateMobile: row.alternateMobile || "",
       collegeName: row.collegeName || "",
       eduYear: row.eduYear || "",
-      remark: row.remark || ""
+      remark: row.remark || "",
     });
     setEditModalOpen(true);
   };
 
   const handleEditSubmit = async () => {
     try {
-      await axios.patch(`/registration/update/${selectedStudent._id}`, editFormData, {
-        withCredentials: true,
-      });
+      await axios.patch(
+        `/registration/update/${selectedStudent._id}`,
+        editFormData,
+        {
+          withCredentials: true,
+        }
+      );
       handleEditClose();
       // Refresh data
       window.location.reload();
     } catch (error) {
       console.error("Error updating student:", error);
+    } finally {
+      featchStudent();
     }
   };
 
@@ -139,7 +160,7 @@ function AcceptReg() {
       alternateMobile: "",
       collegeName: "",
       eduYear: "",
-      remark: ""
+      remark: "",
     });
   };
 
@@ -166,12 +187,18 @@ function AcceptReg() {
             </Link>
           </div>
           <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg">
-            <span className="font-semibold">Total Accepted: {acceptedStudents.length}</span>
+            <span className="font-semibold">
+              Total Accepted: {acceptedStudents.length}
+            </span>
           </div>
         </div>
 
         {/* DataTable */}
-        <DataTable columns={columns} data={acceptedStudents} loading={loading} />
+        <DataTable
+          columns={columns}
+          data={acceptedStudents}
+          loading={loading}
+        />
 
         {/* View Student Details Modal */}
         <CustomModal
@@ -187,81 +214,109 @@ function AcceptReg() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     User ID
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.userid}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.userid}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Student Name
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.studentName}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.studentName}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Father Name
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.fatherName}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.fatherName}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.email}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.email}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Mobile
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.mobile}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.mobile}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Alternate Mobile
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.alternateMobile || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.alternateMobile || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     College Name
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.collegeName}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.collegeName}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Education Year
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.eduYear}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.eduYear}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Training
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.training?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.training?.name || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Technology
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.technology?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.technology?.name || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Type
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.paymentType}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.paymentType}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Amount
                   </label>
-                  <p className="text-sm text-gray-900">₹{selectedStudent.amount}</p>
+                  <p className="text-sm text-gray-900">
+                    ₹{selectedStudent.amount}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Status
                   </label>
-                  <Chip 
-                    label={selectedStudent.paymentStatus} 
-                    color={selectedStudent.paymentStatus === 'success' ? 'success' : 'warning'}
+                  <Chip
+                    label={selectedStudent.paymentStatus}
+                    color={
+                      selectedStudent.paymentStatus === "success"
+                        ? "success"
+                        : "warning"
+                    }
                     variant="outlined"
                     size="small"
                   />
@@ -270,8 +325,8 @@ function AcceptReg() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Registration Status
                   </label>
-                  <Chip 
-                    label={selectedStudent.status} 
+                  <Chip
+                    label={selectedStudent.status}
                     color="success"
                     variant="outlined"
                     size="small"
@@ -281,43 +336,53 @@ function AcceptReg() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Method
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.paymentMethod || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.paymentMethod || "N/A"}
+                  </p>
                 </div>
               </div>
-              
+
               {selectedStudent.couponCode && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Coupon Code
                     </label>
-                    <p className="text-sm text-gray-900">{selectedStudent.couponCode}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedStudent.couponCode}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Coupon Discount
                     </label>
-                    <p className="text-sm text-gray-900">₹{selectedStudent.couponDiscount}</p>
+                    <p className="text-sm text-gray-900">
+                      ₹{selectedStudent.couponDiscount}
+                    </p>
                   </div>
                 </div>
               )}
-              
+
               {selectedStudent.remark && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Remark
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.remark}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.remark}
+                  </p>
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Registration Date
                   </label>
                   <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.createdAt).toLocaleDateString('en-IN')}
+                    {new Date(selectedStudent.createdAt).toLocaleDateString(
+                      "en-IN"
+                    )}
                   </p>
                 </div>
                 <div>
@@ -325,7 +390,9 @@ function AcceptReg() {
                     Transaction Date
                   </label>
                   <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.txnDateTime).toLocaleDateString('en-IN')}
+                    {new Date(selectedStudent.txnDateTime).toLocaleDateString(
+                      "en-IN"
+                    )}
                   </p>
                 </div>
               </div>
