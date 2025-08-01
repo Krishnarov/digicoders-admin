@@ -9,9 +9,8 @@ const useGetTranning = () => {
 
     const fetchTranning = useCallback(async () => {
         try {
-            const res = await axios.get("/training/getAll")
+            const res = await axios.get("/training/getAll",{withCredentials:true})
             // console.log(res);
-            
             if (res.status===200) {
                dispatch(setTranning(res.data.data))
             }

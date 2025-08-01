@@ -13,7 +13,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       store.dispatch(logout()); // redux state reset
-      window.location.href = "/"; // login page par redirect
+      // window.location.href = "/"; // login page par redirect
     }
     return Promise.reject(error);
   }

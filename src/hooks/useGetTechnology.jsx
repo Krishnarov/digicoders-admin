@@ -9,7 +9,7 @@ const useGetTechnology = () => {
 
     const fetchTechnology = useCallback(async () => {
         try {
-            const res = await axios.get("/technology/getAll")
+            const res = await axios.get("/technology/getAll",{withCredentials:true})
             // console.log(res);
             
             if (res.data) {

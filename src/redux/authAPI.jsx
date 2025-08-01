@@ -6,6 +6,7 @@ export const authAPI = createApi({
   reducerPath: 'authAPI',
   baseQuery: fetchBaseQuery({
     baseUrl: `${import.meta.env.VITE_BASE_API}/auth`, // Replace with your API URL
+    credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth.token;
       if (token) {

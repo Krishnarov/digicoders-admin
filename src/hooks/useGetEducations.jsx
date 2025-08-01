@@ -9,7 +9,7 @@ const useGetEducations = () => {
 
     const fetchEducation = useCallback(async () => {
         try {
-            const res = await axios.get("/education")
+            const res = await axios.get("/education",{withCredentials:true})
             // console.log(res);
             
             if (res.data) {
