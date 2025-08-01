@@ -4,7 +4,7 @@ import { logout } from "./redux/slice/authSlice.jsx"; // logout action
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_API,
-  withCredentials: true, // taaki cookie backend ko mile
+  // withCredentials: true, // taaki cookie backend ko mile
 });
 
 // har response ke liye ye run hoga

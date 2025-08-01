@@ -28,7 +28,12 @@ export const useAuth = () => {
       const response = await loginMutation(credentials).unwrap();
 
       // Token ko cookies me store karo
-      Cookies.set("token", response.token, { expires: 7 }); // 7 din ke liye
+      Cookies.set("token", response.token, {
+        expires: 7,
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      }); 
 
       dispatch(
         loginSuccess({
