@@ -6,7 +6,19 @@ const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_API,
   // withCredentials: true, // taaki cookie backend ko mile
 });
-
+// Request interceptor for token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = store.getState().auth.token;
+    // console.log(token);
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 // har response ke liye ye run hoga
 axiosInstance.interceptors.response.use(
   (response) => response,
