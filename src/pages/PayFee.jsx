@@ -1,38 +1,98 @@
-import React, { useState } from "react";
-import { Home, ChevronRight, Search, User, Mail, Phone } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Home, ChevronRight, Search, User, Mail, Phone, X } from "lucide-react";
 import axios from "../axiosInstance";
 import { toast } from "react-toastify";
+import { QRCodeCanvas } from "qrcode.react";
 
 function PayFee() {
   const [formData, setFormData] = useState({
     registrationId: "",
-    paymentType: "full",
     amount: 0,
+    paymentType: "installment",
     mode: "cash",
+    isFullPaid: false,
+    hrName:null,
     remark: "",
-    couponCode: "",
     studentName: "",
+    tnxStatus:"paid",
     dueAmount: 0,
     searchTerm: "",
+    qrcode: null,
   });
-  console.log("PayFee Form Data:", formData);
-  
+  const [isLoading, setIsLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
-
+  const [studentEnrollments, setStudentEnrollments] = useState([]);
+  const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
+  const [qrcodes, setQrcodes] = useState([]);
+  const [hr, setHr] = useState([]);
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
+    const fetchHr = useCallback(async () => {
+      try {
+        const response = await axios.get("/hr");
+        if (response.data.success) setHr(response.data.data);
+      } catch (error) {
+        console.error("Error fetching HR data:", error);
+      }
+    }, []);
+  
+  const getAllQrCodes = useCallback(async () => {
+    try {
+      const res = await axios.get("/qrcode");
+      setQrcodes(res.data.data);
+    } catch (error) {
+      console.error("Error fetching QR codes:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([getAllQrCodes(),fetchHr()]);
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [getAllQrCodes,fetchHr]);
+
+  const upiLink = React.useMemo(() => {
+    const qrData = qrcodes.find((qr) => qr._id === formData.qrcode);
+    return `upi://pay?pa=${qrData?.upi || ""}&pn=${encodeURIComponent(
+      formData.studentName
+    )}&am=${formData.amount}&cu=INR`;
+  }, [formData.qrcode, formData.studentName, formData.amount, qrcodes]);
 
   const handleRegister = async () => {
-    console.log("PayFee:", formData);
+    if (!formData.registrationId) {
+      toast.error("Please select a student first");
+      return;
+    }
 
     try {
       const res = await axios.post(`/fee`, formData);
       console.log(res);
       toast.success("Payment successful!");
+      // Reset form after successful payment
+      setFormData({
+        registrationId: "",
+        paymentType: "installment",
+        amount: 0,
+        mode: "cash",
+        remark: "",
+        couponCode: "",
+        studentName: "",
+        dueAmount: 0,
+        searchTerm: formData.searchTerm, // Keep search term
+      });
     } catch (error) {
       console.log(error);
       toast.error(error.response?.data?.message || "Payment failed");
@@ -50,15 +110,38 @@ function PayFee() {
       const res = await axios.get(
         `/registration/get/user/${formData.searchTerm}`
       );
+      console.log(res);
+
       if (res.data.data) {
-        setFormData((prev) => ({
-          ...prev,
-          registrationId: res.data.data._id,
-          studentName: res.data.data.studentName,
-          amount: res.data.data.dueAmount || 0,
-          dueAmount: res.data.data.dueAmount || 0,
-        }));
-        toast.success("Student found!");
+        // Check if response is array (multiple enrollments)
+        if (Array.isArray(res.data.data)) {
+          if (res.data.data.length === 1) {
+            // Only one enrollment, auto-select it
+            const enrollment = res.data.data[0];
+            setFormData((prev) => ({
+              ...prev,
+              registrationId: enrollment._id,
+              studentName: enrollment.studentName,
+              amount: enrollment.dueAmount || 0,
+              dueAmount: enrollment.dueAmount || 0,
+            }));
+            toast.success("Student found!");
+          } else {
+            // Multiple enrollments, show modal to select
+            setStudentEnrollments(res.data.data);
+            setShowEnrollmentsModal(true);
+          }
+        } else {
+          // Single enrollment response
+          setFormData((prev) => ({
+            ...prev,
+            registrationId: res.data.data._id,
+            studentName: res.data.data.studentName,
+            amount: res.data.data.dueAmount || 0,
+            dueAmount: res.data.data.dueAmount || 0,
+          }));
+          toast.success("Student found!");
+        }
       } else {
         toast.error("Student not found");
       }
@@ -69,6 +152,20 @@ function PayFee() {
       setSearchLoading(false);
     }
   };
+
+  const selectEnrollment = (enrollment) => {
+    setFormData((prev) => ({
+      ...prev,
+      registrationId: enrollment._id,
+      studentName: enrollment.studentName,
+      amount: enrollment.dueAmount || 0,
+      dueAmount: enrollment.dueAmount || 0,
+    }));
+    setShowEnrollmentsModal(false);
+    toast.success("Enrollment selected!");
+  };
+
+  console.log(formData);
 
   return (
     <div className=" bg-gray-50 ">
@@ -145,7 +242,19 @@ function PayFee() {
                 }
               />
             </div>
+            {/* Amount To Pay Now */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Amount To Pay Now
+              </label>
+              <input
+                type="number"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.amount}
 
+                onChange={(e) => handleInputChange("amount", e.target.value)}
+              />
+            </div>
             {/* Payment Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -157,17 +266,19 @@ function PayFee() {
                     type="radio"
                     name="paymentType"
                     value="installment"
-                    checked={formData.paymentType === "installment"}
+                    checked={
+                      formData.paymentType === "installment"
+                    }
                     onChange={(e) =>
                       handleInputChange("paymentType", e.target.value)
                     }
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">
-                    Installment Fee
+                    Training / Installment Fee
                   </span>
                 </label>
-                <label className="flex items-center">
+                {/* <label className="flex items-center">
                   <input
                     type="radio"
                     name="paymentType"
@@ -179,63 +290,127 @@ function PayFee() {
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   />
                   <span className="ml-2 text-sm text-gray-700">Full Fee</span>
-                </label>
+                </label> */}
               </div>
             </div>
 
-            {/* Amount To Pay Now */}
+            {/* Payment Mode */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Amount To Pay Now
+                If Full Fee Paid
               </label>
-              <input
-                type="number"
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.paymentType === "full" ? formData.dueAmount : formData.amount}
-                disabled={formData.paymentType === "full"}
-                onChange={(e) => handleInputChange("amount", e.target.value)}
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={formData.isFullPaid}
+                  onChange={(e) =>
+                    handleInputChange("isFullPaid", e.target.checked)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />{" "}
+                Mark as Full Paid
+              </div>
             </div>
-
-            {/* Payment Status */}
+            {/* Fee Submitted By */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Status
+                Select Fee Submitted By *
+              </label>
+              <select
+                className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                value={formData.hrName}
+                onChange={(e) => handleInputChange("hrName", e.target.value)}
+                disabled={isLoading}
+              >
+                <option value="">-Select HR Name-</option>
+                {hr
+                  .filter((data) => data.isActive)
+                  .map((data) => (
+                    <option key={data._id} value={data._id}>
+                      {data.name}
+                    </option>
+                  ))}
+              </select>
+
+            </div>
+            
+
+            {/* Payment Mode */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Mode
               </label>
               <select
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.mode}
                 onChange={(e) => handleInputChange("mode", e.target.value)}
               >
-                <option value="">---select---</option>
-                <option value="cash">cash</option>
-                <option value="online">online</option>
-                <option value="cheque">cheque</option>
+                <option value="">--- select payment mode ---</option>
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+                {/* <option value="cheque">cheque</option> */}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                 Discount Coupon Code (Optional)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter Coupon Code"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.couponCode}
-                  onChange={(e) =>
-                    handleInputChange("couponCode", e.target.value)
-                  }
-                />
-                <button
-                  type="button"
-                  className="px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 font-medium"
+
+            {/* QR code selection */}
+            {formData.mode === "online" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Payment Accout *
+                </label>
+                <select
+                  className={`w-full px-4 py-3 border  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  value={formData.qrcode}
+                  onChange={(e) => handleInputChange("qrcode", e.target.value)}
+                  disabled={isLoading}
                 >
-                  Apply
-                </button>
+                  <option value="">-- Select Payment Accout --</option>
+                  {qrcodes
+                    .filter((data) => data.isActive)
+                    .map((data) => (
+                      <option key={data._id} value={data._id}>
+                        {data.name}
+                      </option>
+                    ))}
+                </select>
+                {/* {errors.qrcode && (
+                  <p className="mt-1 text-sm text-red-600">{errors.qrcode}</p>
+                )} */}
               </div>
-            </div>
-             {/* Remark */}
+            )}
+
+            {/* QR code display */}
+            {/* {formData.qrcode && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Scan & Pay
+                </label>
+                <QRCodeCanvas value={upiLink} size={200} />
+              </div>
+            )} */}
+            {/* Transaction ID / UTR */}
+            {formData.mode === "online" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Transaction ID / UTR No.
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    className={`w-full pl-8 px-4 py-3 border  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    value={formData.tnxId}
+                    onChange={(e) => handleInputChange("tnxId", e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+                {/* {errors.tnxId && (
+                <p className="mt-1 text-sm text-red-600">{errors.tnxId}</p>
+              )} */}
+              </div>
+            )}
+
+            {/* Remark */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Remark
@@ -262,6 +437,61 @@ function PayFee() {
           </div>
         </div>
       </div>
+
+      {/* Enrollments Modal */}
+      {showEnrollmentsModal && (
+        <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-semibold">Select Enrollment</h3>
+              <button
+                onClick={() => setShowEnrollmentsModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <p className="mb-4 text-gray-600">
+                This student has multiple enrollments. Please select one to
+                continue:
+              </p>
+              <div className="space-y-3">
+                {studentEnrollments.map((enrollment) => (
+                  <div
+                    key={enrollment._id}
+                    onClick={() => selectEnrollment(enrollment)}
+                    className="p-4 border border-gray-300 shadow rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">
+                          {enrollment.userid || "Unknown Course"}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Name: {enrollment?.studentName || "Unknown Batch"}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Tranning :{" "}
+                          {enrollment?.training?.name || "Unknown Batch"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          Due: ₹{enrollment.dueAmount || 0}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(enrollment.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,80 +6,52 @@ import {
   loginFailure,
   logout,
 } from "../redux/slice/authSlice.jsx";
-import {
-  useLoginMutation,
-  useRefreshTokenMutation,
-} from "../redux/authAPI.jsx";
 import Cookies from "js-cookie";
+import axios from "../axiosInstance.jsx";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, token, isLoggedIn, loading, error } = useSelector(
+  const { user, isLoggedIn, loading, error } = useSelector(
     (state) => state.auth
   );
-
-  const [loginMutation] = useLoginMutation();
-  const [refreshTokenMutation] = useRefreshTokenMutation();
 
   const login = async (credentials) => {
     try {
       dispatch(loginStart());
-      const response = await loginMutation(credentials).unwrap();
-
-      // Token ko cookies me store karo
-      Cookies.set("token", response.token, {
-        expires: 7,
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-      }); 
-
-      dispatch(
-        loginSuccess({
-          user: response.user,
-          token: response.token,
-        })
-      );
-
+      const res = await axios.post("/auth/login", credentials);
+      console.log(res);
+      
+      dispatch(loginSuccess({ user: res.data.user }));
       navigate("/dashboard");
       return { success: true };
-    } catch (error) {
-      dispatch(loginFailure(error.data?.message || "Login failed"));
-      return { success: false, error: error.data?.message };
+    } catch (err) {
+      dispatch(loginFailure(err.response?.data?.message || "Login failed"));
+      console.log(err);
+      
+      return { success: false };
     }
   };
 
-  const logoutUser = () => {
+  const logoutUser = async () => {
+    await axios.post("/auth/logout");
     dispatch(logout());
-    Cookies.remove("token"); // Logout par token remove karo
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken"); 
+    
+   // Remove cookies properly
+    
     navigate("/");
   };
 
-  const refreshToken = async () => {
-    try {
-      const response = await refreshTokenMutation().unwrap();
-      dispatch(
-        loginSuccess({
-          user: response.user,
-          token: response.token,
-        })
-      );
-      return true;
-    } catch (error) {
-      dispatch(logout());
-      return false;
-    }
-  };
+
 
   return {
     user,
-    token,
     isLoggedIn,
     loading,
     error,
     login,
     logout: logoutUser,
-    refreshToken,
   };
 };

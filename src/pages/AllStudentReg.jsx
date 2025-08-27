@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Home, ChevronRight, Edit2, Eye } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, TextField, Chip } from "@mui/material";
+import { Button, TextField, Chip, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
@@ -29,12 +29,56 @@ function AllStudentReg() {
   });
 
   const columns = [
+    {
+      label: "Action",
+      accessor: "action",
+      Cell: ({ row }) => (
+        <div className="flex gap-2 items-center">
+          <Link to={`/reg-student/${row._id}`}>
+            <Tooltip
+              title={<span className="font-bold ">View</span>}
+              placement="top"
+            >
+              <button className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600">
+                <Eye size={20} />
+              </button>
+            </Tooltip>
+          </Link>
+          <Tooltip
+            title={<span className="font-bold ">Edit</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
+              onClick={() => handleEdit(row)}
+            >
+              <Edit2 size={20} />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
     { label: "ID", accessor: "userid", filter: false },
     { label: "Student Name", accessor: "studentName", filter: false },
     { label: "Father Name", accessor: "fatherName", filter: false },
     { label: "Mobile", accessor: "mobile", filter: false },
-    { label: "College Name", accessor: "collegeName", filter: true },
-    { label: "Edu Year", accessor: "eduYear", filter: true },
+    { label: "Whatshapp", accessor: "whatshapp", filter: false },
+    { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
+    { label: "College_Name", accessor: "collegeName", filter: true },
+    { label: "Edu_Year", accessor: "eduYear", filter: true },
+    { label: "Tranning", accessor: "training.name",Cell:({row})=>(<span>{row.training.name}</span>) , filter: true, show: true },
+    { label: "Technology", accessor: "technology",Cell:({row})=>(<span>{row.technology.name}</span>) , filter: true, show: true },
+    { label: "Education", accessor: "education", Cell:({row})=>(<span>{row.education.name}</span>) ,filter: true, show: true },
+    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
+    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+    { label: "Amount", accessor: "amount", filter: false, show: true },
+    { label: "Branch", accessor: "branch", Cell:({row})=>(<span>{row.branch.name}</span>) ,filter: true, show: true },
+    { label: "Hr Name", accessor: "hrName", Cell:({row})=>(<span>{row.hrName?.name}</span>) ,filter: false, show: true },
+    { label: "Payment Method", accessor: "paymentMethod", filter: false, show: true },
+    { label: "Qr code", accessor: "qrcode", Cell:({row})=>(<span>{row.qrcode?.name}</span>) ,filter: false, show: true },
+    { label: "Remark", accessor: "remark",filter: false, show: true },
     {
       label: "Payment Status",
       accessor: "paymentStatus",
@@ -60,32 +104,6 @@ function AllStudentReg() {
         />
       ),
       filter: true,
-    },
-    {
-      label: "Action",
-      accessor: "action",
-      Cell: ({ row }) => (
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Eye size={16} />}
-            onClick={() => handleView(row)}
-          >
-            View
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            color="secondary"
-            startIcon={<Edit2 size={16} />}
-            onClick={() => handleEdit(row)}
-          >
-            Edit
-          </Button>
-        </div>
-      ),
     },
   ];
 

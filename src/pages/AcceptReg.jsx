@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Eye ,Printer} from "lucide-react";
+import { Home, ChevronRight, Edit2, Eye, Printer } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, TextField, Chip } from "@mui/material";
+import { Button, TextField, Chip, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
-import { Stack } from "@mui/system";
-import { Link } from "react-router-dom";
+import { Stack, width } from "@mui/system";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
@@ -14,6 +14,7 @@ function AcceptReg() {
     (student) => student.status === "accepted"
   );
   const featchStudent = useGetStudents();
+  const navigate = useNavigate(); 
 
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -34,75 +35,97 @@ function AcceptReg() {
     featchStudent();
   }, []);
   const columns = [
-    { label: "ID", accessor: "userid", filter: false },
-    { label: "Student Name", accessor: "studentName", filter: false },
-    { label: "Father Name", accessor: "fatherName", filter: false },
-    { label: "Mobile", accessor: "mobile", filter: false },
-    { label: "College Name", accessor: "collegeName", filter: true },
-    { label: "Edu Year", accessor: "eduYear", filter: true },
-    { label: "Tranning", accessor: "training.name", filter: true, show: false },
-    {
-      label: "Payment Status",
-      accessor: "paymentStatus",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.paymentStatus}
-          color={row.paymentStatus === "paid" ? "success" : "warning"}
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
-    // {
-    //   label: "Status",
-    //   accessor: "status",
-    //   Cell: ({ row }) => (
-    //     <Chip
-    //       label={row.status}
-    //       color="success"
-    //       variant="outlined"
-    //       size="small"
-    //     />
-    //   ),
-    // },
     {
       label: "Action",
       accessor: "action",
+      width: "20%",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Eye size={16} />}
-            onClick={() => handleView(row)}
+          <Link to={`/reg-student/${row._id}`}>
+            <Tooltip
+              title={<span className="font-bold ">View</span>}
+              placement="top"
+            >
+              <button className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600">
+                <Eye size={20} />
+              </button>
+            </Tooltip>
+          </Link>
+          <Tooltip
+            title={<span className="font-bold ">Edit</span>}
+            placement="top"
           >
-            View
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            color="secondary"
-            startIcon={<Edit2 size={16} />}
-            onClick={() => handleEdit(row)}
+            <button
+              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
+              onClick={() => handleEdit(row)}
+            >
+              <Edit2 size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold ">Print</span>}
+            placement="top"
           >
-            Edit
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            color="secondary"
-            startIcon={<Printer size={16} />}
-            onClick={() => handlePrint(row)}
-          >
-            Print
-          </Button>
+            <button
+              className="px-2 py-1 rounded-md hover:bg-purple-100 transition-colors border text-purple-600"
+              onClick={() => handlePrint(row)}
+            >
+              <Printer size={20} />
+            </button>
+          </Tooltip>
         </div>
       ),
     },
+    
+    {
+          label: "Tra Fee Status",
+          accessor: "trainingFeeStatus",
+          Cell: ({ row }) => (
+            <Chip
+              label={row.trainingFeeStatus}
+              color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
+              variant="outlined"
+              size="small"
+            />
+          ),
+        },
+        {
+          label: "Tnx Status",
+          accessor: "tnxStatus",
+          Cell: ({ row }) => (
+            <Chip
+              label={row.tnxStatus}
+              color={row.tnxStatus === "paid" ? "success" : "warning"}
+              variant="outlined"
+              size="small"
+            />
+          ),
+        },
+    { label: "ID", accessor: "userid", filter: false},
+    { label: "Student_Name", accessor: "studentName", filter: false },
+    { label: "Father_Name", accessor: "fatherName", filter: false },
+    { label: "Mobile", accessor: "mobile", filter: false },
+    { label: "Whatshapp", accessor: "whatshapp", filter: false },
+    { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
+    { label: "College_Name", accessor: "collegeName", filter: true },
+    { label: "Edu_Year", accessor: "eduYear", filter: true },
+    { label: "Tranning", accessor: "training.name",Cell:({row})=>(<span>{row.training.name}</span>) , filter: true, show: true },
+    { label: "Technology", accessor: "technology",Cell:({row})=>(<span>{row.technology.name}</span>) , filter: true, show: true },
+    { label: "Education", accessor: "education", Cell:({row})=>(<span>{row.education.name}</span>) ,filter: true, show: true },
+    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
+    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+    { label: "Amount", accessor: "amount", filter: false, show: true },
+    { label: "Branch", accessor: "branch", Cell:({row})=>(<span>{row.branch.name}</span>) ,filter: true, show: true },
+    { label: "Hr Name", accessor: "hrName", Cell:({row})=>(<span>{row.hrName?.name}</span>) ,filter: false, show: true },
+    { label: "Payment Method", accessor: "paymentMethod", filter: false, show: true },
+    { label: "Qr code", accessor: "qrcode", Cell:({row})=>(<span>{row.qrcode?.name}</span>) ,filter: false, show: true },
+    { label: "Remark", accessor: "remark",filter: false, show: true },
   ];
+// console.log(acceptedStudents);
 
-   const handlePrint = (student) => {
+  const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
   };
   const handleView = (row) => {
@@ -111,18 +134,20 @@ function AcceptReg() {
   };
 
   const handleEdit = (row) => {
-    setSelectedStudent(row);
-    setEditFormData({
-      studentName: row.studentName || "",
-      fatherName: row.fatherName || "",
-      email: row.email || "",
-      mobile: row.mobile || "",
-      alternateMobile: row.alternateMobile || "",
-      collegeName: row.collegeName || "",
-      eduYear: row.eduYear || "",
-      remark: row.remark || "",
-    });
-    setEditModalOpen(true);
+     navigate(`/AddStudent/${row._id}`);
+    // setSelectedStudent(row);
+
+    // setEditFormData({
+    //   studentName: row.studentName || "",
+    //   fatherName: row.fatherName || "",
+    //   email: row.email || "",
+    //   mobile: row.mobile || "",
+    //   alternateMobile: row.alternateMobile || "",
+    //   collegeName: row.collegeName || "",
+    //   eduYear: row.eduYear || "",
+    //   remark: row.remark || "",
+    // });
+    // setEditModalOpen(true);
   };
 
   const handleEditSubmit = async () => {
@@ -200,205 +225,7 @@ function AcceptReg() {
           loading={loading}
         />
 
-        {/* View Student Details Modal */}
-        <CustomModal
-          open={viewModalOpen}
-          onClose={handleViewModalClose}
-          title="Student Registration Details"
-          hideSubmitButton={true}
-        >
-          {selectedStudent && (
-            <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    User ID
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.userid}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Student Name
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.studentName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Father Name
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.fatherName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.email}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mobile
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.mobile}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alternate Mobile
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.alternateMobile || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    College Name
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.collegeName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Education Year
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.eduYear}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Training
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.training?.name || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Technology
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.technology?.name || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Type
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.paymentType}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    ₹{selectedStudent.amount}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Status
-                  </label>
-                  <Chip
-                    label={selectedStudent.paymentStatus}
-                    color={
-                      selectedStudent.paymentStatus === "success"
-                        ? "success"
-                        : "warning"
-                    }
-                    variant="outlined"
-                    size="small"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Registration Status
-                  </label>
-                  <Chip
-                    label={selectedStudent.status}
-                    color="success"
-                    variant="outlined"
-                    size="small"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Method
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.paymentMethod || "N/A"}
-                  </p>
-                </div>
-              </div>
 
-              {selectedStudent.couponCode && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Coupon Code
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {selectedStudent.couponCode}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Coupon Discount
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      ₹{selectedStudent.couponDiscount}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {selectedStudent.remark && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Remark
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.remark}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Registration Date
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.createdAt).toLocaleDateString(
-                      "en-IN"
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Transaction Date
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.txnDateTime).toLocaleDateString(
-                      "en-IN"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </CustomModal>
 
         {/* Edit Student Modal */}
         <CustomModal
@@ -439,14 +266,6 @@ function AcceptReg() {
               name="mobile"
               fullWidth
               value={editFormData.mobile}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Alternate Mobile"
-              name="alternateMobile"
-              fullWidth
-              value={editFormData.alternateMobile}
               onChange={handleEditChange}
               variant="outlined"
             />

@@ -1,19 +1,35 @@
 import { X, User, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { menuItems } from "../routes/menuItems.jsx";
 import { useAuth } from "../hooks/useAuth.jsx";
-function Sidenav({ isOpen, closeSidebar, user}) {
+import useGetCount from "../hooks/useGetCount.jsx";
+import { useSelector } from "react-redux";
+
+function Sidenav({ isOpen, closeSidebar, user }) {
   const { logout } = useAuth();
+
   const [expandedMenus, setExpandedMenus] = useState({});
-  const location = useLocation();
+  const location = useLocation();  
+const  counts  = useSelector((state) => state.count.data)||{};
+const fetchCount=useGetCount()
+
+
+  // role ke hisaab se filter
+  const filteredMenu = menuItems.filter(
+    (item) => !item.roles || item.roles.includes(user?.role)
+  );
+  // console.log(filteredMenu);
+
   const toggleSubmenu = (menuKey) => {
     setExpandedMenus((prev) => ({
       ...prev,
       [menuKey]: !prev[menuKey],
     }));
   };
-
+useEffect(() => {
+  fetchCount()
+}, [])
   return (
     <>
       {/* Mobile Overlay */}
@@ -54,7 +70,7 @@ function Sidenav({ isOpen, closeSidebar, user}) {
 
         <nav className="mt-8 flex-1 overflow-y-auto " id="hide-scrollbar">
           <ul className="space-y-2 px-4 mb-40">
-            {menuItems.map((item, index) => {
+            {filteredMenu.map((item, index) => {
               // Check if main menu or any submenu is active
               const isMenuActive =
                 (item.path && location.pathname === item.path) ||
@@ -75,9 +91,22 @@ function Sidenav({ isOpen, closeSidebar, user}) {
                         }
                       `}
                       >
-                        <div className="flex items-center gap-3">
+                        {/* <div className="flex items-center gap-3">
                           <item.icon size={20} />
                           <span className="font-medium">{item.label}</span>
+                        </div> */}
+                        <div className="flex items-center gap-3 ">
+                          <item.icon size={20} />
+                          <span className="font-medium whitespace-nowrap">
+                            {item.label}
+                          </span>
+
+                          {/* ✅ All count badge for main menu */}
+                          {counts?.[item.key]?.all !== undefined && (
+                            <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                              {counts[item.key].all}
+                            </span>
+                          )}
                         </div>
                         {expandedMenus[item.key] ? (
                           <ChevronDown size={16} />
@@ -105,6 +134,12 @@ function Sidenav({ isOpen, closeSidebar, user}) {
                                 >
                                   <subItem.icon size={16} />
                                   <span>{subItem.label}</span>
+                                  {counts?.[item.key]?.[subItem.key] !==
+                                    undefined && (
+                                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                                      {counts[item.key][subItem.key]}
+                                    </span>
+                                  )}
                                 </Link>
                               </li>
                             );
@@ -126,6 +161,12 @@ function Sidenav({ isOpen, closeSidebar, user}) {
                     >
                       <item.icon size={20} />
                       <span className="font-medium">{item.label}</span>
+                      {/* ✅ Example for Fees section */}
+                      {/* {item.key === "fee-payments" && (
+                        <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                          {counts?.fees?.pending || 0}
+                        </span>
+                      )} */}
                     </Link>
                   )}
                 </li>

@@ -10,7 +10,7 @@ const useGetFee = () => {
     const fetchFee = useCallback(async () => {
         try {
             const res = await axios.get("/fee",{withCredentials:true})
-            console.log(res);
+            // console.log(res);
             
             if (res.data) {
                 dispatch(setFee(res.data.data))

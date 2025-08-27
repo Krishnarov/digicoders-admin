@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Home, ChevronRight, Eye, Check, X, Printer } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, Chip } from "@mui/material";
+import { Button, Chip, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
@@ -10,98 +10,112 @@ import useGetFee from "../hooks/useGetFee";
 
 function NewFee() {
   const fetchFee = useGetFee();
-  const feeData = useSelector((state) => state.fee.data).filter((data)=>data.status==="new");
+  const feeData = useSelector((state) => state.fee.data).filter(
+    (data) => data.status === "new"
+  );
 
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  
+
   useEffect(() => {
     fetchFee();
   }, []);
 
   const columns = [
-    { label: "Receipt No", accessor: "receiptNo", filter: true },
-    { 
-      label: "Student Name", 
-      accessor: "registrationId.studentName", 
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A"
-    },
-    { 
-      label: "Mobile", 
-      accessor: "registrationId.mobile", 
-      Cell: ({ row }) => row.registrationId?.mobile || "N/A"
-    },
-    { 
-      label: "Payment Date", 
-      accessor: "paymentDate",
-      Cell: ({ row }) => formatDate(row.paymentDate)
-    },
-    { 
-      label: "Amount", 
-      accessor: "amount",
-      Cell: ({ row }) => `₹${row.amount}`
-    },
-    {
-      label: "Payment Status",
-      accessor: "paymentStatus",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.paymentStatus}
-          color={
-            row.paymentStatus === "success"? "success": row.paymentStatus === "failed"? "error": "warning"
-          }
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
     {
       label: "Actions",
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Eye size={16} />}
-            onClick={() => handleView(row)}
+          <Tooltip
+            title={<span className="font-bold ">View</span>}
+            placement="top"
           >
-            View
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            color="success"
-            startIcon={<Check size={16} />}
-            onClick={() => handleAccept(row._id)}
-            disabled={row.status === "accepted"}
+            <button
+              className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
+              onClick={() => handleView(row)}
+            >
+              <Eye size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold ">Accept</span>}
+            placement="top"
           >
-            Accept
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            color="error"
-            startIcon={<X size={16} />}
-            onClick={() => handleReject(row._id)}
-            disabled={row.status === "rejected"}
+            <button
+              className="px-2 py-1 rounded-md hover:bg-green-100 transition-colors border text-green-600"
+              onClick={() => handleAccept(row._id)}
+              disabled={row.status === "accepted"}
+            >
+              <Check size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold ">Reject</span>}
+            placement="top"
           >
-            Reject
-          </Button>
-          {/* <Button
-            variant="outlined"
-            size="small"
-            color="secondary"
-            startIcon={<Printer size={16} />}
-            onClick={() => handlePrint(row)}
+            <button
+              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+              onClick={() => handleReject(row._id)}
+              disabled={row.status === "rejected"}
+            >
+              <X size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold ">Print</span>}
+            placement="top"
           >
-            Print
-          </Button> */}
+            <button
+              className="px-2 py-1 rounded-md hover:bg-purple-100 transition-colors border text-purple-600"
+              onClick={() => handlePrint(row)}
+            >
+              <Printer size={20} />
+            </button>
+          </Tooltip>
         </div>
       ),
     },
+    {
+      label: "Tnx Status",
+      accessor: "tnxStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.tnxStatus}
+          color={row.tnxStatus === "paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    { label: "Receipt No", accessor: "receiptNo", filter: true },
+
+    {
+      label: "Student Name",
+      accessor: "registrationId.studentName",
+      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
+    },
+    {
+      label: "Mobile",
+      accessor: "registrationId.mobile",
+      Cell: ({ row }) => row.registrationId?.mobile || "N/A",
+    },
+    {
+      label: "Payment Date",
+      accessor: "paymentDate",
+      Cell: ({ row }) => formatDate(row.paymentDate),
+    },
+    {
+      label: "Amount",
+      accessor: "amount",
+      Cell: ({ row }) => `₹${row.amount}`,
+    },
+     { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
+    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+
   ];
 
   const handleView = (row) => {
@@ -161,7 +175,7 @@ function NewFee() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
             <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-             Fee Payments
+              Fee Payments
             </h1>
             <Link
               to="/dashboard"

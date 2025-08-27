@@ -6,7 +6,6 @@ import routes from "./routes/Routes.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Receipt from "./components/Receipt.jsx";
 function App() {
-
   return (
     <Routes>
       <Route path="/" element={<Login />} />
@@ -20,7 +19,11 @@ function App() {
                 {routes.map((route, index) => (
                   <Route
                     path={route.path}
-                    element={<route.component />}
+                    element={
+                      <ProtectedRoute roles={route.roles}>
+                        <route.component />
+                      </ProtectedRoute>
+                    }
                     key={index}
                   />
                 ))}

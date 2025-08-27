@@ -1,43 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { toast, ToastContainer } from "react-toastify";
+import axiosInstance from "../axiosInstance.jsx";
+import { store } from "../store/store.jsx"; // redux store ka path
+import { logout, loginSuccess } from "../redux/slice/authSlice.jsx";
+import { useNavigate } from "react-router-dom";
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
-  // Mock login function since useAuth is not available
-  // const login = async (creds) => {
-  //   setLoading(true);
-  //   setError("");
-
-  //   // Simulate API call
-  //   await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  //   // Mock validation
-  //   if (
-  //     creds.email === "test@example.com" &&
-  //     creds.password === "password123"
-  //   ) {
-  //     setLoading(false);
-  //     return { success: true };
-  //   } else {
-  //     setError("Invalid email or password");
-  //     setLoading(false);
-  //     return { success: false };
+  const navigate = useNavigate();
+  // const ifTockenExists = async () => {
+  //   try {
+  //     const res = await axiosInstance.post("/auth/refresh-token");
+  //     console.log(res);
+  //     toast.success("Login successful");
+  //     await store.dispatch(loginSuccess({ user: res.data.user }));
+  //     navigate("/dashboard");
+  //   } catch (error) {
+  //     console.log(error);
   //   }
   // };
+  // useEffect(() => {
+  //   ifTockenExists();
+  // },[]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await login(credentials);
-    if (result.success) {
-      console.log("Login successful");
-      alert("Login successful!");
-    }
+    if (result.success) toast.success("Login successful");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <ToastContainer />
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">

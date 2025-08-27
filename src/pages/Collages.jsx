@@ -6,17 +6,24 @@ import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
-import { useSelector } from "react-redux";
-import useGetEducations from "../hooks/useGetEducations";
+
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
-function Education() {
-  const educations = useSelector((state) => state.education.data);
-  const fetchEducations = useGetEducations();
+function Collages() {
+  const [collegeNames, setCollegeNames] = useState([]);
+  const fetchCollegeNames = async () => {
+    try {
+      const response = await axios.get("/college");
 
+      setCollegeNames(response.data.colleges);
+    } catch (error) {
+      console.error("Error fetching college names:", error);
+    }
+  };
   useEffect(() => {
-    fetchEducations();
+    fetchCollegeNames();
   }, []);
+  // console.log(collegeNames);
 
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
@@ -70,22 +77,30 @@ function Education() {
         </div>
       ),
     },
-    { label: "ID", accessor: "_id", filter: false },
-    { label: "Education Name", accessor: "name", filter: true },
+    { label: "Collage Name", accessor: "name" },
     {
       label: "Status",
       accessor: "isActive",
       Cell: ({ row }) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.isActive
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {row.isActive ? "Active" : "Inactive"}
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="ml-2 text-sm font-medium text-gray-700">
+            {row.isActive ? "Active" : "Inactive"}
+          </span>
+          <button
+            onClick={() => toggleStatus(row)}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
+              row.isActive ? "bg-green-500" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
+                row.isActive ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
       ),
+      filter: true,
     },
   ];
 
@@ -98,47 +113,46 @@ function Education() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/education/${id}?action=delete`);
-      fetchEducations();
+      await axios.delete(`/college/${id}`);
     } catch (error) {
       console.error("Error deleting education:", error);
     } finally {
+      fetchCollegeNames();
       setLoading("");
-      fetchEducations();
     }
   };
 
-  const toggleStatus = async (id) => {
+  const toggleStatus = async (row) => {
     try {
       setLoading(true);
-      const item = educations.find((item) => item._id === id);
-      await axios.put(`/education/${id}?action=update`, {
-        isActive: !item.isActive,
+      const res = await axios.put(`/college/${row._id}`, {
+        isActive: !row.isActive,
       });
-      fetchEducations();
+      console.log(res);
     } catch (error) {
       console.error("Error toggling status:", error);
     } finally {
+      fetchCollegeNames();
       setLoading(false);
-      fetchEducations();
     }
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
+
       if (editId) {
-        await axios.put(`/education/${editId}?action=update`, formData);
+        await axios.put(`/college/${editId}`, formData);
       } else {
-        await axios.post("/education?action=add", formData);
+        await axios.post("/college", formData);
       }
+
       handleClose();
-      fetchEducations();
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
+      fetchCollegeNames();
       setLoading(false);
-      fetchEducations();
     }
   };
 
@@ -159,7 +173,7 @@ function Education() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
             <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-              Education
+              Collages
             </h1>
             <Link
               to="/dashboard"
@@ -175,14 +189,14 @@ function Education() {
             onClick={() => setOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Add New Education
+            Add New Collage
           </Button>
         </div>
 
         {/* DataTable */}
         <DataTable
           columns={columns}
-          data={educations}
+          data={collegeNames}
           loading={loading}
           onStatusToggle={toggleStatus}
         />
@@ -192,13 +206,13 @@ function Education() {
           open={open}
           onClose={handleClose}
           onSubmit={handleSubmit}
-          title={editId ? "Edit Education" : "Add New Education"}
+          title={editId ? "Edit Collage" : "Add New Collage"}
           submitText={editId ? "Update" : "Create"}
           loading={loading}
         >
           <Stack spacing={3} sx={{ mt: 2 }}>
             <TextField
-              label="Education Name"
+              label="Collage Name"
               name="name"
               fullWidth
               value={formData.name}
@@ -214,4 +228,4 @@ function Education() {
   );
 }
 
-export default Education;
+export default Collages;

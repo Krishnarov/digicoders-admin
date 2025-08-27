@@ -1,31 +1,33 @@
 import axios from "axios";
 import { store } from "./store/store.jsx"; // redux store ka path
-import { logout } from "./redux/slice/authSlice.jsx"; // logout action
+import { logout, loginSuccess } from "./redux/slice/authSlice.jsx"; // logout action
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_BASE_API,
-  // withCredentials: true, // taaki cookie backend ko mile
+  withCredentials: true, // IMPORTANT for cookie transfer
 });
 // Request interceptor for token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = store.getState().auth.token;
-    // console.log(token);
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-// har response ke liye ye run hoga
+// axiosInstance.interceptors.request.use(
+//   (config) => {
+//     const token = store.getState().auth.token;
+//     // console.log(token);
+
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+//   },
+//   (error) => Promise.reject(error)
+// );
+// Automatically call refresh API on 401
+
+// Agar 401 aaya → logout + redirect
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      store.dispatch(logout()); // redux state reset
-      // window.location.href = "/"; // login page par redirect
+      store.dispatch(logout());
+      // history.push("/"); // user ko login page par bhejna
     }
     return Promise.reject(error);
   }

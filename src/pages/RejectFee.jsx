@@ -1,9 +1,7 @@
-
-
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Eye, Check, X, Printer } from "lucide-react";
+import { Home, ChevronRight, Eye, Check, X, Printer, Trash2 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, Chip } from "@mui/material";
+import { Button, Chip, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
@@ -12,37 +10,87 @@ import useGetFee from "../hooks/useGetFee";
 
 function RejectFee() {
   const fetchFee = useGetFee();
-  const feeData = useSelector((state) => state.fee.data).filter((item) => item.status === "rejected");
+  const feeData = useSelector((state) => state.fee.data).filter(
+    (item) => item.status === "rejected"
+  );
 
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  
+
   useEffect(() => {
     fetchFee();
   }, []);
 
   const columns = [
+    {
+      label: "Actions",
+      accessor: "action",
+      Cell: ({ row }) => (
+        <div className="flex gap-2 items-center">
+          {/* <Button
+            variant="outlined"
+            size="small"
+            color="primary"
+            startIcon={<Eye size={16} />}
+            onClick={() => handleView(row)}
+          >
+            View
+          </Button> */}
+          <Tooltip
+            title={<span className="font-bold ">View</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
+              onClick={() => handleView(row)}
+            >
+              <Eye size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold ">Delete</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+              onClick={() => handleDeleta(row._id)}
+            >
+              <Trash2 size={20} />
+            </button>
+          </Tooltip>
+          {/* <Button
+            variant="outlined"
+            size="small"
+            color="error"
+            startIcon={<X size={16} />}
+            onClick={() => handleDeleta(row._id)}
+          >
+            Delete
+          </Button> */}
+        </div>
+      ),
+    },
     { label: "Receipt No", accessor: "receiptNo", filter: true },
-    { 
-      label: "Student Name", 
-      accessor: "registrationId.studentName", 
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A"
+    {
+      label: "Student Name",
+      accessor: "registrationId.studentName",
+      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
     },
-    { 
-      label: "Mobile", 
-      accessor: "registrationId.mobile", 
-      Cell: ({ row }) => row.registrationId?.mobile || "N/A"
+    {
+      label: "Mobile",
+      accessor: "registrationId.mobile",
+      Cell: ({ row }) => row.registrationId?.mobile || "N/A",
     },
-    { 
-      label: "Payment Date", 
+    {
+      label: "Payment Date",
       accessor: "paymentDate",
-      Cell: ({ row }) => formatDate(row.paymentDate)
+      Cell: ({ row }) => formatDate(row.paymentDate),
     },
-    { 
-      label: "Amount", 
+    {
+      label: "Amount",
       accessor: "amount",
-      Cell: ({ row }) => `₹${row.amount}`
+      Cell: ({ row }) => `₹${row.amount}`,
     },
     {
       label: "Status",
@@ -60,33 +108,6 @@ function RejectFee() {
           variant="outlined"
           size="small"
         />
-      ),
-    },
-    {
-      label: "Actions",
-      accessor: "action",
-      Cell: ({ row }) => (
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Eye size={16} />}
-            onClick={() => handleView(row)}
-          >
-            View
-          </Button>
-         
-          <Button
-            variant="outlined"
-            size="small"
-            color="error"
-            startIcon={<X size={16} />}
-            onClick={() => handleDeleta(row._id)}
-          >
-            Delete
-          </Button>
-        </div>
       ),
     },
   ];
@@ -107,8 +128,6 @@ function RejectFee() {
       setLoading(false);
     }
   };
-
-
 
   const handleViewModalClose = () => {
     setViewModalOpen(false);
@@ -134,7 +153,7 @@ function RejectFee() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
             <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-             Rejected Fee Payments
+              Rejected Fee Payments
             </h1>
             <Link
               to="/dashboard"
@@ -357,8 +376,6 @@ function RejectFee() {
                   </p>
                 </div>
               )}
-
-
             </div>
           )}
         </CustomModal>

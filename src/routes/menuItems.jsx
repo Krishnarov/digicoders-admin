@@ -36,6 +36,8 @@ import {
   BookUser,
   CircleFadingPlus,
   BadgePlus,
+  QrCode,
+  PointerOffIcon,
 } from "lucide-react";
 
 export const menuItems = [
@@ -44,45 +46,33 @@ export const menuItems = [
     icon: Home,
     label: "Dashboard",
     active: true,
+    roles: ["Admin", "Employee"],
   },
   {
-    key: "registrations",
+    key: "students",
     icon: UserPlus,
     label: "Registrations",
     hasSubmenu: true,
+    roles: ["Admin", "Employee"], 
     submenu: [
-      { path: "/AddStudent", label: "Add Student", icon: Plus },
-      { path: "/new", label: "New", icon: BadgePlus },
-      { path: "/accepted", label: "Accepted", icon: UserCheck },
-      { path: "/rejected", label: "Rejected", icon: UserX },
-      {path: "/all-students", label: "All Students", icon: UsersIcon,},
+      {path: "/AddStudent", label: "Add Student", icon: Plus,roles: ["Admin", "Employee"], },
+      {key: "new", path: "/new", label: "New", icon: BadgePlus,roles: ["Admin", "Employee"], },
+      {key: "accepted", path: "/accepted", label: "Accepted", icon: UserCheck,roles: ["Admin", "Employee"], },
+      {key: "rejected", path: "/rejected", label: "Rejected", icon: UserX,roles: ["Admin", "Employee"], },
+      {key: "all", path: "/all-students", label: "All Students", icon: UsersIcon,roles: ["Admin", "Employee"], },
     ],
   },
+
   {
-    path: "/tranning",
-    icon: BookUser,
-    label: "Tranning Type",
-  },
-  {
-    path: "/technology",
-    icon: BookUser,
-    label: "Technology",
-  },
-  {
-    path: "/education",
-    icon: BookUser,
-    label: "Education",
-  },
-  {
-    key: "fee-payments",
+    key: "fees",
     icon: CreditCard,
     label: "Fee Payments",
-    hasSubmenu: true,
+    hasSubmenu: true,roles: ["Admin", "Employee"],
     submenu: [
-      { path: "/pay-fee", label: "Pay Fee", icon: CreditCard },
-      { path: "/new-fee", label: "New", icon: Plus },
-      { path: "/accepted-fee", label: "Accepted", icon: CheckCircle },
-      { path: "/rejected-fee", label: "Rejected", icon: XCircle },
+      { path: "/pay-fee", label: "Pay Fee", icon: CreditCard ,roles: ["Admin", "Employee"],},
+      {key: "new", path: "/new-fee", label: "New", icon: Plus,roles: ["Admin", "Employee"], },
+      {key: "accepted", path: "/accepted-fee", label: "Accepted", icon: CheckCircle,roles: ["Admin", "Employee"], },
+      {key: "rejected", path: "/rejected-fee", label: "Rejected", icon: XCircle,roles: ["Admin", "Employee"], },
     ],
   },
 
@@ -90,160 +80,111 @@ export const menuItems = [
     path: "/manage-teacher",
     icon: BookUser,
     label: "Manage Teacher",
+    roles: ["Admin", "Employee"],
   },
   {
     path: "/manage-batch",
     icon: LayoutList,
     label: "Manage Batch",
+    roles: ["Admin", "Employee"],
   },
   {
-    path: "/manage-attendance",
+    key: "attendance",
     icon: CheckCircle,
     label: "Manage Attendance",
-  },
-  {
-    path: "/manage-assignment",
-    icon: FileText,
-    label: "Upload Assignment",
-  },
-  {
-    path: "/studentvideo",
-    icon: Video,
-    label: "Stu. video link",
-  },
-  {
-    path: "/UploadPhotos",
-    icon: UploadCloud,
-    label: "Stu. upload photo",
-  },
-  {
-    path: "/blog",
-    icon: ScrollText,
-    label: "Manage Blogs",
-  },
-  {
-    path: "/ManageCoupon",
-    icon: BadgePercent,
-    label: "Manage Coupon",
-  },
-  {
-    path: "/Contact",
-    icon: PhoneCall,
-    label: "Contact",
-  },
-  {
-    path: "/ManageFinalYearProject",
-    icon: Projector,
-    label: "Project Request",
-  },
-  {
-    path: "/ManageBanner",
-    icon: Image,
-    label: "Manage Banner",
-  },
-  {
-    path: "/expert",
-    icon: Users,
-    label: "Manage Expert",
-  },
-  {
-    path: "/Intern",
-    icon: UserCheck,
-    label: "Manage Intern",
-  },
-  {
-    path: "/ManageWebinar",
-    icon: Video,
-    label: "Manage Webinar",
-  },
-  {
-    path: "/ManageExpertList",
-    icon: Group,
-    label: "Manage Team",
-  },
-  {
-    path: "/ManageReview",
-    icon: Star,
-    label: "Manage Review",
-  },
-  {
-    path: "/ManageCertificate",
-    icon: ScrollText,
-    label: "Manage Certificate",
-  },
-  {
-    path: "/ManageMOU",
-    icon: Handshake,
-    label: "MOUs",
-  },
-  {
-    path: "/Achievements",
-    icon: Trophy,
-    label: "Achievements",
-  },
-  {
-    path: "/ManageAppreciation",
-    icon: ThumbsUp,
-    label: "Appreciations",
-  },
-  {
-    path: "/ManageAdvisory",
-    icon: Users,
-    label: "Advisory",
-  },
-  {
-    path: "/ManageGallery",
-    icon: GalleryHorizontal,
-    label: "Photos Gallery",
-  },
-  {
-    path: "/ManageFarewell",
-    icon: PartyPopper,
-    label: "Farewell",
-  },
-  {
-    path: "/ManageModal",
-    icon: AlertCircle,
-    label: "Popup",
-  },
-  {
-    path: "/placement",
-    icon: Building2,
-    label: "Placement Photos",
-  },
-  {
-    path: "/ManageVideo",
-    icon: Video,
-    label: "Video Gallery",
-  },
-  {
-    path: "/ManageFAQ",
-    icon: MessageCircle,
-    label: "Manage FAQ",
-  },
-  {
-    path: "/ManageNews",
-    icon: Newspaper,
-    label: "News Media",
-  },
-  {
-    path: "/PlacementPartner",
-    icon: Handshake,
-    label: "Placement Partner",
+    hasSubmenu: true,
+    roles: ["Admin", "Employee","Intern"],
+    submenu:[
+        {
+        path: "/attendance-marking",
+        icon: BookUser,
+        label: "Attendance Marking",
+        roles: ["Admin", "Employee","Intern"],
+      },
+        {
+        path: "/attendance-viwe",
+        icon: BookUser,
+        label: "Attendance Viwe",
+        roles: ["Admin", "Employee","Intern"],
+      },
+    ]
   },
   {
     key: "setting",
     icon: Settings,
     label: "Manage Settings",
     hasSubmenu: true,
+    roles: ["Admin"],
     submenu: [
+      {
+        path: "/tranning",
+        icon: BookUser,
+        label: "Tranning Type",
+        roles: ["Admin", "Employee"],
+      },
+
+      {
+        path: "/technology",
+        icon: BookUser,
+        label: "Technology",
+        roles: ["Admin", "Employee"],
+      },
+      {
+        path: "/education",
+        icon: BookUser,
+        label: "Education",
+        roles: ["Admin", "Employee"],
+      },
+      {
+        path: "/collages",
+        icon: BookUser,
+        label: "Collages",
+        roles: ["Admin", "Employee"],
+      },
+
+      {
+        path: "/manage-hr",
+        icon: BookUser,
+        label: "Manage Hr",
+        roles: ["Admin", "Employee"],
+      },
+      {
+        path: "/qr-code",
+        icon: QrCode,
+        label: "Qr Code",
+        roles: ["Admin"],
+      },
+      {
+        path: "/employee",
+        icon: QrCode,
+        label: "Manage Employee",
+        roles: ["Admin"],
+      },
+      {
+        path: "/teacher",
+        icon: QrCode,
+        label: "Manage Teacher",
+        roles: ["Admin","Employee"],
+      },
+      {
+        path: "/batchs",
+        icon: QrCode,
+        label: "Manage Batchs",
+        roles: ["Admin","Employee"],
+      },
+      {
+        path: "/profile",
+        icon: PointerOffIcon,
+        label: "Profile",
+        roles: ["Admin", "Employee"],
+      },
       { path: "/WhatsAppGroup", label: "WhatsApp Group", icon: Send },
       { path: "/ManageSetting", label: "Manage Form Element", icon: Plus },
     ],
   },
-  //   {
-  //     path: "/",
-  //     icon: LogOut,
-  //     label: "Log Out",
-  //   },
+    {
+      path: "/",
+      icon: LogOut,
+      label: "Log Out",
+    },
 ];

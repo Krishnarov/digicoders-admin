@@ -1,5 +1,5 @@
 // components/DataTable.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -15,7 +15,8 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Grid
+  Grid,
+  Box,
 } from "@mui/material";
 
 function DataTable({ columns, data }) {
@@ -51,9 +52,10 @@ function DataTable({ columns, data }) {
       .filter((row) => {
         return Object.entries(filters).every(([column, value]) => {
           if (!value) return true;
-          // return String(row[column]).toLowerCase() === value.toLowerCase();
-          return String(row?.[column] ?? '').toLowerCase() === String(value ?? '').toLowerCase();
-
+          return (
+            String(row?.[column] ?? "").toLowerCase() ===
+            String(value ?? "").toLowerCase()
+          );
         });
       });
   }, [data, searchTerm, filters]);
@@ -70,8 +72,43 @@ function DataTable({ columns, data }) {
   }, [filteredData, orderBy, order]);
 
   const paginatedData = useMemo(() => {
-    return sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    return sortedData.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
   }, [sortedData, page, rowsPerPage]);
+
+  // Function to get the maximum content width for a column
+  const getMaxContentWidth = useCallback(
+    (accessor) => {
+      const visibleData = filteredData || [];
+      const headerContent =
+        columns.find((col) => col.accessor === accessor)?.label || "";
+
+      // Get all cell contents for this column
+      const cellContents = visibleData.map((row) => {
+        const colConfig = columns.find((col) => col.accessor === accessor);
+        if (colConfig?.Cell) {
+          // For custom cells, we'll estimate based on the accessor value
+          return String(row[accessor] || "");
+        }
+        return String(row[accessor] || "");
+      });
+
+      // Combine header and all cell values
+      const allContents = [headerContent, ...cellContents];
+
+      // Find the longest content
+      const longestContent = allContents.reduce((longest, current) => {
+        return current.length > longest.length ? current : longest;
+      }, "");
+
+      // Calculate approximate width based on content length
+      // This is a rough estimation - you might need to adjust the multiplier
+      return Math.min(Math.max(longestContent.length * 10, 120), 300); // Min 120px, max 300px
+    },
+    [filteredData, columns]
+  );
 
   return (
     <Paper elevation={3} className="p-4">
@@ -81,7 +118,6 @@ function DataTable({ columns, data }) {
             label="Search"
             variant="outlined"
             fullWidth
-            
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -103,13 +139,13 @@ function DataTable({ columns, data }) {
                         }
                       >
                         <MenuItem value="">All</MenuItem>
-                        {[
-                          ...new Set(data?.map((d) => d[col.accessor])),
-                        ].map((option) => (
-                          <MenuItem key={option} value={option}>
-                            {option}
-                          </MenuItem>
-                        ))}
+                        {[...new Set(data?.map((d) => d[col.accessor]))].map(
+                          (option) => (
+                            <MenuItem key={option} value={option}>
+                              {`${option}`}
+                            </MenuItem>
+                          )
+                        )}
                       </Select>
                     </FormControl>
                   </Grid>
@@ -119,31 +155,71 @@ function DataTable({ columns, data }) {
         </Grid>
       </Grid>
 
-      <TableContainer>
-        <Table>
+      <TableContainer
+        className="w-full overflow-x-scroll"
+        sx={{
+          maxWidth: "100%",
+        }}
+      >
+        <Table sx={{ tableLayout: "auto", width: "100%", minWidth: 300 }}>
           <TableHead className="bg-slate-50">
             <TableRow>
-              {columns.filter((col)=>col.show !== false).map((col) => (
-                <TableCell  key={col.accessor}>
-                  <TableSortLabel
-                  className="font-bold"
-                    active={orderBy === col.accessor}
-                    direction={orderBy === col.accessor ? order : "asc"}
-                    onClick={() => handleSort(col.accessor)}
+              {columns
+                .filter((col) => col.show !== false)
+                .map((col) => (
+                  <TableCell
+                    key={col.accessor}
+                    sx={{
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      padding: "12px 16px",
+                      borderRight: "1px solid #e0e0e0",
+                      "&:last-child": {
+                        borderRight: "none",
+                      },
+                    }}
                   >
-                    {col.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
+                    <TableSortLabel
+                      active={orderBy === col.accessor}
+                      direction={orderBy === col.accessor ? order : "asc"}
+                      onClick={() => handleSort(col.accessor)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
             </TableRow>
           </TableHead>
 
           <TableBody>
             {paginatedData.map((row, idx) => (
-              <TableRow key={idx}>
-                {columns.filter((col)=>col.show !== false).map((col) => (
-                  <TableCell key={col.accessor}>{col.Cell ? col.Cell({ row }) : row[col.accessor]}</TableCell>
-                ))}
+              <TableRow key={idx} hover>
+                {columns
+                  .filter((col) => col.show !== false)
+                  .map((col) => (
+                    <TableCell
+                      key={col.accessor}
+                      sx={{
+                        whiteSpace: "nowrap",
+                        padding: "12px 16px",
+                        borderRight: "1px solid #f0f0f0",
+                        "&:last-child": {
+                          borderRight: "none",
+                        },
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "block",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {col.Cell ? col.Cell({ row }) : row[col.accessor]}
+                      </div>
+                    </TableCell>
+                  ))}
               </TableRow>
             ))}
           </TableBody>

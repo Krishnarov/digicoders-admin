@@ -8,6 +8,7 @@ import {
   MenuItem,
   Select,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
@@ -16,6 +17,7 @@ import axios from "../axiosInstance";
 import { debounce } from "lodash";
 import useGetTranning from "../hooks/useGetTranning";
 import { useSelector } from "react-redux";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 function TrainingType() {
   const data = useSelector((state) => state.tranning.data);
@@ -114,6 +116,53 @@ function TrainingType() {
 
   const columns = [
     {
+      label: "Action",
+      accessor: "action",
+      Cell: ({ row }) => (
+        <div className="flex gap-2 items-center">
+          {/* <Button
+            variant="outlined"
+            size="small"
+            color="primary"
+            startIcon={<Edit2 size={16} />}
+            onClick={() => handleEdit(row)}
+            className="flex items-center gap-1"
+          >
+            Edit
+          </Button> */}
+          <Tooltip
+            title={<span className="font-bold ">Edit</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
+              onClick={() => handleEdit(row)}
+            >
+              <Edit2 size={20} />
+            </button>
+          </Tooltip>
+          <DeleteConfirmationModal
+            id={row.id}
+            itemName={row.name}
+            onConfirm={() => handleDelete(row._id)}
+            loading={loading}
+          >
+            <Tooltip
+              title={<span className="font-bold ">Delete</span>}
+              placement="top"
+            >
+              <button
+                className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+                disabled={row.status === "rejected"}
+              >
+                <Trash2 size={20} />
+              </button>
+            </Tooltip>
+          </DeleteConfirmationModal>
+        </div>
+      ),
+    },
+    {
       label: "ID",
       accessor: "id",
       filter: false,
@@ -154,34 +203,6 @@ function TrainingType() {
         </div>
       ),
       filter: true,
-    },
-    {
-      label: "Action",
-      accessor: "action",
-      Cell: ({ row }) => (
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Edit2 size={16} />}
-            onClick={() => handleEdit(row)}
-            className="flex items-center gap-1"
-          >
-            Edit
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            color="error"
-            startIcon={<Trash2 size={16} />}
-            onClick={() => handleDelete(row._id)}
-            className="flex items-center gap-1"
-          >
-            Delete
-          </Button>
-        </div>
-      ),
     },
   ];
   useEffect(() => {
@@ -240,9 +261,9 @@ function TrainingType() {
               variant="outlined"
               autoFocus
             />
-         
+
             <TextField
-            select
+              select
               label="Duration"
               name="duration"
               fullWidth
@@ -251,7 +272,9 @@ function TrainingType() {
               onBlur={handleChange}
               variant="outlined"
             >
-              <MenuItem value=""><em>- Select Duration -</em></MenuItem>
+              <MenuItem value="">
+                <em>- Select Duration -</em>
+              </MenuItem>
               <MenuItem value="45 days">45 days</MenuItem>
               <MenuItem value="28 days">28 days</MenuItem>
               <MenuItem value="6 months">6 months</MenuItem>

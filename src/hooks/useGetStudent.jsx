@@ -10,7 +10,7 @@ const useGetStudents = () => {
     const fetchStudents = useCallback(async () => {
         try {
             const res = await axios.get("/registration/all",{withCredentials:true})
-            console.log(res);
+            // console.log(res);
             
             if (res.data) {
                 dispatch(setStudent(res.data.data))

@@ -24,7 +24,7 @@ function Receipt() {
   useEffect(() => {
     fetchData();
   }, []);
-  console.log(feeData);
+  // console.log(feeData);
   // Add this function at the top of your file
   function numberToWords(num) {
     const a = [
@@ -126,6 +126,7 @@ function Receipt() {
   if (!feeData) {
     return <div className="text-sm p-4">Loading receipt data...</div>;
   }
+console.log(feeData);
 
   return (
     <div className="p-2 max-w-3xl mx-auto text-xs">
@@ -177,11 +178,11 @@ function Receipt() {
             </p>
             <p>
               <span className="font-bold">Date : </span>
-              {feeData.paymentDate.split("T")[0]}
+              {feeData.paymentDate?.split("T")[0]}
             </p>
             <p>
               <span className="font-bold">Reciept No. : </span>
-              {feeData.receiptNo}
+              {feeData?.receiptNo}
             </p>
           </div>
           <div className=" absolute top-2 right-2">
@@ -208,37 +209,55 @@ function Receipt() {
 
         {/* Student Information Section */}
         <div className="mb-4">
-          <div className="mb-3 flex">
+          {/* <div className="mb-3 flex">
             <span className="font-semibold w-30">Name:</span>
             <span className="border-b border-black flex-1">
-              {feeData.registrationId.studentName}
+              {feeData.registrationId?.studentName}
             </span>
+          </div> */}
+          <div className="mb-3 flex gap-4">
+            <div className="flex items-center w-[70%]">
+              <span className="font-semibold w-30 shrink-0">Name:</span>
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId?.studentName}</span>
+            </div>
+            <div className="flex items-center w-[30%]">
+              <span className="font-semibold w-20 shrink-0">Mobile No:</span>
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
+                {feeData.registrationId?.mobile}
+              </span>
+            </div>
           </div>
           <div className="mb-3 flex">
             <span className="font-semibold w-30">College:</span>
             <span className="border-b border-black flex-1">
-              {feeData.registrationId.collegeName}
+              {feeData.registrationId?.collegeName}
             </span>
           </div>
           <div className="mb-3 flex gap-4">
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Course:</span>
-              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId.education.name} (
-                {feeData.registrationId.technology.name})
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId?.education?.name} (
+                {feeData.registrationId?.technology?.name})
               </span>
             </div>
             <div className="flex items-center w-[30%]">
               <span className="font-semibold w-10 shrink-0">Year:</span>
               <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
-                {feeData.registrationId.eduYear}
+                {feeData.registrationId?.eduYear}
               </span>
             </div>
           </div>
-          <div className="mb-3 flex">
-            <span className="font-semibold w-30">Account Of:</span>
-            <span className="border-b border-black flex-1">
-              {feeData.registrationId.training.name}
-            </span>
+          <div className="mb-3 flex gap-4">
+            <div className="flex items-center w-[70%]">
+              <span className="font-semibold w-30 shrink-0">Account Of:</span>
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId?.training?.name}</span>
+            </div>
+            <div className="flex items-center w-[30%]">
+              <span className="font-semibold w-20 shrink-0">Enroll No:</span>
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
+                {feeData.registrationId?.userid}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -296,7 +315,7 @@ function Receipt() {
         {/* QR Code and Note Section */}
         <div className=" mt-8 relative ">
           <div className=" absolute -top-10 left-[55%]">
-            <img src="/img/paid.png" width={100} alt="" />
+            <img src={feeData.tnxStatus==="paid" ? "/img/paid.png":feeData.tnxStatus==="full paid"?"/img/paid.png" :"/img/pending.jpg" } width={100} alt="" />
           </div>
           <div className=" absolute -top-8 right-4  ">
             <div className="flex items-center justify-center mb-2">
@@ -319,15 +338,15 @@ function Receipt() {
               <p>
                 <span>Payment Status : </span>{" "}
                 <span
-                  className={`${
-                    feeData.paymentStatus === "success"
-                      ? "text-green-600"
-                      : feeData.paymentStatus === "failed"
+                  className={`uppercase ${
+                    feeData?.tnxStatus === "paid"
+                      ? "text-green-600":feeData.tnxStatus === "full paid"? "text-green-600"
+                      : feeData.tnxStatus === "failed"
                       ? "text-red-600"
                       : "text-orange-400"
                   }`}
                 >
-                  {feeData.paymentStatus}
+                  {feeData?.tnxStatus}
                 </span>
               </p>
             </div>

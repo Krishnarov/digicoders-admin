@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Eye, Trash } from "lucide-react";
+import { Home, ChevronRight, Edit2, Eye, Trash, Trash2 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, TextField, Chip } from "@mui/material";
+import { Button, TextField, Chip, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
@@ -10,9 +10,11 @@ import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 
 function RejectReg() {
-  const rejectedStudents = useSelector((state) => state.student.data).filter(student => student.status === 'rejected');
-const fetchStudents = useGetStudents();
-  
+  const rejectedStudents = useSelector((state) => state.student.data).filter(
+    (student) => student.status === "rejected"
+  );
+  const fetchStudents = useGetStudents();
+
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -25,10 +27,49 @@ const fetchStudents = useGetStudents();
     alternateMobile: "",
     collegeName: "",
     eduYear: "",
-    remark: ""
+    remark: "",
   });
 
   const columns = [
+    {
+      label: "Action",
+      accessor: "action",
+      Cell: ({ row }) => (
+        <div className="flex gap-2 items-center">
+          <Tooltip
+            title={<span className="font-bold ">View</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
+              onClick={() => handleView(row)}
+            >
+              <Eye size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold ">Delete</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+              onClick={() => handleDeleta(row._id)}
+            >
+              <Trash2 size={20} />
+            </button>
+          </Tooltip>
+          {/* <Button
+            variant="outlined"
+            size="small"
+            color="error"
+            startIcon={<Trash size={16} />}
+            onClick={() => handleDelete(row)}
+          >
+            Delete
+          </Button> */}
+        </div>
+      ),
+    },
     { label: "ID", accessor: "userid", filter: false },
     { label: "Student Name", accessor: "studentName", filter: true },
     { label: "Father Name", accessor: "fatherName", filter: true },
@@ -39,9 +80,9 @@ const fetchStudents = useGetStudents();
       label: "Payment Status",
       accessor: "paymentStatus",
       Cell: ({ row }) => (
-        <Chip 
-          label={row.paymentStatus} 
-          color={row.paymentStatus === 'success' ? 'success' : 'warning'}
+        <Chip
+          label={row.paymentStatus}
+          color={row.paymentStatus === "success" ? "success" : "warning"}
           variant="outlined"
           size="small"
         />
@@ -51,111 +92,82 @@ const fetchStudents = useGetStudents();
       label: "Status",
       accessor: "status",
       Cell: ({ row }) => (
-        <Chip 
-          label={row.status} 
+        <Chip
+          label={row.status}
           color="error"
           variant="outlined"
           size="small"
         />
       ),
     },
-    {
-      label: "Action",
-      accessor: "action",
-      Cell: ({ row }) => (
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Eye size={16} />}
-            onClick={() => handleView(row)}
-          >
-            View
-          </Button>
-
-          <Button
-            variant="outlined"
-            size="small"
-            color="error"
-            startIcon={<Trash size={16} />}
-            onClick={() => handleDelete(row)}
-          >
-            Delete
-          </Button>
-        </div>
-      ),
-    },
   ];
-const handleDelete=async(row)=>{
+  const handleDelete = async (row) => {
     try {
-        const res=await axios.delete(`/registration/user/${row._id}`)
-        console.log(res);
-        
+      const res = await axios.delete(`/registration/user/${row._id}`);
+      console.log(res);
     } catch (error) {
-        console.log(error);
-        
-    }finally{
-        fetchStudents()
+      console.log(error);
+    } finally {
+      fetchStudents();
     }
-}
-const handleView = (row) => {
+  };
+  const handleView = (row) => {
     setSelectedStudent(row);
     setViewModalOpen(true);
-};
+  };
 
-//   const handleEdit = (row) => {
-//     setSelectedStudent(row);
-//     setEditFormData({
-//       studentName: row.studentName || "",
-//       fatherName: row.fatherName || "",
-//       email: row.email || "",
-//       mobile: row.mobile || "",
-//       alternateMobile: row.alternateMobile || "",
-//       collegeName: row.collegeName || "",
-//       eduYear: row.eduYear || "",
-//       remark: row.remark || ""
-//     });
-//     setEditModalOpen(true);
-//   };
+  //   const handleEdit = (row) => {
+  //     setSelectedStudent(row);
+  //     setEditFormData({
+  //       studentName: row.studentName || "",
+  //       fatherName: row.fatherName || "",
+  //       email: row.email || "",
+  //       mobile: row.mobile || "",
+  //       alternateMobile: row.alternateMobile || "",
+  //       collegeName: row.collegeName || "",
+  //       eduYear: row.eduYear || "",
+  //       remark: row.remark || ""
+  //     });
+  //     setEditModalOpen(true);
+  //   };
 
-//   const handleEditSubmit = async () => {
-//     try {
-//       await axios.patch(`/registration/update/${selectedStudent._id}`, editFormData, {
-//         withCredentials: true,
-//       });
-//       handleEditClose();
-//       // Refresh data
-//       window.location.reload();
-//     } catch (error) {
-//       console.error("Error updating student:", error);
-//     }
-//   };
+  //   const handleEditSubmit = async () => {
+  //     try {
+  //       await axios.patch(`/registration/update/${selectedStudent._id}`, editFormData, {
+  //         withCredentials: true,
+  //       });
+  //       handleEditClose();
+  //       // Refresh data
+  //       window.location.reload();
+  //     } catch (error) {
+  //       console.error("Error updating student:", error);
+  //     }
+  //   };
 
   const handleViewModalClose = () => {
     setViewModalOpen(false);
     setSelectedStudent(null);
   };
 
-//   const handleEditClose = () => {
-//     setEditModalOpen(false);
-//     setSelectedStudent(null);
-//     setEditFormData({
-//       studentName: "",
-//       fatherName: "",
-//       email: "",
-//       mobile: "",
-//       alternateMobile: "",
-//       collegeName: "",
-//       eduYear: "",
-//       remark: ""
-//     });
-//   };
+  //   const handleEditClose = () => {
+  //     setEditModalOpen(false);
+  //     setSelectedStudent(null);
+  //     setEditFormData({
+  //       studentName: "",
+  //       fatherName: "",
+  //       email: "",
+  //       mobile: "",
+  //       alternateMobile: "",
+  //       collegeName: "",
+  //       eduYear: "",
+  //       remark: ""
+  //     });
+  //   };
 
-//   const handleEditChange = (e) => {
-//     setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-//   };
- useEffect(() => {
+  //   const handleEditChange = (e) => {
+  //     setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  //   };
+  useEffect(() => {
     fetchStudents(); // Initial fetch when component mounts
   }, [fetchStudents]);
   return (
@@ -177,12 +189,18 @@ const handleView = (row) => {
             </Link>
           </div>
           <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg">
-            <span className="font-semibold">Total Rejected: {rejectedStudents.length}</span>
+            <span className="font-semibold">
+              Total Rejected: {rejectedStudents.length}
+            </span>
           </div>
         </div>
 
         {/* DataTable */}
-        <DataTable columns={columns} data={rejectedStudents} loading={loading} />
+        <DataTable
+          columns={columns}
+          data={rejectedStudents}
+          loading={loading}
+        />
 
         {/* View Student Details Modal */}
         <CustomModal
@@ -198,81 +216,109 @@ const handleView = (row) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     User ID
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.userid}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.userid}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Student Name
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.studentName}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.studentName}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Father Name
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.fatherName}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.fatherName}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.email}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.email}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Mobile
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.mobile}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.mobile}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Alternate Mobile
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.alternateMobile || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.alternateMobile || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     College Name
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.collegeName}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.collegeName}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Education Year
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.eduYear}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.eduYear}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Training
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.training?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.training?.name || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Technology
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.technology?.name || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.technology?.name || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Type
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.paymentType}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.paymentType}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Amount
                   </label>
-                  <p className="text-sm text-gray-900">₹{selectedStudent.amount}</p>
+                  <p className="text-sm text-gray-900">
+                    ₹{selectedStudent.amount}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Status
                   </label>
-                  <Chip 
-                    label={selectedStudent.paymentStatus} 
-                    color={selectedStudent.paymentStatus === 'success' ? 'success' : 'warning'}
+                  <Chip
+                    label={selectedStudent.paymentStatus}
+                    color={
+                      selectedStudent.paymentStatus === "success"
+                        ? "success"
+                        : "warning"
+                    }
                     variant="outlined"
                     size="small"
                   />
@@ -281,8 +327,8 @@ const handleView = (row) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Registration Status
                   </label>
-                  <Chip 
-                    label={selectedStudent.status} 
+                  <Chip
+                    label={selectedStudent.status}
                     color="success"
                     variant="outlined"
                     size="small"
@@ -292,43 +338,53 @@ const handleView = (row) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Method
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.paymentMethod || 'N/A'}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.paymentMethod || "N/A"}
+                  </p>
                 </div>
               </div>
-              
+
               {selectedStudent.couponCode && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Coupon Code
                     </label>
-                    <p className="text-sm text-gray-900">{selectedStudent.couponCode}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedStudent.couponCode}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Coupon Discount
                     </label>
-                    <p className="text-sm text-gray-900">₹{selectedStudent.couponDiscount}</p>
+                    <p className="text-sm text-gray-900">
+                      ₹{selectedStudent.couponDiscount}
+                    </p>
                   </div>
                 </div>
               )}
-              
+
               {selectedStudent.remark && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Remark
                   </label>
-                  <p className="text-sm text-gray-900">{selectedStudent.remark}</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedStudent.remark}
+                  </p>
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Registration Date
                   </label>
                   <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.createdAt).toLocaleDateString('en-IN')}
+                    {new Date(selectedStudent.createdAt).toLocaleDateString(
+                      "en-IN"
+                    )}
                   </p>
                 </div>
                 <div>
@@ -336,7 +392,9 @@ const handleView = (row) => {
                     Transaction Date
                   </label>
                   <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.txnDateTime).toLocaleDateString('en-IN')}
+                    {new Date(selectedStudent.txnDateTime).toLocaleDateString(
+                      "en-IN"
+                    )}
                   </p>
                 </div>
               </div>

@@ -18,6 +18,7 @@
     "@mui/system": "^7.2.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/vite": "^4.1.11",
+    "antd": "^5.26.7",
     "autoprefixer": "^10.4.21",
     "axios": "^1.10.0",
     "file-saver": "^2.0.5",
@@ -34,9 +35,11 @@
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.3",
+    "react-select": "^5.10.2",
     "react-toastify": "^11.0.5",
     "redux-persist": "^6.0.0",
-    "tailwindcss": "^4.1.11"
+    "tailwindcss": "^4.1.11",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
