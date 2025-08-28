@@ -8,6 +8,7 @@ import {
 } from "../redux/slice/authSlice.jsx";
 import Cookies from "js-cookie";
 import axios from "../axiosInstance.jsx";
+import axioS from "axios";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -19,16 +20,21 @@ export const useAuth = () => {
   const login = async (credentials) => {
     try {
       dispatch(loginStart());
-      const res = await axios.post("/auth/login", credentials);
+      const res = await axioS.post(
+        `${import.meta.env.VITE_BASE_API}/auth/login`,
+        credentials
+      );
       console.log(res);
-      
-      dispatch(loginSuccess({ user: res.data.user }));
-      navigate("/dashboard");
-      return { success: true };
+      if (res.data.success) {
+        dispatch(loginSuccess({ user: res.data.user }));
+        navigate("/dashboard");
+        localStorage.setItem("accessToken", res.data.accessToken); // ✅ fixed
+        return { success: true };
+      }
     } catch (err) {
       dispatch(loginFailure(err.response?.data?.message || "Login failed"));
       console.log(err);
-      
+
       return { success: false };
     }
   };
@@ -36,15 +42,13 @@ export const useAuth = () => {
   const logoutUser = async () => {
     await axios.post("/auth/logout");
     dispatch(logout());
+    localStorage.removeItem("accessToken");
     Cookies.remove("accessToken");
-    Cookies.remove("refreshToken"); 
-    
-   // Remove cookies properly
-    
+
+    // Remove cookies properly
+
     navigate("/");
   };
-
-
 
   return {
     user,

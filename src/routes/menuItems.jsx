@@ -76,18 +76,18 @@ export const menuItems = [
     ],
   },
 
-  {
-    path: "/manage-teacher",
-    icon: BookUser,
-    label: "Manage Teacher",
-    roles: ["Admin", "Employee"],
-  },
-  {
-    path: "/manage-batch",
-    icon: LayoutList,
-    label: "Manage Batch",
-    roles: ["Admin", "Employee"],
-  },
+  // {
+  //   path: "/manage-teacher",
+  //   icon: BookUser,
+  //   label: "Manage Teacher",
+  //   roles: ["Admin", "Employee"],
+  // },
+  // {
+  //   path: "/manage-batch",
+  //   icon: LayoutList,
+  //   label: "Manage Batch",
+  //   roles: ["Admin", "Employee"],
+  // },
   {
     key: "attendance",
     icon: CheckCircle,
@@ -170,6 +170,12 @@ export const menuItems = [
         path: "/batchs",
         icon: QrCode,
         label: "Manage Batchs",
+        roles: ["Admin","Employee"],
+      },
+      {
+        path: "/branchs",
+        icon: QrCode,
+        label: "Manage Branchs",
         roles: ["Admin","Employee"],
       },
       {

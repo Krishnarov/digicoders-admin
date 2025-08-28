@@ -12,24 +12,21 @@ import {
   Chip,
   Checkbox,
   FormControlLabel,
-  IconButton,
 } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { Search, Filter } from "lucide-react";
 import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
-import useGetTranning from "../hooks/useGetTranning";
 
 function Batchs() {
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     batchName: "",
-    trainingType: "",
+    branch: "",
     startDate: "",
     teacher: "",
     students: [],
@@ -37,19 +34,14 @@ function Batchs() {
   const [editId, setEditId] = useState(null);
   const [batches, setBatches] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [branches, setBranches] = useState([]);
+
   const allStudents = useSelector((state) => state.student.data).filter(
     (item) => item.status === "accepted"
   );
-  const trainingType = useSelector((state) =>
-    state.tranning.data.filter((item) => item.isActive)
-  );
-  const fetchTranningData = useGetTranning();
-  // New states for student management
-  const [studentsModalOpen, setStudentsModalOpen] = useState(false);
-  const [selectedStudents, setSelectedStudents] = useState([]);
-  const [currentBatch, setCurrentBatch] = useState(null);
 
   const fetchStudents = useGetStudents();
+
   // 🔹 Fetch all batches
   const getAllBatches = async () => {
     try {
@@ -62,13 +54,24 @@ function Batchs() {
     }
   };
 
-  // 🔹 Fetch teachers for dropdown
+  // 🔹 Fetch teachers
   const getAllTeachers = async () => {
     try {
       const res = await axios.get("/teachers");
-
       if (res.data.success) {
         setTeachers(res.data.teachers.filter((item) => item.isActive) || []);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // 🔹 Fetch branches
+  const getAllBranches = async () => {
+    try {
+      const res = await axios.get("/branches");
+      if (res.data.success) {
+        setBranches(res.data.data.filter((b) => b.isActive));
       }
     } catch (error) {
       console.error(error);
@@ -78,8 +81,8 @@ function Batchs() {
   useEffect(() => {
     getAllBatches();
     getAllTeachers();
+    getAllBranches();
     fetchStudents();
-    fetchTranningData();
   }, []);
 
   // 🔹 Table Columns
@@ -89,10 +92,7 @@ function Batchs() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip
-            title={<span className="font-bold">Manage Students</span>}
-            placement="top"
-          >
+          <Tooltip title={<span className="font-bold">Manage Students</span>} placement="top">
             <button
               className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
               onClick={() => handleOpenStudentsModal(row)}
@@ -100,10 +100,7 @@ function Batchs() {
               <Users size={20} />
             </button>
           </Tooltip>
-          <Tooltip
-            title={<span className="font-bold">Edit</span>}
-            placement="top"
-          >
+          <Tooltip title={<span className="font-bold">Edit</span>} placement="top">
             <button
               className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
@@ -117,10 +114,7 @@ function Batchs() {
             onConfirm={() => handleDelete(row._id)}
             loading={loading}
           >
-            <Tooltip
-              title={<span className="font-bold">Delete</span>}
-              placement="top"
-            >
+            <Tooltip title={<span className="font-bold">Delete</span>} placement="top">
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
                 <Trash2 size={20} />
               </button>
@@ -131,13 +125,9 @@ function Batchs() {
     },
     { label: "Batch Name", accessor: "batchName" },
     {
-      label: "Training Type",
-      accessor: "trainingType",
-      Cell: ({ row }) => (
-        <span>
-          {row.trainingType?.name} <br /> ({row.trainingType?.duration}){" "}
-        </span>
-      ),
+      label: "Branch",
+      accessor: "branch",
+      Cell: ({ row }) => row.branch?.name || "N/A",
     },
     {
       label: "Start Date",
@@ -185,8 +175,7 @@ function Batchs() {
   const toggleStatus = async (data) => {
     try {
       setLoading(true);
-      const res = await axios.patch(`/batches/updatestatus/${data._id}`);
-      console.log(res);
+      await axios.patch(`/batches/updatestatus/${data._id}`);
     } catch (error) {
       console.error("Error toggling status:", error);
     } finally {
@@ -194,80 +183,12 @@ function Batchs() {
       getAllBatches();
     }
   };
-  // 🔹 Open student management modal
-  const handleOpenStudentsModal = (batch) => {
-    setCurrentBatch(batch);
-    // Set initially selected students (those already in the batch)
-    const batchStudentIds = batch.students?.map((s) => s._id) || [];
-    setSelectedStudents(batchStudentIds);
-    setStudentsModalOpen(true);
-  };
 
-  // 🔹 Close student management modal
-  const handleCloseStudentsModal = () => {
-    setStudentsModalOpen(false);
-    setSelectedStudents([]);
-    setCurrentBatch(null);
-  };
-
-  // 🔹 Toggle student selection
-  const toggleStudentSelection = (studentId) => {
-    setSelectedStudents((prev) => {
-      if (prev.includes(studentId)) {
-        return prev.filter((id) => id !== studentId);
-      } else {
-        return [...prev, studentId];
-      }
-    });
-  };
-
-  // 🔹 Select all/none students in current filtered view
-  const toggleSelectAll = () => {
-    const filteredStudentIds = allStudents.map((student) => student._id);
-
-    if (
-      selectedStudents.length === filteredStudentIds.length &&
-      filteredStudentIds.length > 0
-    ) {
-      // Deselect all filtered students
-      setSelectedStudents((prev) =>
-        prev.filter((id) => !filteredStudentIds.includes(id))
-      );
-    } else {
-      // Select all filtered students, keeping previously selected ones
-      setSelectedStudents((prev) => {
-        const newSelection = [...prev];
-        filteredStudentIds.forEach((id) => {
-          if (!newSelection.includes(id)) {
-            newSelection.push(id);
-          }
-        });
-        return newSelection;
-      });
-    }
-  };
-
-  // 🔹 Save student assignments to batch
-  const saveStudentsToBatch = async () => {
-    try {
-      setLoading("saving-students");
-      await axios.put(`/batches/${currentBatch._id}/students`, {
-        studentIds: selectedStudents,
-      });
-      getAllBatches(); // Refresh batches data
-      handleCloseStudentsModal();
-    } catch (error) {
-      console.error("Error saving students:", error);
-    } finally {
-      setLoading("");
-    }
-  };
-
-  // 🔹 Handle Edit
+  // 🔹 Edit Batch
   const handleEdit = (row) => {
     setFormData({
       batchName: row.batchName,
-      trainingType: row.trainingType,
+      branch: row.branch?._id || "",
       startDate: row.startDate?.split("T")[0],
       teacher: row.teacher?._id || "",
       students: row.students || [],
@@ -276,7 +197,7 @@ function Batchs() {
     setOpen(true);
   };
 
-  // 🔹 Handle Delete
+  // 🔹 Delete Batch
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
@@ -289,7 +210,7 @@ function Batchs() {
     }
   };
 
-  // 🔹 Submit Form (Create / Update Batch)
+  // 🔹 Submit Form (Create/Update)
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -312,7 +233,7 @@ function Batchs() {
     setOpen(false);
     setFormData({
       batchName: "",
-      trainingType: "",
+      branch: "",
       startDate: "",
       teacher: "",
       students: [],
@@ -320,59 +241,10 @@ function Batchs() {
     setEditId(null);
   };
 
-  // 🔹 Handle Change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  // Student table columns for the modal
-  const studentColumns = [
-    {
-      label: "Select",
-      accessor: "select",
-      Cell: ({ row }) => (
-        <Checkbox
-          checked={selectedStudents.includes(row._id)}
-          onChange={() => toggleStudentSelection(row._id)}
-        />
-      ),
-    },
-    { label: "Name", accessor: "studentName" },
-    {
-      label: "Technology",
-      accessor: "technology",
-      Cell: ({ row }) => <span>{row.technology?.name || "N/A"}</span>,
-      filter: true,
-      show: true,
-    },
-    { label: "Email", accessor: "email" },
-    { label: "Phone", accessor: "mobile" },
-    {
-      label: "Join Date",
-      accessor: "createdAt",
-      Cell: ({ row }) => (
-        <span>
-          {new Date(row.createdAt).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}
-        </span>
-      ),
-    },
-  ];
-
-  // Check if all filtered students are selected
-  const allFilteredSelected =
-    allStudents.length > 0 &&
-    allStudents.every((student) => selectedStudents.includes(student._id));
-
-  // Check if some filtered students are selected
-  const someFilteredSelected =
-    allStudents.length > 0 &&
-    allStudents.some((student) => selectedStudents.includes(student._id)) &&
-    !allFilteredSelected;
 
   return (
     <div className="bg-gray-50 py-8">
@@ -424,17 +296,17 @@ function Batchs() {
               required
             />
 
-            {/* Training Type Select */}
+            {/* Branch Dropdown */}
             <FormControl fullWidth>
-              <InputLabel>Training Type</InputLabel>
+              <InputLabel>Branch</InputLabel>
               <Select
-                name="trainingType"
-                value={formData.trainingType}
+                name="branch"
+                value={formData.branch}
                 onChange={handleChange}
               >
-                {trainingType.map((t) => (
-                  <MenuItem key={t._id} value={t._id}>
-                    {t.name}
+                {branches.map((b) => (
+                  <MenuItem key={b._id} value={b._id}>
+                    {b.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -467,49 +339,6 @@ function Batchs() {
               </Select>
             </FormControl>
           </Stack>
-        </CustomModal>
-
-        {/* Manage Students Modal */}
-        <CustomModal
-          open={studentsModalOpen}
-          onClose={handleCloseStudentsModal}
-          onSubmit={saveStudentsToBatch}
-          title={`Manage Students - ${currentBatch?.batchName || ""}`}
-          submitText="Save Changes"
-          loading={loading === "saving-students"}
-          size="2xl"
-        >
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={allFilteredSelected}
-                    indeterminate={someFilteredSelected}
-                    onChange={toggleSelectAll}
-                  />
-                }
-                label={`Select filtered (${selectedStudents.length} total selected)`}
-              />
-
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setSelectedStudents([])}
-              >
-                Clear All
-              </Button>
-            </div>
-          </div>
-
-          <div className="max-h-96 overflow-y-auto">
-            <DataTable
-              columns={studentColumns}
-              data={allStudents}
-              loading={false}
-              showPagination={false}
-            />
-          </div>
         </CustomModal>
       </div>
     </div>

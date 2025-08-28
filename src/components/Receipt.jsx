@@ -6,7 +6,7 @@ import { saveAs } from "file-saver";
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
 import { Button } from "@mui/material";
-import { FileText, Image, ImageDown, PanelsRightBottom } from "lucide-react";
+import { FileText, Image, ImageDown, PanelsRightBottom, PhoneCall, PhoneCallIcon } from "lucide-react";
 
 function Receipt() {
   const param = useParams();
@@ -126,13 +126,42 @@ function Receipt() {
   if (!feeData) {
     return <div className="text-sm p-4">Loading receipt data...</div>;
   }
+
+const shareOnWhatsApp = () => {
+  const whatsappNumber =
+    feeData?.registrationId?.whatshapp || feeData?.registrationId?.mobile; // Student ka mobile no
+  const receiptUrl = `${import.meta.env.VITE_UI_URI}/receipt/${param.id}`;
+
+  const message = `Hello *${feeData?.registrationId?.studentName}*,
+
+🧾 *Payment Receipt*
+────────────────────────────
+📑 Receipt No: *${feeData?.receiptNo}*
+📅 Payment Date: ${new Date(feeData?.paymentDate).toLocaleDateString()}
+
+💰 Total Fee: *₹${feeData?.finalFee}*
+🎟️ Discount: ₹${feeData?.discount || 0}
+✅ Paid Amount: *₹${feeData?.amount}*
+❌ Due Amount: *₹${feeData?.dueAmount}*
+────────────────────────────
+🔗 View Full Receipt: ${receiptUrl}
+
+Thank you for your payment 🙏`;
+
+  // WhatsApp API link
+  const url = `https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
+};
+
+
+
 console.log(feeData);
 
   return (
     <div className="p-2 max-w-3xl mx-auto text-xs">
-      <div className="flex justify-between items-center my-5">
-        <h1 className="text-xl font-bold">Payment Receipt</h1>
-        <div className="flex gap-5">
+      <div className="flex justify-between items-center my-5 gap-5">
+        <h1 className="text-xl font-bold whitespace-nowrap ">Payment Receipt</h1>
+        <div className="flex flex-wrap gap-5">
           <Button
             variant="outlined"
             size="small"
@@ -161,6 +190,14 @@ console.log(feeData);
             onClick={() => downloadReceipt("pdf")}
           >
             Download PDF
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color="success"
+            onClick={shareOnWhatsApp}
+          >
+            Share on WhatsApp
           </Button>
         </div>
       </div>
@@ -218,7 +255,9 @@ console.log(feeData);
           <div className="mb-3 flex gap-4">
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Name:</span>
-              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId?.studentName}</span>
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
+                {feeData.registrationId?.studentName}
+              </span>
             </div>
             <div className="flex items-center w-[30%]">
               <span className="font-semibold w-20 shrink-0">Mobile No:</span>
@@ -236,7 +275,8 @@ console.log(feeData);
           <div className="mb-3 flex gap-4">
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Course:</span>
-              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId?.education?.name} (
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
+                {feeData.registrationId?.education?.name} (
                 {feeData.registrationId?.technology?.name})
               </span>
             </div>
@@ -250,7 +290,9 @@ console.log(feeData);
           <div className="mb-3 flex gap-4">
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Account Of:</span>
-              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">{feeData.registrationId?.training?.name}</span>
+              <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
+                {feeData.registrationId?.training?.name}
+              </span>
             </div>
             <div className="flex items-center w-[30%]">
               <span className="font-semibold w-20 shrink-0">Enroll No:</span>
@@ -315,7 +357,17 @@ console.log(feeData);
         {/* QR Code and Note Section */}
         <div className=" mt-8 relative ">
           <div className=" absolute -top-10 left-[55%]">
-            <img src={feeData.tnxStatus==="paid" ? "/img/paid.png":feeData.tnxStatus==="full paid"?"/img/paid.png" :"/img/pending.jpg" } width={100} alt="" />
+            <img
+              src={
+                feeData.tnxStatus === "paid"
+                  ? "/img/paid.png"
+                  : feeData.tnxStatus === "full paid"
+                  ? "/img/paid.png"
+                  : "/img/pending.jpg"
+              }
+              width={100}
+              alt=""
+            />
           </div>
           <div className=" absolute -top-8 right-4  ">
             <div className="flex items-center justify-center mb-2">
@@ -331,7 +383,6 @@ console.log(feeData);
               </span>
               <div className="border border-slate-500 bg-sky-50 w-40 p-2">
                 {feeData.amount}
-                
               </div>
             </div>
             <div>
@@ -340,7 +391,9 @@ console.log(feeData);
                 <span
                   className={`uppercase ${
                     feeData?.tnxStatus === "paid"
-                      ? "text-green-600":feeData.tnxStatus === "full paid"? "text-green-600"
+                      ? "text-green-600"
+                      : feeData.tnxStatus === "full paid"
+                      ? "text-green-600"
                       : feeData.tnxStatus === "failed"
                       ? "text-red-600"
                       : "text-orange-400"

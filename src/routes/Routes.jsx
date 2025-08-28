@@ -6,6 +6,7 @@ import AllStudentReg from "../pages/AllStudentReg";
 import Attendance from "../pages/Attendance";
 import AttendanceViwe from "../pages/AttendanceViwe";
 import Batchs from "../pages/Batchs";
+import Branchs from "../pages/Branchs";
 import Collages from "../pages/Collages";
 import Dashboard from "../pages/Dashboard";
 import Education from "../pages/Education";
@@ -127,6 +128,10 @@ const Routes = [
   {
     path: "batchs",
     component: Batchs, roles: ["Admin", "Employee",],
+  },
+  {
+    path: "branchs",
+    component: Branchs, roles: ["Admin", "Employee",],
   },
   {
     path: "attendance-marking",
