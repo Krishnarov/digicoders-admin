@@ -13,7 +13,7 @@ console.log(counts);
 
   
   return (
-    <div>
+    <div className="p-6">
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Welcome to Dashboard</h2>

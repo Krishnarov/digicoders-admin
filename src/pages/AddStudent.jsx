@@ -43,6 +43,7 @@ const AddStudent = () => {
   const [EditId, setEditId] = useState("");
   const [studentEnrollments, setStudentEnrollments] = useState([]);
   const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
+  const [showQr, setshowQr] = useState(false);
   const searchParams = useParams();
   const navigate = useNavigate();
 
@@ -1239,14 +1240,15 @@ const AddStudent = () => {
             )}
 
             {/* QR code display */}
-            {/* {formData.qrcode && (
+            {formData.paymentMethod === "online" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Scan & Pay
                 </label>
-                <QRCodeCanvas value={upiLink} size={200} />
+                {showQr ? (<QRCodeCanvas value={upiLink} size={100} />):(<span className="border rounded-full p-2  cursor-pointer hover:bg-gray-50 text-xs" onClick={()=>setshowQr(true)}>Show Qr code</span>)}
+                {/* <QRCodeCanvas value={upiLink} size={200} /> */}
               </div>
-            )} */}
+            )}
             {/* Transaction ID / UTR */}
             {formData.paymentMethod === "online" && (
               <div>
@@ -1254,10 +1256,10 @@ const AddStudent = () => {
                   Transaction ID / UTR No.
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-3 text-gray-500">₹</span>
+                  <span className="absolute left-3 top-3 text-gray-500">UTR</span>
                   <input
                     type="number"
-                    className={`w-full pl-8 px-4 py-3 border ${
+                    className={`w-full pl-12 px-4 py-3 border ${
                       errors.tnxId ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     value={formData.tnxId}

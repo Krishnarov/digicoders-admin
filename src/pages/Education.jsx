@@ -70,22 +70,30 @@ function Education() {
         </div>
       ),
     },
-    { label: "ID", accessor: "_id", filter: false },
-    { label: "Education Name", accessor: "name", filter: true },
-    {
+    { label: "Education Name", accessor: "name",  },
+     {
       label: "Status",
       accessor: "isActive",
       Cell: ({ row }) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            row.isActive
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {row.isActive ? "Active" : "Inactive"}
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="ml-2 text-sm font-medium text-gray-700">
+            {row.isActive ? "Active" : "Inactive"}
+          </span>
+          <button
+            onClick={() => toggleStatus(row._id)}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
+              row.isActive ? "bg-green-500" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
+                row.isActive ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
       ),
+      filter: true,
     },
   ];
 

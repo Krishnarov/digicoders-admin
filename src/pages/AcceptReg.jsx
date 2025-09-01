@@ -14,22 +14,12 @@ function AcceptReg() {
     (student) => student.status === "accepted"
   );
   const featchStudent = useGetStudents();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [editFormData, setEditFormData] = useState({
-    studentName: "",
-    fatherName: "",
-    email: "",
-    mobile: "",
-    alternateMobile: "",
-    collegeName: "",
-    eduYear: "",
-    remark: "",
-  });
+  const [QrModalOpen, setQrModalOpen] = useState(false);
+  const [selectedQrCode, setSelectedQrCode] = useState(null);
 
   useEffect(() => {
     featchStudent();
@@ -76,121 +66,114 @@ function AcceptReg() {
         </div>
       ),
     },
-    
+
     {
-          label: "Tra Fee Status",
-          accessor: "trainingFeeStatus",
-          Cell: ({ row }) => (
-            <Chip
-              label={row.trainingFeeStatus}
-              color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
-              variant="outlined"
-              size="small"
-            />
-          ),
-        },
-        {
-          label: "Tnx Status",
-          accessor: "tnxStatus",
-          Cell: ({ row }) => (
-            <Chip
-              label={row.tnxStatus}
-              color={row.tnxStatus === "paid" ? "success" : "warning"}
-              variant="outlined"
-              size="small"
-            />
-          ),
-        },
-    { label: "ID", accessor: "userid", filter: false},
-    { label: "Student_Name", accessor: "studentName", filter: false },
-    { label: "Father_Name", accessor: "fatherName", filter: false },
+      label: "Tra Fee Status",
+      accessor: "trainingFeeStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.trainingFeeStatus}
+          color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Tnx Status",
+      accessor: "tnxStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.tnxStatus}
+          color={row.tnxStatus === "paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    { label: "Enroll ID", accessor: "userid", filter: false },
+    { label: "Student Name", accessor: "studentName", filter: false },
+    { label: "Father Name", accessor: "fatherName", filter: false },
     { label: "Mobile", accessor: "mobile", filter: false },
     { label: "Whatshapp", accessor: "whatshapp", filter: false },
     { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
     { label: "College_Name", accessor: "collegeName", filter: true },
     { label: "Edu_Year", accessor: "eduYear", filter: true },
-    { label: "Tranning", accessor: "training.name",Cell:({row})=>(<span>{row.training.name}</span>) , filter: true, show: true },
-    { label: "Technology", accessor: "technology",Cell:({row})=>(<span>{row.technology.name}</span>) , filter: true, show: true },
-    { label: "Education", accessor: "education", Cell:({row})=>(<span>{row.education.name}</span>) ,filter: true, show: true },
-    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
-    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
-    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
-    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+    {
+      label: "Tranning",
+      accessor: "training.name",
+      Cell: ({ row }) => <span>{row.training.name}</span>,
+      filter: true,
+      show: true,
+    },
+    {
+      label: "Technology",
+      accessor: "technology",
+      Cell: ({ row }) => <span>{row.technology.name}</span>,
+      filter: true,
+      show: true,
+    },
+    {
+      label: "Education",
+      accessor: "education",
+      Cell: ({ row }) => <span>{row.education.name}</span>,
+      filter: true,
+      show: true,
+    },
     { label: "Amount", accessor: "amount", filter: false, show: true },
-    { label: "Branch", accessor: "branch", Cell:({row})=>(<span>{row.branch.name}</span>) ,filter: true, show: true },
-    { label: "Hr Name", accessor: "hrName", Cell:({row})=>(<span>{row.hrName?.name}</span>) ,filter: false, show: true },
-    { label: "Payment Method", accessor: "paymentMethod", filter: false, show: true },
-    { label: "Qr code", accessor: "qrcode", Cell:({row})=>(<span>{row.qrcode?.name}</span>) ,filter: false, show: true },
-    { label: "Remark", accessor: "remark",filter: false, show: true },
+    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "discount", accessor: "discount", filter: false, show: true },
+    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
+    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    {
+      label: "Branch",
+      accessor: "branch",
+      Cell: ({ row }) => <span>{row.branch.name}</span>,
+      filter: true,
+      show: true,
+    },
+    {
+      label: "Hr Name",
+      accessor: "hrName",
+      Cell: ({ row }) => <span>{row.hrName?.name}</span>,
+      filter: false,
+      show: true,
+    },
+    {
+      label: "Payment Method",
+      accessor: "paymentMethod",
+      filter: false,
+      show: true,
+    },
+    {
+      label: "Qr code",
+      accessor: "qrcode",
+      Cell: ({ row }) => (
+        <div
+          className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
+          onClick={() => handleQrView(row)}
+        >
+          {row.qrcode?.name}
+        </div>
+      ),
+      filter: false,
+      show: true,
+    },
+    { label: "Remark", accessor: "remark", filter: false, show: true },
   ];
-// console.log(acceptedStudents);
 
   const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
   };
-  const handleView = (row) => {
-    setSelectedStudent(row);
-    setViewModalOpen(true);
-  };
-
   const handleEdit = (row) => {
-     navigate(`/AddStudent/${row._id}`);
-    // setSelectedStudent(row);
-
-    // setEditFormData({
-    //   studentName: row.studentName || "",
-    //   fatherName: row.fatherName || "",
-    //   email: row.email || "",
-    //   mobile: row.mobile || "",
-    //   alternateMobile: row.alternateMobile || "",
-    //   collegeName: row.collegeName || "",
-    //   eduYear: row.eduYear || "",
-    //   remark: row.remark || "",
-    // });
-    // setEditModalOpen(true);
+    navigate(`/AddStudent/${row._id}`);
   };
-
-  const handleEditSubmit = async () => {
-    try {
-      await axios.patch(
-        `/registration/update/${selectedStudent._id}`,
-        editFormData,
-        {
-          withCredentials: true,
-        }
-      );
-      handleEditClose();
-      // Refresh data
-      window.location.reload();
-    } catch (error) {
-      console.error("Error updating student:", error);
-    } finally {
-      featchStudent();
+  const handleQrView = (row) => {
+    if (row.qrcode && row.qrcode.image && row.qrcode.image.url) {
+      setSelectedQrCode(row.qrcode.image.url);
+      setQrModalOpen(true);
     }
-  };
-
-  const handleViewModalClose = () => {
-    setViewModalOpen(false);
-    setSelectedStudent(null);
-  };
-
-  const handleEditClose = () => {
-    setEditModalOpen(false);
-    setSelectedStudent(null);
-    setEditFormData({
-      studentName: "",
-      fatherName: "",
-      email: "",
-      mobile: "",
-      alternateMobile: "",
-      collegeName: "",
-      eduYear: "",
-      remark: "",
-    });
-  };
-
-  const handleEditChange = (e) => {
-    setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   return (
@@ -225,77 +208,29 @@ function AcceptReg() {
           loading={loading}
         />
 
-
-
-        {/* Edit Student Modal */}
         <CustomModal
-          open={editModalOpen}
-          onClose={handleEditClose}
-          onSubmit={handleEditSubmit}
-          title="Edit Student Information"
-          submitText="Update"
+          open={QrModalOpen}
+          title="Show Qr Code"
+          boxWidth="xs"
+          isBtnHide={true}
+          onClose={() => setQrModalOpen(false)}
         >
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            <TextField
-              label="Student Name"
-              name="studentName"
-              fullWidth
-              value={editFormData.studentName}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Father Name"
-              name="fatherName"
-              fullWidth
-              value={editFormData.fatherName}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              fullWidth
-              value={editFormData.email}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Mobile"
-              name="mobile"
-              fullWidth
-              value={editFormData.mobile}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="College Name"
-              name="collegeName"
-              fullWidth
-              value={editFormData.collegeName}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Education Year"
-              name="eduYear"
-              fullWidth
-              value={editFormData.eduYear}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Remark"
-              name="remark"
-              fullWidth
-              multiline
-              rows={3}
-              value={editFormData.remark}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-          </Stack>
+          {/* <Stack spacing={3} sx={{ mt: 2 }}> */}
+          <div className="flex flex-col items-center justify-center ">
+            {selectedQrCode ? (
+              <>
+                <img
+                  src={selectedQrCode}
+                  alt="QR Code"
+                  className="w-md h-md object-contain border rounded-lg"
+                />
+                {/* <p className="mt-4 text-gray-600">Scan this QR code for payment</p> */}
+              </>
+            ) : (
+              <p className="text-gray-500">No QR code available</p>
+            )}
+          </div>
+          {/* </Stack> */}
         </CustomModal>
       </div>
     </div>

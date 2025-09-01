@@ -68,7 +68,7 @@ function TrainingType() {
       const newStatus = !item.isActive;
 
       await axios.patch(
-        `/training/updateStatus/${id}`,
+        `/training/update/${id}`,
         {
           isActive: newStatus,
         },
@@ -76,6 +76,8 @@ function TrainingType() {
           withCredentials: true,
         }
       );
+
+      fetchTranningData()
     } catch (error) {
       console.error("Error toggling status:", error);
     }
@@ -85,7 +87,7 @@ function TrainingType() {
     try {
       if (editId) {
         // Update existing
-        await axios.put(`/training/update/${editId}`, formData, {
+        await axios.patch(`/training/update/${editId}`, formData, {
           withCredentials: true,
         });
       } else {
@@ -162,15 +164,11 @@ function TrainingType() {
         </div>
       ),
     },
-    {
-      label: "ID",
-      accessor: "id",
-      filter: false,
-    },
+
     {
       label: "Training Name",
       accessor: "name",
-      filter: true,
+
     },
     {
       label: "Duration",

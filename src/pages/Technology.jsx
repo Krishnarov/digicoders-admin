@@ -82,8 +82,7 @@ function Technology() {
         </div>
       ),
     },
-    { label: "ID", accessor: "id", filter: false },
-    { label: "Technology Name", accessor: "name", filter: true },
+    { label: "Technology Name", accessor: "name", filter: false },
     { label: "Training Type", accessor: "duration", filter: true },
     { label: "Price", accessor: "price", filter: true },
     {
@@ -113,7 +112,7 @@ function Technology() {
   ];
 
   const handleEdit = (row) => {
-    setFormData({ name: row.name, duration: row.duration });
+    setFormData({ name: row.name, duration: row.duration,price: row.price });
     setEditId(row._id);
     setOpen(true);
   };
@@ -137,8 +136,8 @@ function Technology() {
       const item = data.find((item) => item._id === id);
       const newStatus = !item.isActive;
 
-      await axios.put(
-        `/technology/updateStatus/${id}`,
+      await axios.patch(
+        `/technology/update/${id}`,
         {
           isActive: newStatus,
         },

@@ -1,34 +1,23 @@
-import { useEffect, useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import {  useState } from "react";
+import { Eye, EyeOff, Mail, Lock, User, OctagonPause } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { toast, ToastContainer } from "react-toastify";
-import axiosInstance from "../axiosInstance.jsx";
-import { store } from "../store/store.jsx"; // redux store ka path
-import { logout, loginSuccess } from "../redux/slice/authSlice.jsx";
 import { useNavigate } from "react-router-dom";
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [isTwoFactor ,setisTwoFactor]=useState(false)
   const { login, loading, error } = useAuth();
   const navigate = useNavigate();
-  // const ifTockenExists = async () => {
-  //   try {
-  //     const res = await axiosInstance.post("/auth/refresh-token");
-  //     console.log(res);
-  //     toast.success("Login successful");
-  //     await store.dispatch(loginSuccess({ user: res.data.user }));
-  //     navigate("/dashboard");
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-  // useEffect(() => {
-  //   ifTockenExists();
-  // },[]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log(credentials);
     const result = await login(credentials);
+    // console.log(result);
+
+    if(result.isTwoFactor){
+      setisTwoFactor(true)
+    }
     if (result.success) toast.success("Login successful");
   };
 
@@ -112,6 +101,35 @@ const Login = () => {
                 </button>
               </div>
             </div>
+            {/* otp */}
+            {isTwoFactor ? (
+
+           
+            <div>
+
+              <label
+                htmlFor="otp"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Enter OTP
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <OctagonPause className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="otp"
+                  placeholder="Enter your otp"
+                  value={credentials.otp}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, otp: e.target.value })
+                  }
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                  required
+                />
+                
+              </div>
+            </div> ):""}
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">

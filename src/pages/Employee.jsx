@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
+import { Button, MenuItem, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
@@ -11,79 +11,81 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 function Employee() {
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", image: null, email: "",password:"",role:"" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    image: null, 
+    email: "", 
+    password: "", 
+    role: "" 
+  });
   const [preview, setPreview] = useState(null);
   const [editId, setEditId] = useState(null);
-  const [employes, setemployes] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
-  const getAllEmployee = async () => {
+  const getAllEmployees = async () => {
     try {
       const res = await axios.get("/auth/getall");
-      setemployes(res.data.data);
+      setEmployees(res.data.data);
     } catch (error) {
       console.log(error);
     }
   };
 
   useEffect(() => {
-    getAllEmployee();
+    getAllEmployees();
   }, []);
 
   const columns = [
-    // {
-    //   label: "Action",
-    //   accessor: "action",
-    //   Cell: ({ row }) => (
-    //     <div className="flex gap-2 items-center">
-    //       {/* <Button
-    //         variant="outlined"
-    //         size="small"
-    //         color="primary"
-    //         startIcon={<Edit2 size={16} />}
-    //         onClick={() => handleEdit(row)}
-    //       >
-    //         Edit
-    //       </Button> */}
-    //       {/* <Tooltip
-    //         title={<span className="font-bold ">Edit</span>}
-    //         placement="top"
-    //       >
-    //         <button
-    //           className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
-    //           onClick={() => handleEdit(row)}
-    //         >
-    //           <Edit2 size={20} />
-    //         </button>
-    //       </Tooltip> */}
-    //       <DeleteConfirmationModal
-    //         id={row._id}
-    //         itemName={row.name}
-    //         onConfirm={() => handleDelete(row._id)}
-    //         loading={loading}
-    //       >
-    //         <Tooltip
-    //           title={<span className="font-bold ">Delete</span>}
-    //           placement="top"
-    //         >
-    //           <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-    //             <Trash2 size={20} />
-    //           </button>
-    //         </Tooltip>
-    //         {/* <Button
-    //           variant="outlined"
-    //           size="small"
-    //           color="error"
-    //           startIcon={<Trash2 size={16} />}
-    //         >
-    //           {loading === `deleting-${row._id}` ? "Deleting..." : "Delete"}
-    //         </Button> */}
-    //       </DeleteConfirmationModal>
-    //     </div>
-    //   ),
-    // },
+    {
+      label: "Action",
+      accessor: "action",
+      Cell: ({ row }) => (
+        <div className="flex gap-2 items-center">
+          <Tooltip
+            title={<span className="font-bold ">Edit</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
+              onClick={() => handleEdit(row)}
+            >
+              <Edit2 size={20} />
+            </button>
+          </Tooltip>
+          <DeleteConfirmationModal
+            id={row._id}
+            itemName={row.name}
+            onConfirm={() => handleDelete(row._id)}
+            loading={loading}
+          >
+            <Tooltip
+              title={<span className="font-bold ">Delete</span>}
+              placement="top"
+            >
+              <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
+                <Trash2 size={20} />
+              </button>
+            </Tooltip>
+          </DeleteConfirmationModal>
+        </div>
+      ),
+    },
     { label: "Name", accessor: "name" },
     { label: "Email ", accessor: "email" },
     { label: "Role ", accessor: "role" },
+    {
+      label: "Profile Image",
+      accessor: "image",
+      Cell: ({ row }) => (
+        row.image?.url ? (
+          <img 
+            src={row.image.url} 
+            alt="Profile" 
+            className="h-12 w-12 object-cover rounded-full"
+          />
+        ) : "No Image"
+      )
+    },
     {
       label: "Status",
       accessor: "isActive",
@@ -111,8 +113,14 @@ function Employee() {
   ];
 
   const handleEdit = (row) => {
-    setFormData({ name: row.name,email: row.email,password: row.password,role: row.role, image: null });
-    setPreview(row?.image?.url); // Assuming your API returns imageUrl
+    setFormData({ 
+      name: row.name, 
+      email: row.email, 
+      password: "", // Don't prefill password for security
+      role: row.role, 
+      image: null 
+    });
+    setPreview(row.image?.url); // Set preview if image exists
     setEditId(row._id);
     setOpen(true);
   };
@@ -120,28 +128,26 @@ function Employee() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/qrcode/${id}`);
-
+      await axios.delete(`/auth/delete/${id}`);
+      getAllEmployees();
     } catch (error) {
-      console.error("Error deleting qr code:", error);
+      console.error("Error deleting employee:", error);
     } finally {
       setLoading("");
-      getAllEmployee()
     }
   };
 
   const toggleStatus = async (data) => {
     try {
       setLoading(true);
-     const res= await axios.put(`/auth/update/${data._id}`, {
+      await axios.put(`/auth/update/${data._id}`, {
         isActive: !data.isActive,
       });
-      console.log(res)
     } catch (error) {
       console.error("Error toggling status:", error);
     } finally {
       setLoading(false);
-      getAllEmployee();
+      getAllEmployees();
     }
   };
 
@@ -151,6 +157,7 @@ function Employee() {
     formDataToSend.append("email", formData.email);
     formDataToSend.append("password", formData.password);
     formDataToSend.append("role", formData.role);
+    
     if (formData.image) {
       formDataToSend.append("image", formData.image);
     }
@@ -158,24 +165,32 @@ function Employee() {
     try {
       setLoading(true);
       if (editId) {
-        await axios.put(`/qrcode/${editId}`, formDataToSend);
+        // For update, use the correct endpoint and method
+        await axios.put(`/auth/update/${editId}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
       } else {
-       const res= await axios.post("/auth/register", formData);
-       console.log(res);
-       
+        // For create, use the register endpoint
+        await axios.post("/auth/register", formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
       }
       handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
-      getAllEmployee();
+      getAllEmployees();
     }
   };
 
   const handleClose = () => {
     setOpen(false);
-    setFormData({ name: "", image: null });
+    setFormData({ name: "", image: null, email: "", password: "", role: "" });
     setPreview(null);
     setEditId(null);
   };
@@ -202,7 +217,6 @@ function Employee() {
     setFormData((prev) => ({ ...prev, image: null }));
     setPreview(null);
   };
-  console.log(formData);
 
   return (
     <div className="bg-gray-50 py-8">
@@ -234,9 +248,8 @@ function Employee() {
         {/* DataTable */}
         <DataTable
           columns={columns}
-          data={employes}
+          data={employees}
           loading={loading}
-          onStatusToggle={toggleStatus}
         />
 
         {/* Modal */}
@@ -256,41 +269,41 @@ function Employee() {
               value={formData.name}
               onChange={handleChange}
               variant="outlined"
-              autoFocus
               required
             />
             <TextField
               label="Email"
               name="email"
+              type="email"
               fullWidth
               value={formData.email}
               onChange={handleChange}
               variant="outlined"
-              autoFocus
               required
             />
             <TextField
               label="Password"
               name="password"
+              type="password"
               fullWidth
               value={formData.password}
               onChange={handleChange}
               variant="outlined"
-              autoFocus
-              required
+              required={!editId} // Password required only for new employees
+              helperText={editId ? "Leave blank to keep current password" : ""}
             />
             <TextField
               select
               label="Role"
               name="role"
               fullWidth
-              value={formData?.role}
-            //   onChange={handleImmediateChange}
+              value={formData.role}
               onChange={handleChange}
               variant="outlined"
+              required
             >
               <MenuItem value="">
-                <em>- Select Duration -</em>
+                <em>- Select Role -</em>
               </MenuItem>
               <MenuItem value="Admin">Admin</MenuItem>
               <MenuItem value="Employee">Employee</MenuItem>
@@ -314,35 +327,35 @@ function Employee() {
                   hover:file:bg-blue-100"
               />
 
-                {/* {preview && (
-                    <div className="mt-2 relative">
-                    <img
-                        src={preview}
-                        alt="Preview"
-                        className="h-32 object-contain border rounded"
-                    />
-                    <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 -mt-2 -mr-2 hover:bg-red-600"
+              {preview && (
+                <div className="mt-2 relative">
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="h-32 object-contain border rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 -mt-2 -mr-2 hover:bg-red-600"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                        <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                        </svg>
-                    </button>
-                    </div>
-                )} */}
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </Stack>
         </CustomModal>

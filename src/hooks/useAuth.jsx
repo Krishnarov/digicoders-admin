@@ -7,8 +7,8 @@ import {
   logout,
 } from "../redux/slice/authSlice.jsx";
 import Cookies from "js-cookie";
-import axios from "../axiosInstance.jsx";
-import axioS from "axios";
+import axiosInstance from "../axiosInstance.jsx";
+import axios from "axios";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -20,16 +20,21 @@ export const useAuth = () => {
   const login = async (credentials) => {
     try {
       dispatch(loginStart());
-      const res = await axioS.post(
+      const res = await axios.post(
         `${import.meta.env.VITE_BASE_API}/auth/login`,
         credentials
       );
       console.log(res);
       if (res.data.success) {
-        dispatch(loginSuccess({ user: res.data.user }));
-        navigate("/dashboard");
-        localStorage.setItem("accessToken", res.data.accessToken); // ✅ fixed
-        return { success: true };
+        if (res.data.isTwoFactor) {
+          dispatch(loginSuccess({ user: res.data.user }));
+          return { isTwoFactor: true };
+        } else {
+          dispatch(loginSuccess({ user: res.data.user }));
+          navigate("/dashboard");
+          localStorage.setItem("accessToken", res.data.accessToken); // ✅ fixed
+          return { success: true, res: res.data };
+        }
       }
     } catch (err) {
       dispatch(loginFailure(err.response?.data?.message || "Login failed"));
@@ -40,7 +45,7 @@ export const useAuth = () => {
   };
 
   const logoutUser = async () => {
-    await axios.post("/auth/logout");
+    await axiosInstance.post("/auth/logout");
     dispatch(logout());
     localStorage.removeItem("accessToken");
     Cookies.remove("accessToken");

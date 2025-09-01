@@ -102,8 +102,8 @@ function Teacher() {
  const toggleStatus = async (data) => {
     try {
       setLoading(true);
-      const res = await axios.patch(`/teachers/updatestatus/${data._id}`);
-      console.log(res);
+      const res = await axios.patch(`/teachers/${data._id}`, { isActive: !data.isActive });
+      // console.log(res);
     } catch (error) {
       console.error("Error toggling status:", error);
     } finally {
@@ -136,7 +136,7 @@ function Teacher() {
     try {
       setLoading(true);
       if (editId) {
-        await axios.put(`/teachers/${editId}`, formData);
+        await axios.patch(`/teachers/${editId}`, formData);
       } else {
         await axios.post("/teachers/create", formData);
       }

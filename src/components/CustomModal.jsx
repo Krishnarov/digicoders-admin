@@ -10,10 +10,24 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-const CustomModal = ({ open, onClose, title, children, onSubmit }) => {
+const CustomModal = ({
+  open,
+  onClose,
+  title,
+  children,
+  onSubmit,
+  isBtnHide,
+  boxWidth
+}) => {
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth={boxWidth}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         {title}
         <IconButton onClick={onClose}>
           <CloseIcon />
@@ -21,15 +35,16 @@ const CustomModal = ({ open, onClose, title, children, onSubmit }) => {
       </DialogTitle>
 
       <DialogContent dividers>{children}</DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose} variant="outlined" color="secondary">
-          Cancel
-        </Button>
-        <Button onClick={onSubmit} variant="contained" color="primary">
-          Save
-        </Button>
-      </DialogActions>
+      {!isBtnHide && (
+        <DialogActions>
+          <Button onClick={onClose} variant="outlined" color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={onSubmit} variant="contained" color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      )}
     </Dialog>
   );
 };

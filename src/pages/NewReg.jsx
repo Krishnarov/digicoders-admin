@@ -8,7 +8,6 @@ import axios from "../axiosInstance";
 import useGetTechnology from "../hooks/useGetTechnology";
 import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
-import { set } from "lodash";
 import useGetCount from "../hooks/useGetCount";
 import { Close } from "@mui/icons-material";
 
@@ -26,15 +25,12 @@ function NewReg() {
   }, []);
 
   const [loading, setLoading] = useState(false);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
   
   const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
   };
-  console.log(students);
   
   const handleQrView = (row) => {
     if (row.qrcode && row.qrcode.image && row.qrcode.image.url) {
@@ -127,14 +123,14 @@ function NewReg() {
         />
       ),
     },
-    { label: "ID", accessor: "userid", filter: false },
+    { label: "Enroll ID", accessor: "userid", filter: false },
     { label: "Student Name", accessor: "studentName", filter: false },
-    { label: "Father_Name", accessor: "fatherName", filter: false },
+    { label: "Father Name", accessor: "fatherName", filter: false },
     { label: "Mobile", accessor: "mobile", filter: false },
     { label: "Whatshapp", accessor: "whatshapp", filter: false },
     { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
-    { label: "College_Name", accessor: "collegeName", filter: true },
-    { label: "Edu_Year", accessor: "eduYear", filter: true },
+    { label: "College Name", accessor: "collegeName", filter: true },
+    { label: "Edu Year", accessor: "eduYear", filter: true },
     {
       label: "Tranning",
       accessor: "training.name",
@@ -144,26 +140,27 @@ function NewReg() {
     },
     {
       label: "Technology",
-      accessor: "technology",
+      accessor: "technology.name",
       Cell: ({ row }) => <span>{row.technology.name}</span>,
       filter: true,
       show: true,
     },
     {
       label: "Education",
-      accessor: "education",
+      accessor: "education.name",
       Cell: ({ row }) => <span>{row.education.name}</span>,
       filter: true,
       show: true,
     },
-    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
-    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
-    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
-    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
     { label: "Amount", accessor: "amount", filter: false, show: true },
+    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "Discount", accessor: "discount", filter: false, show: true },
+    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
+    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
     {
       label: "Branch",
-      accessor: "branch",
+      accessor: "branch.name",
       Cell: ({ row }) => <span>{row.branch.name}</span>,
       filter: true,
       show: true,
@@ -198,10 +195,6 @@ function NewReg() {
     { label: "Remark", accessor: "remark", filter: false, show: true },
   ];
 
-  const handleView = (row) => {
-    setSelectedStudent(row);
-    setViewModalOpen(true);
-  };
 
   const handleAccept = async (id) => {
     try {
@@ -239,10 +232,6 @@ function NewReg() {
     }
   };
 
-  const handleViewModalClose = () => {
-    setViewModalOpen(false);
-    setSelectedStudent(null);
-  };
 
   // Format date to Indian format
   const formatDate = (dateString) => {
@@ -256,6 +245,7 @@ function NewReg() {
       minute: "2-digit",
     });
   };
+console.log(students);
 
   return (
     <div className="bg-gray-50 py-8">

@@ -40,6 +40,11 @@ function Batchs() {
     (item) => item.status === "accepted"
   );
 
+  // New states for student management
+  const [studentsModalOpen, setStudentsModalOpen] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [currentBatch, setCurrentBatch] = useState(null);
+
   const fetchStudents = useGetStudents();
 
   // 🔹 Fetch all batches
@@ -184,6 +189,75 @@ function Batchs() {
     }
   };
 
+  // 🔹 Open student management modal
+  const handleOpenStudentsModal = (batch) => {
+    setCurrentBatch(batch);
+    // Set initially selected students (those already in the batch)
+    const batchStudentIds = batch.students?.map((s) => s._id) || [];
+    setSelectedStudents(batchStudentIds);
+    setStudentsModalOpen(true);
+  };
+
+  // 🔹 Close student management modal
+  const handleCloseStudentsModal = () => {
+    setStudentsModalOpen(false);
+    setSelectedStudents([]);
+    setCurrentBatch(null);
+  };
+
+  // 🔹 Toggle student selection
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents((prev) => {
+      if (prev.includes(studentId)) {
+        return prev.filter((id) => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
+  };
+
+  // 🔹 Select all/none students in current filtered view
+  const toggleSelectAll = () => {
+    const filteredStudentIds = allStudents.map((student) => student._id);
+
+    if (
+      selectedStudents.length === filteredStudentIds.length &&
+      filteredStudentIds.length > 0
+    ) {
+      // Deselect all filtered students
+      setSelectedStudents((prev) =>
+        prev.filter((id) => !filteredStudentIds.includes(id))
+      );
+    } else {
+      // Select all filtered students, keeping previously selected ones
+      setSelectedStudents((prev) => {
+        const newSelection = [...prev];
+        filteredStudentIds.forEach((id) => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
+    }
+  };
+
+  // 🔹 Save student assignments to batch
+  const saveStudentsToBatch = async () => {
+    try {
+      setLoading("saving-students");
+      await axios.put(`/batches/${currentBatch._id}/students`, {
+        studentIds: selectedStudents,
+      });
+      getAllBatches(); // Refresh batches data
+      handleCloseStudentsModal();
+    } catch (error) {
+      console.error("Error saving students:", error);
+    } finally {
+      setLoading("");
+    }
+  };
+
   // 🔹 Edit Batch
   const handleEdit = (row) => {
     setFormData({
@@ -246,6 +320,54 @@ function Batchs() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Student table columns for the modal
+  const studentColumns = [
+    {
+      label: "Select",
+      accessor: "select",
+      Cell: ({ row }) => (
+        <Checkbox
+          checked={selectedStudents.includes(row._id)}
+          onChange={() => toggleStudentSelection(row._id)}
+        />
+      ),
+    },
+    { label: "Name", accessor: "studentName" },
+    {
+      label: "Technology",
+      accessor: "technology.name",
+      Cell: ({ row }) => <span>{row.technology?.name || "N/A"}</span>,
+      filter: true,
+      show: true,
+    },
+    { label: "Email", accessor: "email" },
+    { label: "Phone", accessor: "mobile" },
+    {
+      label: "Join Date",
+      accessor: "createdAt",
+      Cell: ({ row }) => (
+        <span>
+          {new Date(row.createdAt).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}
+        </span>
+      ),
+    },
+  ];
+
+  // Check if all filtered students are selected
+  const allFilteredSelected =
+    allStudents.length > 0 &&
+    allStudents.every((student) => selectedStudents.includes(student._id));
+
+  // Check if some filtered students are selected
+  const someFilteredSelected =
+    allStudents.length > 0 &&
+    allStudents.some((student) => selectedStudents.includes(student._id)) &&
+    !allFilteredSelected;
+
   return (
     <div className="bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -303,6 +425,7 @@ function Batchs() {
                 name="branch"
                 value={formData.branch}
                 onChange={handleChange}
+                label="Branch"
               >
                 {branches.map((b) => (
                   <MenuItem key={b._id} value={b._id}>
@@ -330,6 +453,7 @@ function Batchs() {
                 name="teacher"
                 value={formData.teacher}
                 onChange={handleChange}
+                label="Assign Teacher"
               >
                 {teachers.map((t) => (
                   <MenuItem key={t._id} value={t._id}>
@@ -339,6 +463,49 @@ function Batchs() {
               </Select>
             </FormControl>
           </Stack>
+        </CustomModal>
+
+        {/* Manage Students Modal */}
+        <CustomModal
+          open={studentsModalOpen}
+          onClose={handleCloseStudentsModal}
+          onSubmit={saveStudentsToBatch}
+          title={`Manage Students - ${currentBatch?.batchName || ""}`}
+          submitText="Save Changes"
+          loading={loading === "saving-students"}
+          size="2xl"
+        >
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    indeterminate={someFilteredSelected}
+                    onChange={toggleSelectAll}
+                  />
+                }
+                label={`Select filtered (${selectedStudents.length} total selected)`}
+              />
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setSelectedStudents([])}
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
+
+          <div className="max-h-96 overflow-y-auto">
+            <DataTable
+              columns={studentColumns}
+              data={allStudents}
+              loading={false}
+              showPagination={false}
+            />
+          </div>
         </CustomModal>
       </div>
     </div>

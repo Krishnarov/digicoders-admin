@@ -13,20 +13,34 @@ import {
   Eye,
   MessageSquare,
   Mail as MailIcon,
-  Phone as PhoneIcon
+  Phone as PhoneIcon,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, Chip, Tooltip, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import {
+  Button,
+  Chip,
+  Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
+import { toast } from "react-toastify";
 
 function RegView() {
   const param = useParams();
   const [feeData, setFeeData] = useState([]);
   const [studentData, setStudentData] = useState({});
   const [loading, setLoading] = useState("loading");
-  const [reminderDialog, setReminderDialog] = useState({ open: false, type: '', message: '' });
-  const [customMessage, setCustomMessage] = useState('');
+  const [reminderDialog, setReminderDialog] = useState({
+    open: false,
+    type: "",
+    message: "",
+  });
+  const [customMessage, setCustomMessage] = useState("");
 
   const fetchStudentData = async () => {
     try {
@@ -52,7 +66,7 @@ function RegView() {
     fetchStudentData();
     fetchData();
   }, []);
-  
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleString("en-IN", {
@@ -102,16 +116,36 @@ function RegView() {
 
   const handleSendReminder = (type) => {
     // Set default message based on type
-    let defaultMessage = '';
-    
-    if (type === 'whatsapp') {
+    let defaultMessage = "";
+
+    if (type === "whatsapp") {
       defaultMessage = `Dear ${studentData.studentName}, this is a reminder about your pending fee of ₹${studentData.dueAmount} for ${studentData.training?.name} training. Please complete the payment at your earliest convenience.`;
-    } else if (type === 'sms') {
+    } else if (type === "sms") {
       defaultMessage = `Fee Reminder: ${studentData.studentName}, your pending fee is ₹${studentData.dueAmount} for ${studentData.training?.name}. Kindly make the payment soon.`;
-    } else if (type === 'email') {
-      defaultMessage = `Dear ${studentData.studentName},\n\nThis is a reminder that you have a pending fee of ₹${studentData.dueAmount} for the ${studentData.training?.name} training program.\n\nPlease complete the payment at your earliest convenience.\n\nBest regards,\nTraining Department`;
+    } else if (type === "email") {
+      defaultMessage = `Dear ${studentData.studentName},
+
+We hope you are doing well. This is a gentle reminder from DigiCoders technologies pvt ltd. Training & Placement Cell regarding your pending fee of ₹${
+        studentData.dueAmount
+      } for the **${studentData.training?.name}** training program.
+
+📌 Training Details:
+- Training Program: ${studentData.training?.name}
+- Duration: ${studentData.training?.duration || "N/A"}
+- Start Date: ${studentData.training?.startDate || "N/A"}
+- Mode: ${studentData.training?.mode || "Online/Offline"}
+
+Your timely payment will help us ensure uninterrupted access to training sessions, study materials, and mentorship support.
+
+👉 Please complete your payment at the earliest to continue availing all the benefits of the program.
+
+If you have already completed the payment, kindly ignore this message.
+
+Best regards,  
+**Digicoders Training Department**  
+support@digicoders.in | www.digicoders.in`;
     }
-    
+
     setCustomMessage(defaultMessage);
     setReminderDialog({ open: true, type });
   };
@@ -119,24 +153,25 @@ function RegView() {
   const confirmSendReminder = async () => {
     try {
       // API call to send reminder
+
       const payload = {
         studentId: studentData._id,
         type: reminderDialog.type,
-        message: customMessage
+        message: customMessage,
       };
-      
-      const response = await axiosInstance.post('/reminders/send', payload);
-      
+
+      const response = await axiosInstance.post("/reminders/send", payload);
+
       if (response.data.success) {
-        alert(`Reminder sent successfully via ${reminderDialog.type}`);
+        toast.success(`Reminder sent successfully via ${reminderDialog.type}`);
       } else {
-        alert('Failed to send reminder');
+        alert("Failed to send reminder");
       }
     } catch (error) {
-      console.error('Error sending reminder:', error);
-      alert('Error sending reminder');
+      console.error("Error sending reminder:", error);
+      toast.error('Error sending reminder')
     } finally {
-      setReminderDialog({ open: false, type: '', message: '' });
+      setReminderDialog({ open: false, type: "", message: "" });
     }
   };
 
@@ -211,7 +246,7 @@ function RegView() {
       filter: true,
     },
   ];
-  
+
   const handlePrint = (payment) => {
     window.open(`/receipt/${payment._id}`, "_blank");
   };
@@ -221,7 +256,7 @@ function RegView() {
       <div className="h-96 flex items-center justify-center">Loading...</div>
     );
   }
-
+  // console.log(studentData)
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -242,13 +277,13 @@ function RegView() {
             {getStatusBadge(studentData?.status)}
           </div>
         </div>
-        
+
         {/* Reminder Buttons */}
         <div className="mt-4 flex flex-wrap gap-3">
           <Button
             variant="outlined"
             startIcon={<MessageSquare />}
-            onClick={() => handleSendReminder('whatsapp')}
+            onClick={() => handleSendReminder("whatsapp")}
             className="text-green-600 border-green-600 hover:bg-green-50"
           >
             Send WhatsApp Reminder
@@ -256,7 +291,7 @@ function RegView() {
           <Button
             variant="outlined"
             startIcon={<PhoneIcon />}
-            onClick={() => handleSendReminder('sms')}
+            onClick={() => handleSendReminder("sms")}
             className="text-blue-600 border-blue-600 hover:bg-blue-50"
           >
             Send SMS Reminder
@@ -264,7 +299,7 @@ function RegView() {
           <Button
             variant="outlined"
             startIcon={<MailIcon />}
-            onClick={() => handleSendReminder('email')}
+            onClick={() => handleSendReminder("email")}
             className="text-red-600 border-red-600 hover:bg-red-50"
           >
             Send Email Reminder
@@ -315,7 +350,9 @@ function RegView() {
               <label className="text-sm font-medium text-gray-500">
                 Alternate Mobile
               </label>
-              <p className="text-gray-900">{studentData?.alternateMobile || "N/A"}</p>
+              <p className="text-gray-900">
+                {studentData?.alternateMobile || "N/A"}
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
@@ -401,6 +438,22 @@ function RegView() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
+                Discount
+              </label>
+              <p className="text-gray-900">
+                ₹{studentData?.discount?.toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Final Fee
+              </label>
+              <p className="text-gray-900">
+                ₹{studentData?.finalFee?.toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
                 Paid Amount
               </label>
               <p className="text-green-600 font-semibold">
@@ -415,18 +468,7 @@ function RegView() {
                 ₹{studentData?.dueAmount?.toLocaleString()}
               </p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Discount
-              </label>
-              <p className="text-gray-900">₹{studentData?.discount?.toLocaleString()}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Final Fee
-              </label>
-              <p className="text-gray-900">₹{studentData?.finalFee?.toLocaleString()}</p>
-            </div>
+
             <div>
               <label className="text-sm font-medium text-gray-500">
                 Payment Method
@@ -459,15 +501,15 @@ function RegView() {
               <label className="text-sm font-medium text-gray-500">
                 Registration Status
               </label>
-              <div className="mt-1">
-                {getStatusBadge(studentData.status)}
-              </div>
+              <div className="mt-1">{getStatusBadge(studentData.status)}</div>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
                 HR Name
               </label>
-              <p className="text-gray-900">{studentData?.hrName?.name || "N/A"}</p>
+              <p className="text-gray-900">
+                {studentData?.hrName?.name || "N/A"}
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
@@ -610,16 +652,24 @@ function RegView() {
           </div>
         </div>
       </div>
-      
+
       {/* Payment History Table */}
       <div className="mt-6">
         <DataTable columns={columns} data={feeData} loading={loading} />
       </div>
 
       {/* Reminder Dialog */}
-      <Dialog open={reminderDialog.open} onClose={() => setReminderDialog({ open: false, type: '', message: '' })}>
+      <Dialog
+        open={reminderDialog.open}
+        onClose={() =>
+          setReminderDialog({ open: false, type: "", message: "" })
+        }
+      >
         <DialogTitle>
-          Send {reminderDialog.type.charAt(0).toUpperCase() + reminderDialog.type.slice(1)} Reminder
+          Send{" "}
+          {reminderDialog.type.charAt(0).toUpperCase() +
+            reminderDialog.type.slice(1)}{" "}
+          Reminder
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -627,16 +677,21 @@ function RegView() {
             margin="dense"
             label="Message"
             type="text"
-            fullWidth
+            // sx={{width:500}}
+            className="md:w-lg w-sm"
             variant="outlined"
             multiline
-            rows={4}
+            rows={7}
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReminderDialog({ open: false, type: '', message: '' })}>
+          <Button
+            onClick={() =>
+              setReminderDialog({ open: false, type: "", message: "" })
+            }
+          >
             Cancel
           </Button>
           <Button onClick={confirmSendReminder} variant="contained">

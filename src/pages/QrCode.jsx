@@ -11,7 +11,12 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 function QrCode() {
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", image: null, upi: "" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    image: null, 
+    upi: "", 
+    bankName: "" 
+  });
   const [preview, setPreview] = useState(null);
   const [editId, setEditId] = useState(null);
   const [qrcodes, setqrcodes] = useState([]);
@@ -36,15 +41,6 @@ function QrCode() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          {/* <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Edit2 size={16} />}
-            onClick={() => handleEdit(row)}
-          >
-            Edit
-          </Button> */}
           <Tooltip
             title={<span className="font-bold ">Edit</span>}
             placement="top"
@@ -70,20 +66,26 @@ function QrCode() {
                 <Trash2 size={20} />
               </button>
             </Tooltip>
-            {/* <Button
-              variant="outlined"
-              size="small"
-              color="error"
-              startIcon={<Trash2 size={16} />}
-            >
-              {loading === `deleting-${row._id}` ? "Deleting..." : "Delete"}
-            </Button> */}
           </DeleteConfirmationModal>
         </div>
       ),
     },
-    { label: "Qr Code Name", accessor: "name" },
-    { label: "UPI ID ", accessor: "upi" },
+    { label: "QR Code Name", accessor: "name" },
+    { label: "Bank Name", accessor: "bankName" },
+    { label: "UPI ID", accessor: "upi" },
+    {
+      label: "QR Code",
+      accessor: "image",
+      Cell: ({ row }) => (
+        row.image?.url ? (
+          <img 
+            src={row.image.url} 
+            alt="QR Code" 
+            className="h-12 w-12 object-contain"
+          />
+        ) : "No Image"
+      )
+    },
     {
       label: "Status",
       accessor: "isActive",
@@ -111,8 +113,13 @@ function QrCode() {
   ];
 
   const handleEdit = (row) => {
-    setFormData({ name: row.name, image: null });
-    setPreview(row.image.url); // Assuming your API returns imageUrl
+    setFormData({ 
+      name: row.name, 
+      upi: row.upi, 
+      bankName: row.bankName, 
+      image: null 
+    });
+    setPreview(row.image?.url); // Assuming your API returns imageUrl
     setEditId(row._id);
     setOpen(true);
   };
@@ -147,6 +154,7 @@ function QrCode() {
     const formDataToSend = new FormData();
     formDataToSend.append("name", formData.name);
     formDataToSend.append("upi", formData.upi);
+    formDataToSend.append("bankName", formData.bankName);
     if (formData.image) {
       formDataToSend.append("image", formData.image);
     }
@@ -169,7 +177,7 @@ function QrCode() {
 
   const handleClose = () => {
     setOpen(false);
-    setFormData({ name: "", image: null });
+    setFormData({ name: "", image: null, upi: "", bankName: "" });
     setPreview(null);
     setEditId(null);
   };
@@ -196,7 +204,6 @@ function QrCode() {
     setFormData((prev) => ({ ...prev, image: null }));
     setPreview(null);
   };
-  console.log(formData);
 
   return (
     <div className="bg-gray-50 py-8">
@@ -205,7 +212,7 @@ function QrCode() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
             <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-              Qr Code
+              QR Code
             </h1>
             <Link
               to="/dashboard"
@@ -221,7 +228,7 @@ function QrCode() {
             onClick={() => setOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Add New Qr Code
+            Add New QR Code
           </Button>
         </div>
 
@@ -253,20 +260,30 @@ function QrCode() {
               autoFocus
               required
             />
+            
             <TextField
-              label="Upi Id"
+              label="Bank Name"
+              name="bankName"
+              fullWidth
+              value={formData.bankName}
+              onChange={handleChange}
+              variant="outlined"
+              required
+            />
+            
+            <TextField
+              label="UPI ID"
               name="upi"
               fullWidth
               value={formData.upi}
               onChange={handleChange}
               variant="outlined"
-              autoFocus
               required
             />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image
+                QR Code Image
               </label>
               <input
                 type="file"

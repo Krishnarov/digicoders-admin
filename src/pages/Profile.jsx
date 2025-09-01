@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
   Avatar,
-  Tabs,
-  Tab,
   Box,
   IconButton,
   InputAdornment,
   Switch,
   FormControlLabel,
-  Divider
-} from '@mui/material';
+  Divider,
+  Card,
+  CardContent,
+  Typography,
+  Alert,
+  Snackbar,
+  CircularProgress,
+} from "@mui/material";
 import {
   Edit as EditIcon,
   Visibility,
@@ -21,311 +25,503 @@ import {
   Work as WorkIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
-  CalendarToday as CalendarIcon,
   Lock as LockIcon,
-  Notifications as NotificationsIcon,
   Security as SecurityIcon,
-  Person as PersonIcon
-} from '@mui/icons-material';
+  Person as PersonIcon,
+  Save as SaveIcon,
+} from "@mui/icons-material";
+import { useSelector } from "react-redux";
+import axiosInstance from "../axiosInstance";
 
 const Profile = () => {
-  const [tabValue, setTabValue] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const userId = useSelector((state) => state.auth.user.id);
+  const [user, setUser] = useState({});
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    post: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    isTwoFactor: false,
+  });
+
+  const getUser = async () => {
+    try {
+      const res = await axiosInstance.get(`/auth/getme/${userId}`);
+      setUser(res.data.user);
+      setFormData((prev) => ({
+        ...prev,
+        name: res.data.user.name || "",
+        email: res.data.user.email || "",
+        phone: res.data.user.phone || "",
+        address: res.data.user.address || "",
+        post: res.data.user.post || "",
+        isTwoFactor: res.data.user.isTwoFactor || false,
+      }));
+    } catch (error) {
+      console.log(error);
+      showMessage("error", "Failed to load user data");
+    }
   };
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
+  useEffect(() => {
+    getUser();
+  }, [userId]);
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setSnackbarOpen(true);
+    setTimeout(() => setSnackbarOpen(false), 3000);
   };
 
-  const handleClickShowNewPassword = () => {
-    setShowNewPassword(!showNewPassword);
-  };
-
-  const handleClickShowConfirmPassword = () => {
+  const handleClickShowPassword = () => setShowPassword(!showPassword);
+  const handleClickShowNewPassword = () => setShowNewPassword(!showNewPassword);
+  const handleClickShowConfirmPassword = () =>
     setShowConfirmPassword(!showConfirmPassword);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handlePersonalInfoSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await axiosInstance.put(`/auth/update/${userId}`, {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        post: formData.post,
+      });
+
+      if (res.data.success) {
+        showMessage("success", "Personal information updated successfully");
+        getUser(); // Refresh user data
+      }
+    } catch (error) {
+      console.error(error);
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to update personal information"
+      );
+    } finally {
+      setLoading(false);
+       getUser();
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    console.log(formData);
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      showMessage("error", "New passwords do not match");
+      return;
+    }
+
+    if (formData.newPassword.length < 6) {
+      showMessage("error", "New password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    const data = {
+      oldpassword: formData.currentPassword,
+      newpassword: formData.newPassword,
+    };
+    console.log(data);
+    
+    try {
+      const res = await axiosInstance.put(`/auth/update/${userId}`, data);
+      console.log(res);
+
+      if (res.status === 200) {
+        showMessage("success", "Password updated successfully");
+        setFormData((prev) => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
+      }
+    } catch (error) {
+      console.error(error);
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to update password"
+      );
+    } finally {
+      setLoading(false);
+       getUser();
+    }
+  };
+
+  const handleTwoFactorToggle = async () => {
+    const newValue = !formData.isTwoFactor;
+    try {
+      const res = await axiosInstance.put(`/auth/update/${userId}`, {
+        isTwoFactor: newValue,
+      });
+
+      if (res.data.success) {
+        setFormData((prev) => ({ ...prev, isTwoFactor: newValue }));
+        showMessage(
+          "success",
+          `Two-factor authentication ${newValue ? "enabled" : "disabled"}`
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      showMessage("error", "Failed to update two-factor authentication");
+    } finally {
+      getUser();
+      setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formDatas = new FormData();
+    formDatas.append("image", file);
+
+    try {
+      const res = await axiosInstance.put(`/auth/update/${userId}`, formDatas, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log(res);
+
+      if (res.status === 200) {
+        showMessage("success", "Profile image updated successfully");
+      }
+    } catch (error) {
+      console.error(error);
+      showMessage("error", "Failed to upload image");
+    } finally {
+      getUser();
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="max-w-4xl mx-auto">
         {/* Profile Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="relative">
-              <Avatar
-                sx={{ width: 100, height: 100, border: '3px solid white' }}
-                src="/path/to/avatar.jpg"
-                alt="Profile"
-              >
-                JD
-              </Avatar>
-              <IconButton 
-                sx={{ 
-                  position: 'absolute', 
-                  bottom: 0, 
-                  right: 0, 
-                  backgroundColor: 'white',
-                  '&:hover': { backgroundColor: 'grey.100' }
-                }}
-                size="small"
-              >
-                <CameraIcon sx={{ color: 'blue.500' }} />
-              </IconButton>
-            </div>
-            <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
-              <h1 className="text-2xl font-bold">John Doe</h1>
-              <p className="flex items-center justify-center md:justify-start mt-1">
-                <WorkIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
-                Software Developer
-              </p>
-              <p className="flex items-center justify-center md:justify-start mt-1">
-                <LocationIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
-                San Francisco, CA
-              </p>
-            </div>
-            <div className="mt-4 md:mt-0 md:ml-auto">
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: 'white',
-                  color: 'blue.600',
-                  '&:hover': { backgroundColor: 'grey.100' }
-                }}
-                startIcon={<EditIcon />}
-              >
-                Edit Profile
-              </Button>
+        <Card className="mb-6 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="relative">
+                <Avatar
+                  sx={{ width: 100, height: 100, border: "3px solid white" }}
+                  src={user?.image?.url}
+                  alt="Profile"
+                >
+                  {user?.name?.charAt(0)}
+                </Avatar>
+                <input
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  id="icon-button-file"
+                  type="file"
+                  onChange={handleImageUpload}
+                />
+                <label htmlFor="icon-button-file">
+                  <IconButton
+                    sx={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      backgroundColor: "white",
+                      "&:hover": { backgroundColor: "grey.100" },
+                    }}
+                    size="small"
+                    component="span"
+                  >
+                    <CameraIcon sx={{ color: "blue.500" }} />
+                  </IconButton>
+                </label>
+              </div>
+              <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
+                <h1 className="text-2xl font-bold">{user?.name}</h1>
+                <p className="flex items-center justify-center md:justify-start mt-1">
+                  <WorkIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
+                  {user?.post || "No position set"}
+                </p>
+                <p className="flex items-center justify-center md:justify-start mt-1">
+                  <LocationIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
+                  {user?.address || "No address set"}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Tabs Section */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} centered>
-            <Tab icon={<PersonIcon />} label="Personal Info" />
-            <Tab icon={<LockIcon />} label="Change Password" />
-            <Tab icon={<NotificationsIcon />} label="Notifications" />
-            <Tab icon={<SecurityIcon />} label="Security" />
-          </Tabs>
-        </Box>
+        {/* Personal Information Fieldset */}
+        <Card className="mb-6">
+          <CardContent>
+            <Box className="flex items-center mb-4">
+              <PersonIcon color="primary" className="mr-2" />
+              <Typography variant="h6" component="h2">
+                Personal Information
+              </Typography>
+            </Box>
+            <Divider className="mb-4" />
 
-        {/* Tab Content */}
-        <div className="p-6">
-          {tabValue === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <TextField
-                fullWidth
-                label="First Name"
-                defaultValue="John"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton size="small">
-                        <EditIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Last Name"
-                defaultValue="Doe"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton size="small">
-                        <EditIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Email"
-                defaultValue="john.doe@example.com"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Phone"
-                defaultValue="+1 (555) 123-4567"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PhoneIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Date of Birth"
-                defaultValue="January 15, 1990"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <CalendarIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Address"
-                defaultValue="123 Main St, San Francisco, CA"
-                multiline
-                rows={2}
-              />
-              <div className="md:col-span-2 flex justify-end mt-4">
-                <Button variant="contained" color="primary">
-                  Save Changes
-                </Button>
+            <form onSubmit={handlePersonalInfoSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
+                <TextField
+                  fullWidth
+                  label="Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  disabled
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Position"
+                  name="post"
+                  value={formData.post}
+                  onChange={handleInputChange}
+                />
+                <TextField
+                  fullWidth
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  multiline
+                  rows={2}
+                  className="md:col-span-2"
+                />
               </div>
-            </div>
-          )}
-
-          {tabValue === 1 && (
-            <div className="space-y-4 max-w-lg mx-auto">
-              <TextField
-                fullWidth
-                label="Current Password"
-                type={showPassword ? 'text' : 'password'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleClickShowPassword}>
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="New Password"
-                type={showNewPassword ? 'text' : 'password'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleClickShowNewPassword}>
-                        {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Confirm New Password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleClickShowConfirmPassword}>
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
               <div className="flex justify-end mt-6">
-                <Button variant="contained" color="primary">
-                  Update Password
+                <Button
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  disabled={loading}
+                  startIcon={
+                    loading ? <CircularProgress size={20} /> : <SaveIcon />
+                  }
+                >
+                  {loading ? "Saving..." : "Save Personal Information"}
                 </Button>
               </div>
-            </div>
-          )}
+            </form>
+          </CardContent>
+        </Card>
 
-          {tabValue === 2 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Notification Preferences</h3>
-              <Divider />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={notificationsEnabled}
-                    onChange={() => setNotificationsEnabled(!notificationsEnabled)}
+        {/* Change Password Fieldset */}
+        <Card className="mb-6">
+          <CardContent>
+            <Box className="flex items-center mb-4">
+              <LockIcon color="primary" className="mr-2" />
+              <Typography variant="h6" component="h2">
+                Change Password
+              </Typography>
+            </Box>
+            <Divider className="mb-4" />
+
+            <form onSubmit={handlePasswordChange}>
+              <div className="space-y-4 max-w-lg mx-auto mt-5">
+                <TextField
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  label="Current Password"
+                  name="currentPassword"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.currentPassword}
+                  onChange={handleInputChange}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handleClickShowPassword}>
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  label="New Password"
+                  name="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  value={formData.newPassword}
+                  onChange={handleInputChange}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handleClickShowNewPassword}>
+                          {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  label="Confirm New Password"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handleClickShowConfirmPassword}>
+                          {showConfirmPassword ? (
+                            <VisibilityOff />
+                          ) : (
+                            <Visibility />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <div className="flex justify-end mt-6">
+                  <Button
+                    variant="contained"
                     color="primary"
-                  />
-                }
-                label="Enable Email Notifications"
-              />
-              <FormControlLabel
-                control={<Switch color="primary" defaultChecked />}
-                label="Product Updates"
-              />
-              <FormControlLabel
-                control={<Switch color="primary" defaultChecked />}
-                label="Security Alerts"
-              />
-              <FormControlLabel
-                control={<Switch color="primary" />}
-                label="Marketing Promotions"
-              />
-              <div className="flex justify-end mt-6">
-                <Button variant="contained" color="primary">
-                  Save Preferences
-                </Button>
+                    type="submit"
+                    disabled={loading}
+                    startIcon={
+                      loading ? <CircularProgress size={20} /> : <SaveIcon />
+                    }
+                  >
+                    {loading ? "Updating..." : "Update Password"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            </form>
+          </CardContent>
+        </Card>
 
-          {tabValue === 3 && (
-            <div className="space-y-6">
-              <h3 className="text-lg font-medium">Security Settings</h3>
-              <Divider />
+        {/* Security Fieldset */}
+        <Card className="mb-6">
+          <CardContent>
+            <Box className="flex items-center mb-4">
+              <SecurityIcon color="primary" className="mr-2" />
+              <Typography variant="h6" component="h2">
+                Security Settings
+              </Typography>
+            </Box>
+            <Divider className="mb-4" />
+
+            <div className="space-y-6 mt-4">
               <FormControlLabel
                 control={
                   <Switch
-                    checked={twoFactorEnabled}
-                    onChange={() => setTwoFactorEnabled(!twoFactorEnabled)}
+                    checked={formData.isTwoFactor}
+                    onChange={handleTwoFactorToggle}
                     color="primary"
                   />
                 }
                 label="Two-Factor Authentication"
               />
-              <p className="text-sm text-gray-500">
-                Enhance your account's security by enabling two-factor authentication.
-              </p>
-              
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Active Sessions</h4>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">Chrome on Windows</p>
-                      <p className="text-sm text-gray-500">San Francisco, CA • Last active: 2 hours ago</p>
-                    </div>
-                    <Button color="error" size="small">
-                      Revoke
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
+              {formData.isTwoFactor ? (
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  className="mt-2"
+                >
+                  🔐 Two-Factor Authentication is <b>enabled</b>. Next time you
+                  login, an <b>OTP will be sent to your registered email</b> for
+                  verification.
+                </Typography>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  className="mt-2"
+                >
+                  Enhance your account's security by enabling Two-Factor
+                  Authentication. You’ll need to verify your identity using an
+                  OTP sent to your email when signing in.
+                </Typography>
+              )}
+
               <div className="flex justify-end mt-6">
-                <Button variant="contained" color="primary">
-                  Save Settings
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleTwoFactorToggle}
+                  disabled={loading}
+                >
+                  {formData.isTwoFactor ? "Disable" : "Enable"} Two-Factor
                 </Button>
               </div>
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
+
+        {/* Snackbar for messages */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert severity={message.type} onClose={() => setSnackbarOpen(false)}>
+            {message.text}
+          </Alert>
+        </Snackbar>
       </div>
     </div>
   );
