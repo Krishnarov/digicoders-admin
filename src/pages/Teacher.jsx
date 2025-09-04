@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, TextField, Tooltip, Chip, Select, MenuItem, InputLabel, FormControl } from "@mui/material";
+import {
+  Button,
+  TextField,
+  Tooltip,
+  Chip,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function Teacher() {
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", phone: "", expertise: [] });
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    expertise: [],
+  });
   const [editId, setEditId] = useState(null);
   const [teachers, setTeachers] = useState([]);
 
@@ -20,10 +34,11 @@ function Teacher() {
     try {
       const res = await axios.get("/teachers");
       console.log(res);
-      
+
       setTeachers(res.data.teachers || []); // backend se teachers return hote hain
     } catch (error) {
       console.log(error);
+      toast.error(error.response.data.message || error.message);
     }
   };
 
@@ -38,7 +53,10 @@ function Teacher() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip title={<span className="font-bold ">Edit</span>} placement="top">
+          <Tooltip
+            title={<span className="font-bold ">Edit</span>}
+            placement="top"
+          >
             <button
               className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
@@ -52,9 +70,16 @@ function Teacher() {
             onConfirm={() => handleDelete(row._id)}
             loading={loading}
           >
-            <Tooltip title={<span className="font-bold ">Delete</span>} placement="top">
+            <Tooltip
+              title={<span className="font-bold ">Delete</span>}
+              placement="top"
+            >
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -63,7 +88,7 @@ function Teacher() {
     },
     { label: "Teacher Name", accessor: "name" },
     { label: "Phone", accessor: "phone" },
-     {
+    {
       label: "Status",
       accessor: "isActive",
       Cell: ({ row }) => (
@@ -81,39 +106,42 @@ function Teacher() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
       filter: true,
     },
-    // {
-    //   label: "Expertise",
-    //   accessor: "expertise",
-    //   Cell: ({ row }) => (
-    //     <div className="flex gap-1 flex-wrap">
-    //       {row.expertise?.map((exp, i) => (
-    //         <Chip key={i} label={exp} size="small" color="primary" />
-    //       ))}
-    //     </div>
-    //   ),
-    // },
   ];
- const toggleStatus = async (data) => {
+  const toggleStatus = async (data) => {
     try {
-      setLoading(true);
-      const res = await axios.patch(`/teachers/${data._id}`, { isActive: !data.isActive });
+      setLoading(`status-${data._id}`);
+      const res = await axios.patch(`/teachers/${data._id}`, {
+        isActive: !data.isActive,
+      });
       // console.log(res);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading(false);
-      getAllTeachers()
+      getAllTeachers();
     }
   };
   // 🔹 Handle Edit
   const handleEdit = (row) => {
-    setFormData({ name: row.name, phone: row.phone, expertise: row.expertise || [] });
+    setFormData({
+      name: row.name,
+      phone: row.phone,
+      expertise: row.expertise || [],
+    });
     setEditId(row._id);
     setOpen(true);
   };
@@ -122,30 +150,40 @@ function Teacher() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/teachers/${id}`);
-      getAllTeachers();
+      const res = await axios.delete(`/teachers/${id}`);
+
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting teacher:", error);
     } finally {
       setLoading("");
+      getAllTeachers();
     }
   };
 
   // 🔹 Submit Form (Create / Update Teacher)
   const handleSubmit = async () => {
     try {
-      setLoading(true);
+      setLoading("Save");
+      let res;
       if (editId) {
-        await axios.patch(`/teachers/${editId}`, formData);
+        res = await axios.patch(`/teachers/${editId}`, formData);
       } else {
-        await axios.post("/teachers/create", formData);
+        res = await axios.post("/teachers/create", formData);
       }
-      handleClose();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
       getAllTeachers();
+      handleClose();
     }
   };
 
@@ -163,8 +201,8 @@ function Teacher() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+   
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -221,26 +259,11 @@ function Teacher() {
               required
             />
 
-            {/* Expertise Multi Select */}
-            {/* <FormControl fullWidth>
-              <InputLabel>Expertise</InputLabel>
-              <Select
-                name="expertise"
-                multiple
-                value={formData.expertise}
-                onChange={(e) => setFormData((prev) => ({ ...prev, expertise: e.target.value }))}
-              >
-                <MenuItem value="MERN">MERN</MenuItem>
-                <MenuItem value="Python">Python</MenuItem>
-                <MenuItem value="Java">Java</MenuItem>
-                <MenuItem value="React Native">React Native</MenuItem>
-                <MenuItem value="UI/UX">UI/UX</MenuItem>
-              </Select>
-            </FormControl> */}
+       
           </Stack>
         </CustomModal>
       </div>
-    </div>
+ 
   );
 }
 

@@ -299,8 +299,8 @@ function Attendance() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-2 md:py-6 lg:py-8 w-full">
-      <div className="container mx-auto  sm:px-4 lg:px-6 max-w-6xl">
+ 
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 lg:mb-8 gap-3">
           <div className="flex items-center flex-wrap">
@@ -363,7 +363,7 @@ function Attendance() {
             loading={loading}
             showPagination={false}
           />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-4 md:mb-6 mt-5">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6 mb-4 md:mb-6 mt-5">
             {/* Total Students Card */}
             <div className="bg-blue-50 rounded-lg shadow-sm p-3 md:p-4 text-center">
               <Users className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 mx-auto mb-1 md:mb-2 text-blue-600" />
@@ -388,19 +388,19 @@ function Attendance() {
             <div className="bg-red-50 rounded-lg shadow-sm p-3 md:p-4 text-center">
               <UserX className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 mx-auto mb-1 md:mb-2 text-red-600" />
               <div className="text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                {attendanceCounts.absent}
+                {attendanceCounts.notMarked}
               </div>
               <div className="text-xs md:text-sm text-gray-600">Absent</div>
             </div>
 
             {/* Not Marked Card */}
-            <div className="bg-gray-100 rounded-lg shadow-sm p-3 md:p-4 text-center">
+            {/* <div className="bg-gray-100 rounded-lg shadow-sm p-3 md:p-4 text-center">
               <Users className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 mx-auto mb-1 md:mb-2 text-gray-600" />
               <div className="text-lg md:text-xl lg:text-2xl font-bold text-gray-700">
                 {attendanceCounts.notMarked}
               </div>
               <div className="text-xs md:text-sm text-gray-600">Not Marked</div>
-            </div>
+            </div> */}
           </div>
           
           {/* Action Buttons */}
@@ -479,7 +479,7 @@ function Attendance() {
           </Alert>
         </Snackbar>
       </div>
-    </div>
+    
   );
 }
 

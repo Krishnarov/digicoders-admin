@@ -1,9 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Home, ChevronRight, Search, User, Mail, Phone, X } from "lucide-react";
+import {
+  Home,
+  ChevronRight,
+  Search,
+  User,
+  Mail,
+  Phone,
+  X,
+  Loader2,
+} from "lucide-react";
 import axios from "../axiosInstance";
 import { toast } from "react-toastify";
 import { QRCodeCanvas } from "qrcode.react";
-
 function PayFee() {
   const [formData, setFormData] = useState({
     registrationId: "",
@@ -11,10 +19,10 @@ function PayFee() {
     paymentType: "installment",
     mode: "cash",
     isFullPaid: false,
-    hrName:null,
+    hrName: null,
     remark: "",
     studentName: "",
-    tnxStatus:"paid",
+    tnxStatus: "paid",
     dueAmount: 0,
     searchTerm: "",
     qrcode: null,
@@ -23,6 +31,7 @@ function PayFee() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [studentEnrollments, setStudentEnrollments] = useState([]);
   const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
+  const [showQr, setshowQr] = useState(false);
   const [qrcodes, setQrcodes] = useState([]);
   const [hr, setHr] = useState([]);
   const handleInputChange = (field, value) => {
@@ -31,20 +40,22 @@ function PayFee() {
       [field]: value,
     }));
   };
-    const fetchHr = useCallback(async () => {
-      try {
-        const response = await axios.get("/hr");
-        if (response.data.success) setHr(response.data.data);
-      } catch (error) {
-        console.error("Error fetching HR data:", error);
-      }
-    }, []);
-  
+  const fetchHr = useCallback(async () => {
+    try {
+      const response = await axios.get("/hr");
+      if (response.data.success) setHr(response.data.data);
+    } catch (error) {
+      toast.error(error.response.data.message || error.message);
+      console.error("Error fetching HR data:", error);
+    }
+  }, []);
+
   const getAllQrCodes = useCallback(async () => {
     try {
       const res = await axios.get("/qrcode");
       setQrcodes(res.data.data);
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error fetching QR codes:", error);
     }
   }, []);
@@ -53,7 +64,7 @@ function PayFee() {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        await Promise.all([getAllQrCodes(),fetchHr()]);
+        await Promise.all([getAllQrCodes(), fetchHr()]);
       } catch (error) {
         console.error("Error fetching initial data:", error);
       } finally {
@@ -62,7 +73,7 @@ function PayFee() {
     };
 
     fetchInitialData();
-  }, [getAllQrCodes,fetchHr]);
+  }, [getAllQrCodes, fetchHr]);
 
   const upiLink = React.useMemo(() => {
     const qrData = qrcodes.find((qr) => qr._id === formData.qrcode);
@@ -72,15 +83,20 @@ function PayFee() {
   }, [formData.qrcode, formData.studentName, formData.amount, qrcodes]);
 
   const handleRegister = async () => {
+    setIsLoading("Pay Now");
     if (!formData.registrationId) {
       toast.error("Please select a student first");
-      return;
+      return setIsLoading(false);
     }
 
     try {
       const res = await axios.post(`/fee`, formData);
-      console.log(res);
-      toast.success("Payment successful!");
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+        setTimeout(() => {
+          window.open(`/receipt/${res.data.id}`, "_blank");
+        }, 1500);
+      }
       // Reset form after successful payment
       setFormData({
         registrationId: "",
@@ -94,8 +110,11 @@ function PayFee() {
         searchTerm: formData.searchTerm, // Keep search term
       });
     } catch (error) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "Payment failed");
+      toast.error(
+        error.response.data.message || error.message || "Payment failed"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -110,7 +129,6 @@ function PayFee() {
       const res = await axios.get(
         `/registration/get/user/${formData.searchTerm}`
       );
-      console.log(res);
 
       if (res.data.data) {
         // Check if response is array (multiple enrollments)
@@ -147,7 +165,11 @@ function PayFee() {
       }
     } catch (error) {
       console.log(error);
-      toast.error("Error searching for student");
+      toast.error(
+        error.response.data.message ||
+          error.message ||
+          "Error searching for student"
+      );
     } finally {
       setSearchLoading(false);
     }
@@ -165,11 +187,9 @@ function PayFee() {
     toast.success("Enrollment selected!");
   };
 
-  console.log(formData);
-
   return (
-    <div className=" bg-gray-50 ">
-      <div className="max-w-6xl mx-auto">
+    <div className=" max-w-sm md:max-w-6xl mx-auto  px-2 ">
+      <div >
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center text-gray-600 mb-4 gap-4">
@@ -251,7 +271,6 @@ function PayFee() {
                 type="number"
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={formData.amount}
-
                 onChange={(e) => handleInputChange("amount", e.target.value)}
               />
             </div>
@@ -266,9 +285,7 @@ function PayFee() {
                     type="radio"
                     name="paymentType"
                     value="installment"
-                    checked={
-                      formData.paymentType === "installment"
-                    }
+                    checked={formData.paymentType === "installment"}
                     onChange={(e) =>
                       handleInputChange("paymentType", e.target.value)
                     }
@@ -278,19 +295,6 @@ function PayFee() {
                     Training / Installment Fee
                   </span>
                 </label>
-                {/* <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentType"
-                    value="full"
-                    checked={formData.paymentType === "full"}
-                    onChange={(e) =>
-                      handleInputChange("paymentType", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Full Fee</span>
-                </label> */}
               </div>
             </div>
 
@@ -331,9 +335,7 @@ function PayFee() {
                     </option>
                   ))}
               </select>
-
             </div>
-            
 
             {/* Payment Mode */}
             <div>
@@ -395,10 +397,12 @@ function PayFee() {
                   Transaction ID / UTR No.
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-3 text-gray-500">₹</span>
+                  <span className="absolute left-3 top-3 text-gray-500">
+                    UTR
+                  </span>
                   <input
                     type="number"
-                    className={`w-full pl-8 px-4 py-3 border  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    className={`w-full pl-12 px-4 py-3 border  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     value={formData.tnxId}
                     onChange={(e) => handleInputChange("tnxId", e.target.value)}
                     disabled={isLoading}
@@ -423,6 +427,25 @@ function PayFee() {
                 onChange={(e) => handleInputChange("remark", e.target.value)}
               />
             </div>
+            {/* QR code display */}
+            {formData.mode === "online" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Scan & Pay
+                </label>
+                {showQr ? (
+                  <QRCodeCanvas value={upiLink} size={100} />
+                ) : (
+                  <span
+                    className="border rounded-full p-2  cursor-pointer hover:bg-gray-50 text-xs"
+                    onClick={() => setshowQr(true)}
+                  >
+                    Show Qr code
+                  </span>
+                )}
+                {/* <QRCodeCanvas value={upiLink} size={200} /> */}
+              </div>
+            )}
           </div>
 
           {/* Register Button */}
@@ -432,7 +455,17 @@ function PayFee() {
               onClick={handleRegister}
               className="px-8 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 font-medium text-lg"
             >
-              Pay Now
+              {/* {isLoading === "Pay Now" && (
+                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              )}{" "}
+              Pay Now */}
+              {isLoading ? (
+                <span className="flex">
+                  <Loader2 className="animate-spin mr-2" /> Pay Now ...
+                </span>
+              ) : (
+                "Pay Now"
+              )}
             </button>
           </div>
         </div>

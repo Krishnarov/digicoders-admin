@@ -37,7 +37,7 @@ const Profile = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState('');
   const [message, setMessage] = useState({ type: "", text: "" });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
@@ -128,7 +128,6 @@ const Profile = () => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    console.log(formData);
 
     if (formData.newPassword !== formData.confirmPassword) {
       showMessage("error", "New passwords do not match");
@@ -173,6 +172,7 @@ const Profile = () => {
   };
 
   const handleTwoFactorToggle = async () => {
+    setLoading("TwoFactor")
     const newValue = !formData.isTwoFactor;
     try {
       const res = await axiosInstance.put(`/auth/update/${userId}`, {
@@ -222,8 +222,8 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
+      <div className=" mx-auto">
         {/* Profile Header */}
         <Card className="mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">

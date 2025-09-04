@@ -9,6 +9,7 @@ import {
   IconButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { Loader2 } from "lucide-react";
 
 const CustomModal = ({
   open,
@@ -17,7 +18,7 @@ const CustomModal = ({
   children,
   onSubmit,
   isBtnHide,
-  boxWidth
+  boxWidth,loading
 }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth={boxWidth}>
@@ -41,7 +42,9 @@ const CustomModal = ({
             Cancel
           </Button>
           <Button onClick={onSubmit} variant="contained" color="primary">
-            Save
+             {loading === `Save` && (
+                <Loader2 className="animate-spin  mr-2" />
+              )} Save
           </Button>
         </DialogActions>
       )}

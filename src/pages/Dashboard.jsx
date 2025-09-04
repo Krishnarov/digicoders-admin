@@ -90,6 +90,61 @@ console.log(counts);
               <RegexIcon />
             </div>
           </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm flex justify-between items-center border-blue-500 border-b-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                 Total Branchas
+              </h3>
+              <p className="text-2xl font-bold text-gray-900">{counts?.branchCount}</p>
+            </div>
+            <div className="bg-blue-500 p-3 text-white rounded-full">
+              <RegexIcon />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm flex justify-between items-center border-blue-500 border-b-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                 Total Collages
+              </h3>
+              <p className="text-2xl font-bold text-gray-900">{counts?.collegeCount}</p>
+            </div>
+            <div className="bg-blue-500 p-3 text-white rounded-full">
+              <RegexIcon />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm flex justify-between items-center border-blue-500 border-b-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                 Total Hr
+              </h3>
+              <p className="text-2xl font-bold text-gray-900">{counts?.manageHrCount}</p>
+            </div>
+            <div className="bg-blue-500 p-3 text-white rounded-full">
+              <RegexIcon />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm flex justify-between items-center border-blue-500 border-b-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                 Total Technology
+              </h3>
+              <p className="text-2xl font-bold text-gray-900">{counts?.technologyCount}</p>
+            </div>
+            <div className="bg-blue-500 p-3 text-white rounded-full">
+              <RegexIcon />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-sm flex justify-between items-center border-blue-500 border-b-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                 Total Tranning
+              </h3>
+              <p className="text-2xl font-bold text-gray-900">{counts?.tranningCount}</p>
+            </div>
+            <div className="bg-blue-500 p-3 text-white rounded-full">
+              <RegexIcon />
+            </div>
+          </div>
         </div>
       </div>
     </div>

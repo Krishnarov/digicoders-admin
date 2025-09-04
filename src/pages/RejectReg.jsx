@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Eye, Trash, Trash2 } from "lucide-react";
+import {
+  Home,
+  ChevronRight,
+  Edit2,
+  Eye,
+  Trash,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, TextField, Chip, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -8,6 +16,8 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function RejectReg() {
   const rejectedStudents = useSelector((state) => state.student.data).filter(
@@ -36,79 +46,160 @@ function RejectReg() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
+          <Link to={`/reg-student/${row._id}`}>
           <Tooltip
             title={<span className="font-bold ">View</span>}
             placement="top"
           >
             <button
               className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
-              onClick={() => handleView(row)}
+              // onClick={() => handleView(row)}
             >
               <Eye size={20} />
             </button>
           </Tooltip>
-          <Tooltip
-            title={<span className="font-bold ">Delete</span>}
-            placement="top"
+          </Link>
+          <DeleteConfirmationModal
+            id={row.id}
+            itemName={row.userid}
+            onConfirm={() => handleDelete(row._id)}
+            loading={loading}
           >
-            <button
-              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
-              onClick={() => handleDeleta(row._id)}
+            <Tooltip
+              title={<span className="font-bold ">Delete</span>}
+              placement="top"
             >
-              <Trash2 size={20} />
-            </button>
-          </Tooltip>
-          {/* <Button
-            variant="outlined"
-            size="small"
-            color="error"
-            startIcon={<Trash size={16} />}
-            onClick={() => handleDelete(row)}
-          >
-            Delete
-          </Button> */}
+              <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 size={20} className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
+              </button>
+            </Tooltip>
+          </DeleteConfirmationModal>
         </div>
       ),
     },
-    { label: "ID", accessor: "userid", filter: false },
-    { label: "Student Name", accessor: "studentName", filter: true },
-    { label: "Father Name", accessor: "fatherName", filter: true },
-    { label: "Mobile", accessor: "mobile", filter: true },
+    {
+      label: "Tra Fee Status",
+      accessor: "trainingFeeStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.trainingFeeStatus}
+          color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Tnx Status",
+      accessor: "tnxStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.tnxStatus}
+          color={row.tnxStatus === "paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    { label: "Enroll ID", accessor: "userid", filter: false },
+    { label: "Student Name", accessor: "studentName", filter: false },
+    { label: "Father Name", accessor: "fatherName", filter: false },
+    { label: "Mobile", accessor: "mobile", filter: false },
+    { label: "Whatshapp", accessor: "whatshapp", filter: false },
+    { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
     { label: "College Name", accessor: "collegeName", filter: true },
     { label: "Edu Year", accessor: "eduYear", filter: true },
     {
-      label: "Payment Status",
-      accessor: "paymentStatus",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.paymentStatus}
-          color={row.paymentStatus === "success" ? "success" : "warning"}
-          variant="outlined"
-          size="small"
-        />
-      ),
+      label: "Tranning",
+      accessor: "training.name",
+      Cell: ({ row }) => <span>{row.training.name}</span>,
+      filter: true,
+      show: true,
     },
     {
-      label: "Status",
-      accessor: "status",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.status}
-          color="error"
-          variant="outlined"
-          size="small"
-        />
-      ),
+      label: "Technology",
+      accessor: "technology.name",
+      Cell: ({ row }) => <span>{row.technology.name}</span>,
+      filter: true,
+      show: true,
     },
+    {
+      label: "Education",
+      accessor: "education.name",
+      Cell: ({ row }) => <span>{row.education.name}</span>,
+      filter: true,
+      show: true,
+    },
+    { label: "Amount", accessor: "amount", filter: false, show: true },
+    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "Discount", accessor: "discount", filter: false, show: true },
+    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
+    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
+    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    {
+      label: "Branch",
+      accessor: "branch.name",
+      Cell: ({ row }) => <span>{row.branch.name}</span>,
+      filter: true,
+      show: true,
+    },
+    {
+      label: "Hr Name",
+      accessor: "hrName",
+      Cell: ({ row }) => <span>{row.hrName?.name}</span>,
+      filter: false,
+      show: true,
+    },
+    {
+      label: "Payment Method",
+      accessor: "paymentMethod",
+      filter: true,
+      show: true,
+    },
+    {
+      label: "Reg Date",
+      accessor: "createdAt",
+      Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
+      filter: false,
+      show: true,
+    },
+    {
+      label: "Qr code",
+      accessor: "qrcode.name",
+
+      filter: false,
+      show: true,
+    },
+    { label: "Remark", accessor: "remark", filter: false, show: true },
   ];
-  const handleDelete = async (row) => {
+  // Format date to Indian format
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  const handleDelete = async (id) => {
     try {
-      const res = await axios.delete(`/registration/user/${row._id}`);
-      console.log(res);
+      setLoading(`deleting-${id}`);
+      const res = await axios.delete(`/registration/user/${id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
-      console.log(error);
+      toast.error(error.response.data.message || error.message);
     } finally {
       fetchStudents();
+      setLoading(false);
     }
   };
   const handleView = (row) => {
@@ -116,63 +207,17 @@ function RejectReg() {
     setViewModalOpen(true);
   };
 
-  //   const handleEdit = (row) => {
-  //     setSelectedStudent(row);
-  //     setEditFormData({
-  //       studentName: row.studentName || "",
-  //       fatherName: row.fatherName || "",
-  //       email: row.email || "",
-  //       mobile: row.mobile || "",
-  //       alternateMobile: row.alternateMobile || "",
-  //       collegeName: row.collegeName || "",
-  //       eduYear: row.eduYear || "",
-  //       remark: row.remark || ""
-  //     });
-  //     setEditModalOpen(true);
-  //   };
-
-  //   const handleEditSubmit = async () => {
-  //     try {
-  //       await axios.patch(`/registration/update/${selectedStudent._id}`, editFormData, {
-  //         withCredentials: true,
-  //       });
-  //       handleEditClose();
-  //       // Refresh data
-  //       window.location.reload();
-  //     } catch (error) {
-  //       console.error("Error updating student:", error);
-  //     }
-  //   };
-
   const handleViewModalClose = () => {
     setViewModalOpen(false);
     setSelectedStudent(null);
   };
 
-  //   const handleEditClose = () => {
-  //     setEditModalOpen(false);
-  //     setSelectedStudent(null);
-  //     setEditFormData({
-  //       studentName: "",
-  //       fatherName: "",
-  //       email: "",
-  //       mobile: "",
-  //       alternateMobile: "",
-  //       collegeName: "",
-  //       eduYear: "",
-  //       remark: ""
-  //     });
-  //   };
-
-  //   const handleEditChange = (e) => {
-  //     setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  //   };
   useEffect(() => {
     fetchStudents(); // Initial fetch when component mounts
   }, [fetchStudents]);
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -402,86 +447,8 @@ function RejectReg() {
           )}
         </CustomModal>
 
-        {/* Edit Student Modal */}
-        {/* <CustomModal
-          open={editModalOpen}
-          onClose={handleEditClose}
-          onSubmit={handleEditSubmit}
-          title="Edit Student Information"
-          submitText="Update"
-        >
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            <TextField
-              label="Student Name"
-              name="studentName"
-              fullWidth
-              value={editFormData.studentName}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Father Name"
-              name="fatherName"
-              fullWidth
-              value={editFormData.fatherName}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              fullWidth
-              value={editFormData.email}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Mobile"
-              name="mobile"
-              fullWidth
-              value={editFormData.mobile}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Alternate Mobile"
-              name="alternateMobile"
-              fullWidth
-              value={editFormData.alternateMobile}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="College Name"
-              name="collegeName"
-              fullWidth
-              value={editFormData.collegeName}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Education Year"
-              name="eduYear"
-              fullWidth
-              value={editFormData.eduYear}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-            <TextField
-              label="Remark"
-              name="remark"
-              fullWidth
-              multiline
-              rows={3}
-              value={editFormData.remark}
-              onChange={handleEditChange}
-              variant="outlined"
-            />
-          </Stack>
-        </CustomModal> */}
       </div>
-    </div>
+
   );
 }
 

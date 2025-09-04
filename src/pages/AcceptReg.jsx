@@ -96,9 +96,9 @@ function AcceptReg() {
     { label: "Father Name", accessor: "fatherName", filter: false },
     { label: "Mobile", accessor: "mobile", filter: false },
     { label: "Whatshapp", accessor: "whatshapp", filter: false },
-    { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
-    { label: "College_Name", accessor: "collegeName", filter: true },
-    { label: "Edu_Year", accessor: "eduYear", filter: true },
+    { label: "Alternate Mobile", accessor: "alternateMobile", filter: false },
+    { label: "College Name", accessor: "collegeName", filter: true },
+    { label: "Edu Year", accessor: "eduYear", filter: true },
     {
       label: "Tranning",
       accessor: "training.name",
@@ -123,9 +123,9 @@ function AcceptReg() {
     { label: "Amount", accessor: "amount", filter: false, show: true },
     { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
     { label: "discount", accessor: "discount", filter: false, show: true },
-    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
-    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
-    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    { label: "Final Fee", accessor: "finalFee", filter: false, show: true },
+    { label: "Paid Amount", accessor: "paidAmount", filter: false, show: true },
+    { label: "Due Amount", accessor: "dueAmount", filter: false, show: true },
     {
       label: "Branch",
       accessor: "branch",
@@ -177,8 +177,8 @@ function AcceptReg() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2 ">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -233,7 +233,7 @@ function AcceptReg() {
           {/* </Stack> */}
         </CustomModal>
       </div>
-    </div>
+
   );
 }
 

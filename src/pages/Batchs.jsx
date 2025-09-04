@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2, Users } from "lucide-react";
+import {
+  Home,
+  ChevronRight,
+  Edit2,
+  Trash2,
+  Users,
+  Download,
+  Loader2,
+} from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
   Button,
@@ -14,12 +22,15 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import CustomModal from "../components/CustomModal";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 function Batchs() {
   const [loading, setLoading] = useState("");
@@ -55,6 +66,7 @@ function Batchs() {
         setBatches(res.data.batches || []);
       }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error(error);
     }
   };
@@ -67,6 +79,7 @@ function Batchs() {
         setTeachers(res.data.teachers.filter((item) => item.isActive) || []);
       }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error(error);
     }
   };
@@ -79,6 +92,7 @@ function Batchs() {
         setBranches(res.data.data.filter((b) => b.isActive));
       }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error(error);
     }
   };
@@ -97,7 +111,10 @@ function Batchs() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip title={<span className="font-bold">Manage Students</span>} placement="top">
+          <Tooltip
+            title={<span className="font-bold">Manage Students</span>}
+            placement="top"
+          >
             <button
               className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
               onClick={() => handleOpenStudentsModal(row)}
@@ -105,12 +122,30 @@ function Batchs() {
               <Users size={20} />
             </button>
           </Tooltip>
-          <Tooltip title={<span className="font-bold">Edit</span>} placement="top">
+          <Tooltip
+            title={<span className="font-bold">Edit</span>}
+            placement="top"
+          >
             <button
               className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
             >
               <Edit2 size={20} />
+            </button>
+          </Tooltip>
+          <Tooltip
+            title={<span className="font-bold">Excle Export</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
+              onClick={() => exportToExcel(row)}
+            >
+               {loading === `excle-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Download size={20} />
+                )}
             </button>
           </Tooltip>
           <DeleteConfirmationModal
@@ -119,9 +154,16 @@ function Batchs() {
             onConfirm={() => handleDelete(row._id)}
             loading={loading}
           >
-            <Tooltip title={<span className="font-bold">Delete</span>} placement="top">
+            <Tooltip
+              title={<span className="font-bold">Delete</span>}
+              placement="top"
+            >
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -133,16 +175,19 @@ function Batchs() {
       label: "Branch",
       accessor: "branch",
       Cell: ({ row }) => row.branch?.name || "N/A",
+        filter: true,
     },
     {
       label: "Start Date",
       accessor: "startDate",
       Cell: ({ row }) => new Date(row.startDate).toLocaleDateString(),
+
     },
     {
       label: "Teacher",
       accessor: "teacher",
       Cell: ({ row }) => row.teacher?.name || "Unassigned",
+        filter: true,
     },
     {
       label: "Students Count",
@@ -169,7 +214,12 @@ function Batchs() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {" "}
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
@@ -177,11 +227,42 @@ function Batchs() {
     },
   ];
 
+  const exportToExcel = (batch) => {
+    setLoading(`excle-${batch._id}`)
+    // Students ko format karo
+    const studentData = batch.students.map((student, index) => ({
+      "S.No": index + 1,
+      Name: student.studentName,
+      Email: student.email || "N/A",
+      Phone: student.mobile || "N/A",
+      "Father Name": student.fatherName || "N/A",
+      Technology: student.technology?.name || "N/A",
+      "Due Amount": student.dueAmount ?? 0,
+    }));
+
+    // Workbook create karo
+    const wb = XLSX.utils.book_new();
+
+    // Students sheet add karo
+    const wsStudents = XLSX.utils.json_to_sheet(studentData);
+    XLSX.utils.book_append_sheet(wb, wsStudents, "Students");
+
+    // File generate karo
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const data = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(data, `${batch.batchName}_Students.xlsx`);
+    setLoading("")
+  };
+
   const toggleStatus = async (data) => {
     try {
-      setLoading(true);
-      await axios.patch(`/batches/updatestatus/${data._id}`);
+      setLoading(`status-${data._id}`);
+      const res = await axios.patch(`/batches/updatestatus/${data._id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading(false);
@@ -245,16 +326,20 @@ function Batchs() {
   // 🔹 Save student assignments to batch
   const saveStudentsToBatch = async () => {
     try {
-      setLoading("saving-students");
-      await axios.put(`/batches/${currentBatch._id}/students`, {
+      setLoading("Save");
+      const res = await axios.put(`/batches/${currentBatch._id}/students`, {
         studentIds: selectedStudents,
       });
-      getAllBatches(); // Refresh batches data
-      handleCloseStudentsModal();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error saving students:", error);
     } finally {
       setLoading("");
+      getAllBatches();
+      handleCloseStudentsModal();
     }
   };
 
@@ -275,30 +360,39 @@ function Batchs() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/batches/${id}`);
-      getAllBatches();
+      const res = await axios.delete(`/batches/${id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting batch:", error);
     } finally {
       setLoading("");
+      getAllBatches();
     }
   };
 
   // 🔹 Submit Form (Create/Update)
   const handleSubmit = async () => {
     try {
-      setLoading(true);
+      setLoading("Save");
+      let res;
       if (editId) {
-        await axios.put(`/batches/${editId}`, formData);
+        res = await axios.put(`/batches/${editId}`, formData);
       } else {
-        await axios.post("/batches/create", formData);
+        res = await axios.post("/batches/create", formData);
       }
-      handleClose();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
       getAllBatches();
+      handleClose();
     }
   };
 
@@ -369,8 +463,8 @@ function Batchs() {
     !allFilteredSelected;
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+ 
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -472,7 +566,7 @@ function Batchs() {
           onSubmit={saveStudentsToBatch}
           title={`Manage Students - ${currentBatch?.batchName || ""}`}
           submitText="Save Changes"
-          loading={loading === "saving-students"}
+          loading={loading}
           size="2xl"
         >
           <div className="mb-4">
@@ -508,7 +602,7 @@ function Batchs() {
           </div>
         </CustomModal>
       </div>
-    </div>
+  
   );
 }
 

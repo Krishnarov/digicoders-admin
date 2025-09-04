@@ -307,7 +307,7 @@ console.log(feeData);
         <div className="mb-3 flex items-center">
           <h3 className="font-semibold mb-1">Payment Mode:</h3>
           <div className="flex space-x-10 ml-7">
-            {["cash", "online", "cheque"].map((mode) => (
+            {["cash", "online",].map((mode) => (
               <div key={mode} className="flex items-center">
                 <input
                   type="checkbox"
@@ -362,7 +362,7 @@ console.log(feeData);
                 feeData.tnxStatus === "paid"
                   ? "/img/paid.png"
                   : feeData.tnxStatus === "full paid"
-                  ? "/img/paid.png"
+                  ? "/img/paid.png" :feeData.tnxStatus === "failed" ? "/img/failed.png"
                   : "/img/pending.jpg"
               }
               width={100}

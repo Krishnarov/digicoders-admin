@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function ManageHr() {
   const [hr, setHr] = useState([]);
@@ -16,6 +17,7 @@ function ManageHr() {
       const response = await axios.get("/hr");
       if (response.data.success) setHr(response.data.data);
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error fetching college names:", error);
     }
   };
@@ -35,15 +37,6 @@ function ManageHr() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          {/* <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Edit2 size={16} />}
-            onClick={() => handleEdit(row)}
-          >
-            Edit
-          </Button> */}
           <Tooltip
             title={<span className="font-bold ">Edit</span>}
             placement="top"
@@ -61,21 +54,16 @@ function ManageHr() {
             onConfirm={() => handleDelete(row._id)}
             loading={loading}
           >
-            {/* <Button
-              variant="outlined"
-              size="small"
-              color="error"
-              startIcon={<Trash2 size={16} />}
-              // onClick={() => handleDelete(row._id)}
-            >
-              {loading === `deleting-${row._id}` ? "Deleting..." : "Delete"}
-            </Button> */}
             <Tooltip
               title={<span className="font-bold ">Delete</span>}
               placement="top"
             >
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -101,7 +89,11 @@ function ManageHr() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
@@ -118,8 +110,12 @@ function ManageHr() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/hr/${id}`);
+      const res = await axios.delete(`/hr/${id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting education:", error);
     } finally {
       fetchHr();
@@ -129,12 +125,16 @@ function ManageHr() {
 
   const toggleStatus = async (row) => {
     try {
-      setLoading(true);
+      setLoading(`status-${row._id}`);
       const res = await axios.put(`/hr/${row._id}`, {
         isActive: !row.isActive,
       });
-      console.log(res);
+
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       fetchHr();
@@ -144,19 +144,22 @@ function ManageHr() {
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
-
+    setLoading("Save");
+      let res;
       if (editId) {
-        await axios.put(`/hr/${editId}`, formData);
+        res = await axios.put(`/hr/${editId}`, formData);
       } else {
-        await axios.post("/hr", formData);
+        res = await axios.post("/hr", formData);
       }
-
-      handleClose();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       fetchHr();
+      handleClose();
       setLoading(false);
     }
   };
@@ -172,8 +175,8 @@ function ManageHr() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+  
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -229,7 +232,7 @@ function ManageHr() {
           </Stack>
         </CustomModal>
       </div>
-    </div>
+ 
   );
 }
 

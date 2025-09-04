@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Eye, Check, X, Printer } from "lucide-react";
+import {
+  Home,
+  ChevronRight,
+  Eye,
+  Check,
+  X,
+  Printer,
+  Loader2,
+} from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, Chip, Tooltip } from "@mui/material";
+import {
+  Button,
+  Chip,
+  Dialog,
+  DialogContent,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetFee from "../hooks/useGetFee";
+import { toast } from "react-toastify";
+import { Close } from "@mui/icons-material";
 
 function NewFee() {
   const fetchFee = useGetFee();
@@ -17,7 +34,8 @@ function NewFee() {
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [selectedQrCode, setSelectedQrCode] = useState(null);
   useEffect(() => {
     fetchFee();
   }, []);
@@ -28,7 +46,7 @@ function NewFee() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip
+          {/* <Tooltip
             title={<span className="font-bold ">View</span>}
             placement="top"
           >
@@ -38,7 +56,7 @@ function NewFee() {
             >
               <Eye size={20} />
             </button>
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip
             title={<span className="font-bold ">Accept</span>}
             placement="top"
@@ -48,7 +66,11 @@ function NewFee() {
               onClick={() => handleAccept(row._id)}
               disabled={row.status === "accepted"}
             >
-              <Check size={20} />
+              {loading === `Accept-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <Check size={20} />
+              )}
             </button>
           </Tooltip>
           <Tooltip
@@ -60,7 +82,11 @@ function NewFee() {
               onClick={() => handleReject(row._id)}
               disabled={row.status === "rejected"}
             >
-              <X size={20} />
+              {loading === `Reject-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <X size={20} />
+              )}
             </button>
           </Tooltip>
           <Tooltip
@@ -89,7 +115,7 @@ function NewFee() {
         />
       ),
     },
-    { label: "Receipt No", accessor: "receiptNo", filter: true },
+    { label: "Receipt No", accessor: "receiptNo" },
 
     {
       label: "Student Name",
@@ -99,7 +125,7 @@ function NewFee() {
     {
       label: "Mobile",
       accessor: "registrationId.mobile",
-      Cell: ({ row }) => row.registrationId?.mobile || "N/A",
+      // Cell: ({ row }) => row.registrationId?.mobile || "N/A",show: true
     },
     {
       label: "Payment Date",
@@ -111,13 +137,46 @@ function NewFee() {
       accessor: "amount",
       Cell: ({ row }) => `₹${row.amount}`,
     },
-     { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    {
+      label: "Payment Type",
+      accessor: "paymentType",
+      filter: true,
+      show: true,
+    },
+    { label: "Payment mode", accessor: "mode", filter: true, show: true },
+
+    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "discount", accessor: "discount", filter: false, show: true },
     { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
     { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
     { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
-
+    { label: "tnxId", accessor: "tnxId", filter: false, show: true },
+    {
+      label: "Qr code",
+      accessor: "qrcode",
+      Cell: ({ row }) => (
+        <div
+          className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
+          onClick={() => handleQrView(row)}
+        >
+          {row.qrcode?.name}
+        </div>
+      ),
+      filter: false,
+      show: true,
+    },
+    { label: "Remark", accessor: "remark", filter: false, show: true },
   ];
-
+  const handleQrView = (row) => {
+    if (row.qrcode && row.qrcode.image && row.qrcode.image.url) {
+      setSelectedQrCode(row.qrcode.image.url);
+      setQrModalOpen(true);
+    }
+  };
+  const handleQrModalClose = () => {
+    setQrModalOpen(false);
+    setSelectedQrCode(null);
+  };
   const handleView = (row) => {
     setSelectedPayment(row);
     setViewModalOpen(true);
@@ -125,24 +184,36 @@ function NewFee() {
 
   const handleAccept = async (id) => {
     try {
-      setLoading(true);
-      await axios.patch(`/fee/status/${id}`, { status: "accepted" });
-      fetchFee();
+      setLoading(`Accept-${id}`);
+      const res = await axios.patch(`/fee/status/${id}`, {
+        status: "accepted",
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error accepting payment:", error);
     } finally {
       setLoading(false);
+      fetchFee();
     }
   };
 
   const handleReject = async (id) => {
     try {
-      setLoading(true);
-      await axios.patch(`/fee/status/${id}`, { status: "rejected" });
-      fetchFee();
+      setLoading(`Reject-${id}`);
+      const res = await axios.patch(`/fee/status/${id}`, {
+        status: "rejected",
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error rejecting payment:", error);
     } finally {
+      fetchFee();
       setLoading(false);
     }
   };
@@ -169,8 +240,8 @@ function NewFee() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -412,8 +483,36 @@ function NewFee() {
             </div>
           )}
         </CustomModal>
+        {/* QR Code Modal */}
+        <Dialog
+          open={qrModalOpen}
+          onClose={handleQrModalClose}
+          maxWidth="xs"
+          fullWidth
+        >
+          <div className="flex justify-between items-center p-4 border-b">
+            <h2 className="text-xl font-semibold">QR Code</h2>
+            <IconButton onClick={handleQrModalClose}>
+              <Close />
+            </IconButton>
+          </div>
+          <DialogContent className="flex flex-col items-center justify-center p-6">
+            {selectedQrCode ? (
+              <>
+                <img
+                  src={selectedQrCode}
+                  alt="QR Code"
+                  className="w-72 h-72 object-contain border rounded-lg"
+                />
+                {/* <p className="mt-4 text-gray-600">Scan this QR code for payment</p> */}
+              </>
+            ) : (
+              <p className="text-gray-500">No QR code available</p>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
+
   );
 }
 

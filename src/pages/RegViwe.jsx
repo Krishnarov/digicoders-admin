@@ -34,6 +34,7 @@ function RegView() {
   const param = useParams();
   const [feeData, setFeeData] = useState([]);
   const [studentData, setStudentData] = useState({});
+  const [batchData, setBatchData] = useState([]);
   const [loading, setLoading] = useState("loading");
   const [reminderDialog, setReminderDialog] = useState({
     open: false,
@@ -61,10 +62,21 @@ function RegView() {
       console.log(error);
     }
   };
+  const fetchbatch = async () => {
+    try {
+      const res = await axiosInstance.get(`/batches/student/${param.id}`);
+      setBatchData(res.data.batch);
+      console.log(res);
+      
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     fetchStudentData();
     fetchData();
+    fetchbatch();
   }, []);
 
   const formatDate = (dateString) => {
@@ -181,14 +193,14 @@ support@digicoders.in | www.digicoders.in`;
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip
+          {/* <Tooltip
             title={<span className="font-bold ">View</span>}
             placement="top"
           >
             <button className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600">
               <Eye size={20} />
             </button>
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip
             title={<span className="font-bold ">Print</span>}
             placement="top"
@@ -258,7 +270,7 @@ support@digicoders.in | www.digicoders.in`;
   }
   // console.log(studentData)
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+    <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
         <div className="flex items-center justify-between">
@@ -407,6 +419,12 @@ support@digicoders.in | www.digicoders.in`;
                 Branch Name
               </label>
               <p className="text-gray-900">{studentData?.branch?.name}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Batch
+              </label>
+              {batchData?.map((b)=>(<p className="text-gray-900">{b.batchName || "N/A"},({b?.startDate?.split('T')[0] || "N/A"})</p>)) || "NA"}
             </div>
           </div>
         </div>

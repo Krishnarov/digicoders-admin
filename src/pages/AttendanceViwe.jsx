@@ -40,8 +40,10 @@ function AttendanceView() {
     endDate: "",
   });
   const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
-  
-  const batchName = batches.find((batch) => batch._id === selectedBatch)?.batchName || 'Unknown';
+
+  const batchName =
+    batches.find((batch) => batch._id === selectedBatch)?.batchName ||
+    "Unknown";
 
   // Fetch batches
   const fetchBatches = async () => {
@@ -59,7 +61,7 @@ function AttendanceView() {
       setLoading(true);
       const res = await axios.get(`/attendance/batch/${batchId}`);
       console.log("API Response:", res);
-      
+
       // Handle both array and object response formats
       const data = Array.isArray(res.data) ? res.data : [res.data];
       setAttendanceData(data || []);
@@ -131,7 +133,7 @@ function AttendanceView() {
     return [...records].sort((a, b) => {
       const nameA = a.studentId?.studentName || "Unknown";
       const nameB = b.studentId?.studentName || "Unknown";
-      
+
       if (sortOrder === "asc") {
         return nameA.localeCompare(nameB);
       } else {
@@ -140,89 +142,106 @@ function AttendanceView() {
     });
   };
 
-  const exportToExcel = () => {
-    if (filteredData.length === 0) return;
+ const exportToExcel = () => {
+  if (filteredData.length === 0) return;
 
-    // Group attendance by student
-    const studentAttendanceMap = {};
-    
-    // Process each day's attendance
-    filteredData.forEach(attendanceRecord => {
-      const date = new Date(attendanceRecord.date);
-      const dayOfMonth = date.getDate();
-      
-      attendanceRecord.records.forEach(record => {
-        const studentId = record.studentId?._id || "unknown";
-        
-        if (!studentAttendanceMap[studentId]) {
-          studentAttendanceMap[studentId] = {
-            studentName: record.studentId?.studentName || "Unknown",
-            fatherName: record.studentId?.fatherName || "N/A",
-            attendance: {}
-          };
-        }
-        
-        // Store attendance status for this day
-        studentAttendanceMap[studentId].attendance[dayOfMonth] = record.status;
-      });
-    });
+  // Group attendance by student
+  const studentAttendanceMap = {};
 
-    // Get all unique days (1-31) from the filtered data
-    const allDays = [...new Set(
-      filteredData.flatMap(record => {
-        const day = new Date(record.date).getDate();
-        return day;
-      })
-    )].sort((a, b) => a - b);
+  // Process each day's attendance
+  filteredData.forEach((attendanceRecord) => {
+    const dateObj = new Date(attendanceRecord.date);
+    const formattedDate = dateObj
+      .toLocaleDateString("en-GB") // 02/09/2025
+      .replace(/\//g, "-");        // 02-09-2025
 
-    // Prepare worksheet data in the required format
-    const worksheetData = [
-      ["", `Batch : ${batchName || "Unknown"} , Date : ${filters.startDate || "Start"} To ${filters.endDate || "End"}`],
-      ["Student Name", "Father Name", ...allDays.map(day => `${day}.0`)]
-    ];
+    attendanceRecord.records.forEach((record) => {
+      const studentId = record.studentId?._id || "unknown";
 
-    // Convert student map to array and sort alphabetically
-    const sortedStudents = Object.values(studentAttendanceMap).sort((a, b) => {
-      if (sortOrder === "asc") {
-        return a.studentName.localeCompare(b.studentName);
-      } else {
-        return b.studentName.localeCompare(a.studentName);
+      if (!studentAttendanceMap[studentId]) {
+        studentAttendanceMap[studentId] = {
+          studentName: record.studentId?.studentName || "Unknown",
+          fatherName: record.studentId?.fatherName || "N/A",
+          attendance: {},
+        };
       }
+
+      // Store attendance status for this full date
+      studentAttendanceMap[studentId].attendance[formattedDate] =
+        record.status;
+    });
+  });
+
+  // Get all unique formatted dates
+  const allDays = [
+    ...new Set(
+      filteredData.map((record) => {
+        return new Date(record.date)
+          .toLocaleDateString("en-GB")
+          .replace(/\//g, "-");
+      })
+    ),
+  ].sort((a, b) => {
+    const [d1, m1, y1] = a.split("-").map(Number);
+    const [d2, m2, y2] = b.split("-").map(Number);
+    return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+  });
+
+  // Prepare worksheet data
+  const worksheetData = [
+    [
+      "",
+      `Batch : ${batchName || "Unknown"} , Date : ${
+        filters.startDate || "Start"
+      } To ${filters.endDate || "End"}`,
+    ],
+    ["Student Name", "Father Name", ...allDays],
+  ];
+
+  // Convert student map to array and sort alphabetically
+  const sortedStudents = Object.values(studentAttendanceMap).sort((a, b) => {
+    if (sortOrder === "asc") {
+      return a.studentName.localeCompare(b.studentName);
+    } else {
+      return b.studentName.localeCompare(a.studentName);
+    }
+  });
+
+  // Add each student's data
+  sortedStudents.forEach((student) => {
+    const row = [student.studentName, student.fatherName];
+
+    // Add attendance status for each day
+    allDays.forEach((day) => {
+      row.push(student.attendance[day] || "");
     });
 
-    // Add each student's data
-    sortedStudents.forEach(student => {
-      const row = [student.studentName, student.fatherName];
-      
-      // Add attendance status for each day
-      allDays.forEach(day => {
-        row.push(student.attendance[day] || "");
-      });
-      
-      worksheetData.push(row);
-    });
+    worksheetData.push(row);
+  });
 
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
+  // Create worksheet & workbook
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
 
-    // Generate Excel file
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const data = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+  // Generate Excel file
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+  const data = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
 
-    // Get date range for filename
-    const dateRange = filters.startDate && filters.endDate 
+  // Get date range for filename
+  const dateRange =
+    filters.startDate && filters.endDate
       ? `${filters.startDate}_to_${filters.endDate}`
-      : 'all_dates';
+      : "all_dates";
 
-    saveAs(data, `attendance_${batchName}_${dateRange}.xlsx`);
-  };
+  saveAs(data, `attendance_${batchName}_${dateRange}.xlsx`);
+};
+
 
   const getOverallStats = () => {
     const totalRecords = filteredData.reduce(
@@ -244,8 +263,8 @@ function AttendanceView() {
   const stats = getOverallStats();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 md:py-6 lg:py-8">
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 max-w-6xl">
+    
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 lg:mb-8 gap-3">
           <div className="flex items-center flex-wrap">
@@ -280,7 +299,7 @@ function AttendanceView() {
                   </MenuItem>
                   {batches.map((batch) => (
                     <MenuItem key={batch._id} value={batch._id}>
-                      {batch.batchName} ({batch.trainingType?.name })
+                      {batch.batchName} ({batch.trainingType?.name})
                     </MenuItem>
                   ))}
                 </Select>
@@ -322,7 +341,9 @@ function AttendanceView() {
               <Button
                 variant="outlined"
                 onClick={toggleSortOrder}
-                startIcon={sortOrder === "asc" ? <ArrowUpward /> : <ArrowDownward />}
+                startIcon={
+                  sortOrder === "asc" ? <ArrowUpward /> : <ArrowDownward />
+                }
                 className="flex-1 md:flex-none"
               >
                 Sort A-Z
@@ -366,10 +387,11 @@ function AttendanceView() {
                   {stats.presentCount}
                 </Typography>
                 <Typography variant="body2" className="text-green-600 mt-1">
-                  {stats.totalRecords > 0 ? 
-                    `${Math.round((stats.presentCount / stats.totalRecords) * 100)}% attendance` 
-                    : '0%'
-                  }
+                  {stats.totalRecords > 0
+                    ? `${Math.round(
+                        (stats.presentCount / stats.totalRecords) * 100
+                      )}% attendance`
+                    : "0%"}
                 </Typography>
               </CardContent>
             </Card>
@@ -383,10 +405,11 @@ function AttendanceView() {
                   {stats.absentCount}
                 </Typography>
                 <Typography variant="body2" className="text-red-600 mt-1">
-                  {stats.totalRecords > 0 ? 
-                    `${Math.round((stats.absentCount / stats.totalRecords) * 100)}% absence` 
-                    : '0%'
-                  }
+                  {stats.totalRecords > 0
+                    ? `${Math.round(
+                        (stats.absentCount / stats.totalRecords) * 100
+                      )}% absence`
+                    : "0%"}
                 </Typography>
               </CardContent>
             </Card>
@@ -411,23 +434,32 @@ function AttendanceView() {
         {filteredData.length > 0 ? (
           <div className="space-y-6">
             {filteredData.map((attendanceRecord) => (
-              <Paper key={attendanceRecord._id} className="p-4 md:p-6 shadow-md">
+              <Paper
+                key={attendanceRecord._id}
+                className="p-4 md:p-6 shadow-md"
+              >
                 {/* Header with date and summary */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                   <div>
-                    <Typography variant="h6" className="font-semibold text-gray-800">
-                      {new Date(attendanceRecord.date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
+                    <Typography
+                      variant="h6"
+                      className="font-semibold text-gray-800"
+                    >
+                      {new Date(attendanceRecord.date).toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
                     </Typography>
                     <Typography variant="body2" className="text-gray-600 mt-1">
-                      Marked by: {attendanceRecord.attendBy?.name || 'Unknown'}
+                      Marked by: {attendanceRecord.attendBy?.name || "Unknown"}
                     </Typography>
                   </div>
-                  
+
                   <div className="flex gap-3 flex-wrap">
                     <Chip
                       icon={<Person className="w-4 h-4" />}
@@ -451,45 +483,67 @@ function AttendanceView() {
                 {/* Students list */}
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <Typography variant="subtitle2" className="font-medium text-gray-700">
+                    <Typography
+                      variant="subtitle2"
+                      className="font-medium text-gray-700"
+                    >
                       Students Attendance:
                     </Typography>
                     <Chip
-                      icon={sortOrder === "asc" ? <ArrowUpward /> : <ArrowDownward />}
+                      icon={
+                        sortOrder === "asc" ? (
+                          <ArrowUpward />
+                        ) : (
+                          <ArrowDownward />
+                        )
+                      }
                       label={`Sorted ${sortOrder === "asc" ? "A-Z" : "Z-A"}`}
                       size="small"
                       variant="outlined"
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {sortStudentsAlphabetically(attendanceRecord.records).map((record, index) => (
-                      <div
-                        key={index}
-                        className={`p-3 rounded-lg border ${
-                          record.status === "Present"
-                            ? "bg-green-50 border-green-200"
-                            : "bg-red-50 border-red-200"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <Typography variant="body2" className="font-medium">
-                              {record.studentId?.studentName || "Unknown Student"}
-                            </Typography>
-                            <Typography variant="caption" className="text-gray-600">
-                              {record.studentId?.fatherName || "N/A"}
-                            </Typography>
+                    {sortStudentsAlphabetically(attendanceRecord.records).map(
+                      (record, index) => (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-lg border ${
+                            record.status === "Present"
+                              ? "bg-green-50 border-green-200"
+                              : "bg-red-50 border-red-200"
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <Typography
+                                variant="body2"
+                                className="font-medium"
+                              >
+                                {record.studentId?.studentName ||
+                                  "Unknown Student"}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                className="text-gray-600"
+                              >
+                                {record.studentId?.fatherName || "N/A"}
+                              </Typography>
+                            </div>
+                            <Chip
+                              label={record.status}
+                              color={
+                                record.status === "Present"
+                                  ? "success"
+                                  : "error"
+                              }
+                              size="small"
+                              className="text-xs"
+                            />
                           </div>
-                          <Chip
-                            label={record.status}
-                            color={record.status === "Present" ? "success" : "error"}
-                            size="small"
-                            className="text-xs"
-                          />
                         </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </div>
               </Paper>
@@ -504,7 +558,9 @@ function AttendanceView() {
                 : "No attendance records found for this batch"}
             </Typography>
             <Typography variant="body2" className="text-gray-500">
-              {loading ? "Loading attendance data..." : "Try selecting a different date range or check back later."}
+              {loading
+                ? "Loading attendance data..."
+                : "Try selecting a different date range or check back later."}
             </Typography>
           </Paper>
         ) : (
@@ -516,7 +572,7 @@ function AttendanceView() {
           </Paper>
         )}
       </div>
-    </div>
+    
   );
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -7,15 +7,16 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function QrCode() {
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ 
-    name: "", 
-    image: null, 
-    upi: "", 
-    bankName: "" 
+  const [formData, setFormData] = useState({
+    name: "",
+    image: null,
+    upi: "",
+    bankName: "",
   });
   const [preview, setPreview] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -24,9 +25,9 @@ function QrCode() {
   const getAllQrCodes = async () => {
     try {
       const res = await axios.get("/qrcode");
-      console.log(res.data.data);
       setqrcodes(res.data.data);
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.log(error);
     }
   };
@@ -63,7 +64,11 @@ function QrCode() {
               placement="top"
             >
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -76,15 +81,16 @@ function QrCode() {
     {
       label: "QR Code",
       accessor: "image",
-      Cell: ({ row }) => (
+      Cell: ({ row }) =>
         row.image?.url ? (
-          <img 
-            src={row.image.url} 
-            alt="QR Code" 
+          <img
+            src={row.image.url}
+            alt="QR Code"
             className="h-12 w-12 object-contain"
           />
-        ) : "No Image"
-      )
+        ) : (
+          "No Image"
+        ),
     },
     {
       label: "Status",
@@ -104,7 +110,11 @@ function QrCode() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
@@ -113,11 +123,11 @@ function QrCode() {
   ];
 
   const handleEdit = (row) => {
-    setFormData({ 
-      name: row.name, 
-      upi: row.upi, 
-      bankName: row.bankName, 
-      image: null 
+    setFormData({
+      name: row.name,
+      upi: row.upi,
+      bankName: row.bankName,
+      image: null,
     });
     setPreview(row.image?.url); // Assuming your API returns imageUrl
     setEditId(row._id);
@@ -127,9 +137,13 @@ function QrCode() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/qrcode/${id}`);
+      const res = await axios.delete(`/qrcode/${id}`);
       getAllQrCodes();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting qr code:", error);
     } finally {
       setLoading("");
@@ -138,11 +152,15 @@ function QrCode() {
 
   const toggleStatus = async (data) => {
     try {
-      setLoading(true);
-      await axios.put(`/qrcode/${data._id}`, {
+      setLoading(`status-${data._id}`);
+      const res = await axios.put(`/qrcode/${data._id}`, {
         isActive: !data.isActive,
       });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading(false);
@@ -160,18 +178,23 @@ function QrCode() {
     }
 
     try {
-      setLoading(true);
+      let res;
+      setLoading("Save");
       if (editId) {
-        await axios.put(`/qrcode/${editId}`, formDataToSend);
+        res = await axios.put(`/qrcode/${editId}`, formDataToSend);
       } else {
-        await axios.post("/qrcode", formDataToSend);
+        res = await axios.post("/qrcode", formDataToSend);
       }
-      handleClose();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
       getAllQrCodes();
+      handleClose();
     }
   };
 
@@ -206,8 +229,8 @@ function QrCode() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+     
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -260,7 +283,7 @@ function QrCode() {
               autoFocus
               required
             />
-            
+
             <TextField
               label="Bank Name"
               name="bankName"
@@ -270,7 +293,7 @@ function QrCode() {
               variant="outlined"
               required
             />
-            
+
             <TextField
               label="UPI ID"
               name="upi"
@@ -331,7 +354,7 @@ function QrCode() {
           </Stack>
         </CustomModal>
       </div>
-    </div>
+    
   );
 }
 

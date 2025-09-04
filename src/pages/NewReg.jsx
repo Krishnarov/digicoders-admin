@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Eye, Check, X, Printer } from "lucide-react";
+import {
+  Home,
+  ChevronRight,
+  Eye,
+  Check,
+  X,
+  Printer,
+  Loader2,
+} from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, Chip, Tooltip, Dialog, DialogContent, IconButton } from "@mui/material";
+import {
+  Button,
+  Chip,
+  Tooltip,
+  Dialog,
+  DialogContent,
+  IconButton,
+} from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
@@ -10,6 +25,7 @@ import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 import useGetCount from "../hooks/useGetCount";
 import { Close } from "@mui/icons-material";
+import { toast } from "react-toastify";
 
 function NewReg() {
   const students = useSelector((state) => state.student.data).filter(
@@ -18,7 +34,7 @@ function NewReg() {
   const fetchTechnology = useGetTechnology();
   const fetchStudents = useGetStudents();
   const fetchCount = useGetCount();
- 
+
   useEffect(() => {
     fetchTechnology();
     fetchStudents();
@@ -27,18 +43,18 @@ function NewReg() {
   const [loading, setLoading] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
-  
+
   const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
   };
-  
+
   const handleQrView = (row) => {
     if (row.qrcode && row.qrcode.image && row.qrcode.image.url) {
       setSelectedQrCode(row.qrcode.image.url);
       setQrModalOpen(true);
     }
   };
-  
+
   const handleQrModalClose = () => {
     setQrModalOpen(false);
     setSelectedQrCode(null);
@@ -69,7 +85,11 @@ function NewReg() {
               onClick={() => handleAccept(row._id)}
               disabled={row.status === "accepted"}
             >
-              <Check size={20} />
+              {loading === `Accept-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <Check size={20} />
+              )}
             </button>
           </Tooltip>
           <Tooltip
@@ -81,10 +101,14 @@ function NewReg() {
               onClick={() => handleReject(row._id)}
               disabled={row.status === "rejected"}
             >
-              <X size={20} />
+              {loading === `Reject-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <X size={20} />
+              )}
             </button>
           </Tooltip>
-           <Tooltip
+          <Tooltip
             title={<span className="font-bold ">Print</span>}
             placement="top"
           >
@@ -98,7 +122,7 @@ function NewReg() {
         </div>
       ),
     },
-    
+
     {
       label: "Tra Fee Status",
       accessor: "trainingFeeStatus",
@@ -128,7 +152,7 @@ function NewReg() {
     { label: "Father Name", accessor: "fatherName", filter: false },
     { label: "Mobile", accessor: "mobile", filter: false },
     { label: "Whatshapp", accessor: "whatshapp", filter: false },
-    { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
+    { label: "Alternate Mobile", accessor: "alternateMobile", filter: false },
     { label: "College Name", accessor: "collegeName", filter: true },
     { label: "Edu Year", accessor: "eduYear", filter: true },
     {
@@ -153,11 +177,12 @@ function NewReg() {
       show: true,
     },
     { label: "Amount", accessor: "amount", filter: false, show: true },
-    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
+    { label: "Total Fee", accessor: "totalFee", filter: false, show: true },
     { label: "Discount", accessor: "discount", filter: false, show: true },
-    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
-    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
-    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
+    { label: "Final Fee", accessor: "finalFee", filter: false, show: true },
+    { label: "Paid Amount", accessor: "paidAmount", filter: false, show: true },
+    { label: "Due Amount", accessor: "dueAmount", filter: false, show: true },
+    { label: "tnx Id", accessor: "tnxId", filter: false, show: true },
     {
       label: "Branch",
       accessor: "branch.name",
@@ -179,10 +204,17 @@ function NewReg() {
       show: true,
     },
     {
+      label: "Reg Date",
+      accessor: "createdAt",
+      Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
+      filter: false,
+      show: true,
+    },
+    {
       label: "Qr code",
       accessor: "qrcode",
       Cell: ({ row }) => (
-        <div 
+        <div
           className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
           onClick={() => handleQrView(row)}
         >
@@ -195,43 +227,46 @@ function NewReg() {
     { label: "Remark", accessor: "remark", filter: false, show: true },
   ];
 
-
   const handleAccept = async (id) => {
     try {
-      setLoading(true);
-      await axios.patch(`/registration/status/${id}`, {
+      setLoading(`Accept-${id}`);
+      const res = await axios.patch(`/registration/status/${id}`, {
         status: "accepted",
         acceptStatus: "accepted",
       });
-      // Refresh student data
-      await fetchStudents();
-      await fetchCount()
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error accepting registration:", error);
     } finally {
       setLoading(false);
+      fetchCount();
       fetchStudents();
     }
   };
 
   const handleReject = async (id) => {
     try {
-      setLoading(true);
-      await axios.patch(`/registration/status/${id}`, {
+      setLoading(`Reject-${id}`);
+      const res = await axios.patch(`/registration/status/${id}`, {
         status: "rejected",
         acceptStatus: "rejected",
       });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
       // Refresh student data
-      useGetStudents();
-      await fetchCount()
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error rejecting registration:", error);
     } finally {
       setLoading(false);
+      fetchCount();
       fetchStudents();
     }
   };
-
 
   // Format date to Indian format
   const formatDate = (dateString) => {
@@ -245,11 +280,11 @@ function NewReg() {
       minute: "2-digit",
     });
   };
-console.log(students);
+  // console.log(students);
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -292,9 +327,9 @@ console.log(students);
           <DialogContent className="flex flex-col items-center justify-center p-6">
             {selectedQrCode ? (
               <>
-                <img 
-                  src={selectedQrCode} 
-                  alt="QR Code" 
+                <img
+                  src={selectedQrCode}
+                  alt="QR Code"
                   className="w-72 h-72 object-contain border rounded-lg"
                 />
                 {/* <p className="mt-4 text-gray-600">Scan this QR code for payment</p> */}
@@ -305,7 +340,7 @@ console.log(students);
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+
   );
 }
 

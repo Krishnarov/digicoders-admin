@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -9,6 +9,7 @@ import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetEducations from "../hooks/useGetEducations";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function Education() {
   const educations = useSelector((state) => state.education.data);
@@ -46,15 +47,6 @@ function Education() {
             onConfirm={() => handleDelete(row._id)}
             loading={loading}
           >
-            {/* <Button
-              variant="outlined"
-              size="small"
-              color="error"
-              startIcon={<Trash2 size={16} />}
-              // onClick={() => handleDelete(row._id)}
-            >
-              {loading === `deleting-${row._id}` ? "Deleting..." : "Delete"}
-            </Button> */}
             <Tooltip
               title={<span className="font-bold ">Delete</span>}
               placement="top"
@@ -63,15 +55,19 @@ function Education() {
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
                 disabled={row.status === "rejected"}
               >
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
         </div>
       ),
     },
-    { label: "Education Name", accessor: "name",  },
-     {
+    { label: "Education Name", accessor: "name" },
+    {
       label: "Status",
       accessor: "isActive",
       Cell: ({ row }) => (
@@ -89,7 +85,11 @@ function Education() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
@@ -106,9 +106,13 @@ function Education() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/education/${id}?action=delete`);
+      const res = await axios.delete(`/education/${id}?action=delete`);
       fetchEducations();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting education:", error);
     } finally {
       setLoading("");
@@ -118,13 +122,17 @@ function Education() {
 
   const toggleStatus = async (id) => {
     try {
-      setLoading(true);
+      setLoading(`status-${id}`);
       const item = educations.find((item) => item._id === id);
-      await axios.put(`/education/${id}?action=update`, {
+      const res = await axios.put(`/education/${id}?action=update`, {
         isActive: !item.isActive,
       });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
       fetchEducations();
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading(false);
@@ -134,19 +142,23 @@ function Education() {
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
+       setLoading("Save");
+      let res;
       if (editId) {
-        await axios.put(`/education/${editId}?action=update`, formData);
+        res = await axios.put(`/education/${editId}?action=update`, formData);
       } else {
-        await axios.post("/education?action=add", formData);
+        res = await axios.post("/education?action=add", formData);
       }
-      handleClose();
-      fetchEducations();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
       fetchEducations();
+      handleClose();
     }
   };
 
@@ -161,8 +173,8 @@ function Education() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+ 
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -218,7 +230,7 @@ function Education() {
           </Stack>
         </CustomModal>
       </div>
-    </div>
+     
   );
 }
 

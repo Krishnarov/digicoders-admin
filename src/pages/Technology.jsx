@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -9,6 +9,7 @@ import axios from "../axiosInstance";
 import useGetTechnology from "../hooks/useGetTechnology";
 import { useSelector } from "react-redux";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function Technology() {
   const data = useSelector((state) => state.technology.data);
@@ -32,15 +33,6 @@ function Technology() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          {/* <Button
-            variant="outlined"
-            size="small"
-            color="primary"
-            startIcon={<Edit2 size={16} />}
-            onClick={() => handleEdit(row)}
-          >
-            Edit
-          </Button> */}
           <Tooltip
             title={<span className="font-bold ">Edit</span>}
             placement="top"
@@ -75,7 +67,11 @@ function Technology() {
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
                 disabled={row.status === "rejected"}
               >
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -103,7 +99,12 @@ function Technology() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {" "}
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
@@ -112,7 +113,7 @@ function Technology() {
   ];
 
   const handleEdit = (row) => {
-    setFormData({ name: row.name, duration: row.duration,price: row.price });
+    setFormData({ name: row.name, duration: row.duration, price: row.price });
     setEditId(row._id);
     setOpen(true);
   };
@@ -120,10 +121,14 @@ function Technology() {
   const handleDelete = async (id) => {
     setLoading(`deleting-${id}`);
     try {
-      await axios.delete(`/technology/delete/${id}`, {
+      const res = await axios.delete(`/technology/delete/${id}`, {
         withCredentials: true,
       });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting technology:", error);
     } finally {
       fetchTechnology();
@@ -133,10 +138,11 @@ function Technology() {
 
   const toggleStatus = async (id) => {
     try {
+      setLoading(`status-${id}`);
       const item = data.find((item) => item._id === id);
       const newStatus = !item.isActive;
 
-      await axios.patch(
+      const res = await axios.patch(
         `/technology/update/${id}`,
         {
           isActive: newStatus,
@@ -145,28 +151,39 @@ function Technology() {
           withCredentials: true,
         }
       );
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       fetchTechnology();
+      setLoading("");
     }
   };
 
   const handleSubmit = async () => {
     try {
+       setLoading("Save");
+      let res;
       if (editId) {
-        await axios.patch(`/technology/update/${editId}`, formData, {
+        res = await axios.patch(`/technology/update/${editId}`, formData, {
           withCredentials: true,
         });
       } else {
-        await axios.post("/technology/create", formData, {
+        res = await axios.post("/technology/create", formData, {
           withCredentials: true,
         });
       }
-      handleClose();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
+      handleClose();
       fetchTechnology();
     }
   };
@@ -182,8 +199,8 @@ function Technology() {
   };
 
   return (
-    <div className="bg-gray-50  py-8">
-      <div className="max-w-6xl mx-auto px-4">
+ 
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -215,6 +232,7 @@ function Technology() {
         <CustomModal
           open={open}
           onClose={handleClose}
+          loading={loading}
           onSubmit={handleSubmit}
           title={editId ? "Edit Technology" : "Add New Technology"}
           submitText={editId ? "Update" : "Create"}
@@ -258,7 +276,7 @@ function Technology() {
           </Stack>
         </CustomModal>
       </div>
-    </div>
+    
   );
 }
 

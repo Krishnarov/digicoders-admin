@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function Collages() {
   const [collegeNames, setCollegeNames] = useState([]);
@@ -17,6 +18,7 @@ function Collages() {
 
       setCollegeNames(response.data.colleges);
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error fetching college names:", error);
     }
   };
@@ -53,15 +55,7 @@ function Collages() {
             onConfirm={() => handleDelete(row._id)}
             loading={loading}
           >
-            {/* <Button
-              variant="outlined"
-              size="small"
-              color="error"
-              startIcon={<Trash2 size={16} />}
-              // onClick={() => handleDelete(row._id)}
-            >
-              {loading === `deleting-${row._id}` ? "Deleting..." : "Delete"}
-            </Button> */}
+           
             <Tooltip
               title={<span className="font-bold ">Delete</span>}
               placement="top"
@@ -70,7 +64,8 @@ function Collages() {
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
                 disabled={row.status === "rejected"}
               >
-                <Trash2 size={20} />
+                {/* <Trash2 size={20} /> */}
+                {loading===`deleting-${row._id}` ?  <Loader2 className="animate-spin" />:<Trash2 size={20} />}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -95,8 +90,8 @@ function Collages() {
             <span
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
+              } `}
+            >{loading===`status-${row._id}` &&  <Loader2 className="animate-spin w-4 h-4" />}</span>
           </button>
         </div>
       ),
@@ -113,8 +108,13 @@ function Collages() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/college/${id}`);
+      const res=await axios.delete(`/college/${id}`);
+       if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
+
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting education:", error);
     } finally {
       fetchCollegeNames();
@@ -124,12 +124,15 @@ function Collages() {
 
   const toggleStatus = async (row) => {
     try {
-      setLoading(true);
+      setLoading(`status-${row._id}`);
       const res = await axios.put(`/college/${row._id}`, {
         isActive: !row.isActive,
       });
-      console.log(res);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       fetchCollegeNames();
@@ -139,19 +142,23 @@ function Collages() {
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
-
+ setLoading("Save");
+      let res;
       if (editId) {
-        await axios.put(`/college/${editId}`, formData);
+        res = await axios.put(`/college/${editId}`, formData);
       } else {
-        await axios.post("/college", formData);
+        res = await axios.post("/college", formData);
+      }
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
       }
 
-      handleClose();
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast.error(error.response.data.message || error.message);
     } finally {
       fetchCollegeNames();
+      handleClose();
       setLoading(false);
     }
   };
@@ -167,8 +174,8 @@ function Collages() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+     
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -224,7 +231,7 @@ function Collages() {
           </Stack>
         </CustomModal>
       </div>
-    </div>
+    
   );
 }
 

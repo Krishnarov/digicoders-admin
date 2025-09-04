@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Eye, Check, X, Printer } from "lucide-react";
+import { Home, ChevronRight, Eye, Check, X, Printer, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, Chip, Tooltip } from "@mui/material";
+import { Button, Chip, Dialog, DialogContent, IconButton, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetFee from "../hooks/useGetFee";
+import { Close } from "@mui/icons-material";
 
 function AcceptFee() {
   const fetchFee = useGetFee();
@@ -17,7 +18,8 @@ function AcceptFee() {
   const [loading, setLoading] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [selectedQrCode, setSelectedQrCode] = useState(null);
   useEffect(() => {
     fetchFee();
   }, []);
@@ -28,7 +30,7 @@ function AcceptFee() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip
+          {/* <Tooltip
             title={<span className="font-bold ">View</span>}
             placement="top"
           >
@@ -37,6 +39,22 @@ function AcceptFee() {
               onClick={() => handleView(row)}
             >
               <Eye size={20} />
+            </button>
+          </Tooltip> */}
+          <Tooltip
+            title={<span className="font-bold ">Reject</span>}
+            placement="top"
+          >
+            <button
+              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+              onClick={() => handleReject(row._id)}
+              disabled={row.status === "rejected"}
+            >
+              {loading === `Reject-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <X size={20} />
+              )}
             </button>
           </Tooltip>
           <Tooltip
@@ -50,96 +68,91 @@ function AcceptFee() {
               <Printer size={20} />
             </button>
           </Tooltip>
-
-          {/* <Button
-            variant="outlined"
-            size="small"
-            color="secondary"
-            startIcon={<Printer size={16} />}
-            onClick={() => handlePrint(row)}
-          >
-            Print
-          </Button> */}
         </div>
       ),
     },
     {
-      label: "Tnx Status",
-      accessor: "tnxStatus",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.tnxStatus}
-          color={row.tnxStatus === "paid" ? "success" : "warning"}
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
-    { label: "Receipt No", accessor: "receiptNo", filter: true },
-    {
-      label: "Student Name",
-      accessor: "registrationId.studentName",
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
-    },
-    {
-      label: "Mobile",
-      accessor: "registrationId.mobile",
-      Cell: ({ row }) => row.registrationId?.mobile || "N/A",
-    },
-    {
-      label: "Payment Date",
-      accessor: "paymentDate",
-      Cell: ({ row }) => formatDate(row.paymentDate),
-    },
-    {
-      label: "Amount",
-      accessor: "amount",
-      Cell: ({ row }) => `₹${row.amount}`,
-    },
-    {
-      label: "Status",
-      accessor: "status",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.status}
-          color={
-            row.status === "accepted"
-              ? "success"
-              : row.status === "rejected"
-              ? "error"
-              : "warning"
-          }
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
+          label: "Tnx Status",
+          accessor: "tnxStatus",
+          Cell: ({ row }) => (
+            <Chip
+              label={row.tnxStatus}
+              color={row.tnxStatus === "paid" ? "success" : "warning"}
+              variant="outlined"
+              size="small"
+            />
+          ),
+        },
+        { label: "Receipt No", accessor: "receiptNo" },
+    
+        {
+          label: "Student Name",
+          accessor: "registrationId.studentName",
+          Cell: ({ row }) => row.registrationId?.studentName || "N/A",
+        },
+        {
+          label: "Mobile",
+          accessor: "registrationId.mobile",
+          // Cell: ({ row }) => row.registrationId?.mobile || "N/A",show: true
+        },
+        {
+          label: "Payment Date",
+          accessor: "paymentDate",
+          Cell: ({ row }) => formatDate(row.paymentDate),
+        },
+        {
+          label: "Amount",
+          accessor: "amount",
+          Cell: ({ row }) => `₹${row.amount}`,
+        },
+        {
+          label: "Payment Type",
+          accessor: "paymentType",
+          filter: true,
+          show: true,
+        },
+        { label: "Payment mode", accessor: "mode", filter: true, show: true },
+        { label: "Total Fee", accessor: "totalFee", filter: false, show: true },
+        { label: "discount", accessor: "discount", filter: false, show: true },
+        { label: "Final Fee", accessor: "finalFee", filter: false, show: true },
+        { label: "Due Amount", accessor: "dueAmount", filter: false, show: true },
+        { label: "Paid Amount", accessor: "paidAmount", filter: false, show: true },
+        { label: "tnx Id", accessor: "tnxId", filter: false, show: true },
+        {
+          label: "Qr code",
+          accessor: "qrcode",
+          Cell: ({ row }) => (
+            <div
+              className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
+              onClick={() => handleQrView(row)}
+            >
+              {row.qrcode?.name}
+            </div>
+          ),
+          filter: false,
+          show: true,
+        },
+        { label: "Remark", accessor: "remark", filter: false, show: true },
   ];
-
+  const handleQrView = (row) => {
+    if (row.qrcode && row.qrcode.image && row.qrcode.image.url) {
+      setSelectedQrCode(row.qrcode.image.url);
+      setQrModalOpen(true);
+    }
+  };
+ const handleQrModalClose = () => {
+    setQrModalOpen(false);
+    setSelectedQrCode(null);
+  };
   const handleView = (row) => {
     setSelectedPayment(row);
     setViewModalOpen(true);
   };
 
-  const handleAccept = async (id) => {
-    try {
-      setLoading(true);
-      const res = await axios.patch(`/fee/status/${id}`, {
-        status: "accepted",
-      });
-      console.log(res);
-
-      fetchFee();
-    } catch (error) {
-      console.error("Error accepting payment:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleReject = async (id) => {
     try {
-      setLoading(true);
+      setLoading(`Reject-${id}`);
       await axios.patch(`/fee/status/${id}`, { status: "rejected" });
       fetchFee();
     } catch (error) {
@@ -171,8 +184,8 @@ function AcceptFee() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -414,8 +427,36 @@ function AcceptFee() {
             </div>
           )}
         </CustomModal>
+        {/* QR Code Modal */}
+                <Dialog
+                  open={qrModalOpen}
+                  onClose={handleQrModalClose}
+                  maxWidth="xs"
+                  fullWidth
+                >
+                  <div className="flex justify-between items-center p-4 border-b">
+                    <h2 className="text-xl font-semibold">QR Code</h2>
+                    <IconButton onClick={handleQrModalClose}>
+                      <Close />
+                    </IconButton>
+                  </div>
+                  <DialogContent className="flex flex-col items-center justify-center p-6">
+                    {selectedQrCode ? (
+                      <>
+                        <img
+                          src={selectedQrCode}
+                          alt="QR Code"
+                          className="w-72 h-72 object-contain border rounded-lg"
+                        />
+                        {/* <p className="mt-4 text-gray-600">Scan this QR code for payment</p> */}
+                      </>
+                    ) : (
+                      <p className="text-gray-500">No QR code available</p>
+                    )}
+                  </DialogContent>
+                </Dialog>
       </div>
-    </div>
+
   );
 }
 

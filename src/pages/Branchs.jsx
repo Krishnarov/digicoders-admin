@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Home, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import { Button, TextField, Tooltip } from "@mui/material";
 import CustomModal from "../components/CustomModal";
@@ -7,6 +7,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import { toast } from "react-toastify";
 
 function Branchs() {
   const [branches, setBranches] = useState([]);
@@ -21,6 +22,7 @@ function Branchs() {
       const response = await axios.get("/branches");
       if (response.data.success) setBranches(response.data.data);
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error fetching branches:", error);
     }
   };
@@ -36,7 +38,10 @@ function Branchs() {
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip title={<span className="font-bold">Edit</span>} placement="top">
+          <Tooltip
+            title={<span className="font-bold">Edit</span>}
+            placement="top"
+          >
             <button
               className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
@@ -55,7 +60,11 @@ function Branchs() {
               placement="top"
             >
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-                <Trash2 size={20} />
+                {loading === `deleting-${row._id}` ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Trash2 size={20} />
+                )}
               </button>
             </Tooltip>
           </DeleteConfirmationModal>
@@ -81,7 +90,12 @@ function Branchs() {
               className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
                 row.isActive ? "translate-x-6" : "translate-x-1"
               }`}
-            />
+            >
+              {" "}
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
           </button>
         </div>
       ),
@@ -100,8 +114,12 @@ function Branchs() {
   const handleDelete = async (id) => {
     try {
       setLoading(`deleting-${id}`);
-      await axios.delete(`/branches/${id}`);
+      const res = await axios.delete(`/branches/${id}`);
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error deleting branch:", error);
     } finally {
       fetchBranches();
@@ -112,9 +130,15 @@ function Branchs() {
   // ✅ Toggle Status
   const toggleStatus = async (row) => {
     try {
-      setLoading(true);
-      await axios.put(`/branches/${row._id}`, { isActive: !row.isActive });
+      setLoading(`status-${row._id}`);
+      const res = await axios.put(`/branches/${row._id}`, {
+        isActive: !row.isActive,
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       fetchBranches();
@@ -125,19 +149,22 @@ function Branchs() {
   // ✅ Submit
   const handleSubmit = async () => {
     try {
-      setLoading(true);
-
+      setLoading("Save");
+      let res;
       if (editId) {
-        await axios.put(`/branches/${editId}`, formData);
+        res = await axios.put(`/branches/${editId}`, formData);
       } else {
-        await axios.post("/branches", formData);
+        res = await axios.post("/branches", formData);
       }
-
-      handleClose();
+      if (res.data.success) {
+        toast.success(res.data.message || "successfull");
+      }
     } catch (error) {
+      toast.error(error.response.data.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       fetchBranches();
+      handleClose();
       setLoading(false);
     }
   };
@@ -154,8 +181,8 @@ function Branchs() {
   };
 
   return (
-    <div className="bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+ 
+      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center">
@@ -211,7 +238,7 @@ function Branchs() {
           </Stack>
         </CustomModal>
       </div>
-    </div>
+  
   );
 }
 
