@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
+
 import {
   Home,
   ChevronRight,
@@ -13,12 +13,14 @@ import { useSelector } from "react-redux";
 import axios from "../axiosInstance";
 import Select from "react-select";
 import { toast } from "react-toastify";
-import { QRCodeCanvas } from "qrcode.react";
+
 import useGetTranning from "../hooks/useGetTranning";
 import useGetTechnology from "../hooks/useGetTechnology";
 import useGetEducations from "../hooks/useGetEducations";
 import fetchCounts from "../hooks/useGetCount";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Dialog, DialogContent, IconButton } from "@mui/material";
+import { Close } from "@mui/icons-material";
 const AddStudent = () => {
   // Redux state
   const admin = useSelector((state) => state.auth.user);
@@ -43,7 +45,9 @@ const AddStudent = () => {
   const [EditId, setEditId] = useState("");
   const [studentEnrollments, setStudentEnrollments] = useState([]);
   const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
-  const [showQr, setshowQr] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [selectedQrCode, setSelectedQrCode] = useState(null);
+
   const searchParams = useParams();
   const navigate = useNavigate();
 
@@ -78,7 +82,6 @@ const AddStudent = () => {
 
   // Custom hooks
   const fetchTranningData = useGetTranning();
-  const fetchTechnology = useGetTechnology();
   const fetchEducation = useGetEducations();
 
   // Check if we're in edit mode on component mount
@@ -111,24 +114,35 @@ const AddStudent = () => {
       collegeNames
         .filter((data) => data.isActive)
         .map((data) => ({
-          value: data.name,
+          value: data._id,
           label: data.name,
         })),
     [collegeNames]
   );
-
-  // UPI link generation
-  const upiLink = React.useMemo(() => {
-    const qrData = qrcodes.find((qr) => qr._id === formData.qrcode);
-    return `upi://pay?pa=${qrData?.upi || ""}&pn=${encodeURIComponent(
-      formData.studentName
-    )}&am=${formData.amount}&cu=INR`;
-  }, [formData.qrcode, formData.studentName, formData.amount, qrcodes]);
+  const handleQrView = () => {
+    if (formData.qrcode) {
+      // QR code ID से actual QR code data find करें
+      const selectedQr = qrcodes.find((qr) => qr._id === formData.qrcode);
+      if (selectedQr && selectedQr.image && selectedQr.image.url) {
+        setSelectedQrCode(selectedQr.image.url);
+        setQrModalOpen(true);
+      } else {
+        toast.error("QR code not found or image not available");
+      }
+    } else {
+      toast.error("Please select a QR code first");
+    }
+  };
+  const handleQrModalClose = () => {
+    setQrModalOpen(false);
+    setSelectedQrCode(null);
+  };
 
   // Data fetching functions
   const fetchCollegeNames = useCallback(async () => {
     try {
-      const response = await axios.get("/college");
+const params={limit:1000}
+      const response = await axios.get("/college",{params});
       setCollegeNames(response.data.colleges);
     } catch (error) {
       console.error("Error fetching college names:", error);
@@ -287,7 +301,7 @@ const AddStudent = () => {
       try {
         await Promise.all([
           fetchTranningData(),
-          fetchTechnology(),
+
           fetchEducation(),
           fetchCollegeNames(),
           fetchHr(),
@@ -304,7 +318,7 @@ const AddStudent = () => {
     fetchInitialData();
   }, [
     fetchTranningData,
-    fetchTechnology,
+
     fetchEducation,
     fetchCollegeNames,
     fetchHr,
@@ -571,7 +585,7 @@ const AddStudent = () => {
       let res;
       if (isEditMode) {
         // Update existing student
-        console.log(registrationData);
+
 
         res = await axios.patch(
           `/registration/update/${EditId}`,
@@ -643,739 +657,763 @@ const AddStudent = () => {
   const finalAmount = formData.totalFee - formData.discount;
   const dueAmount = finalAmount - formData.amount;
   if (sameNum) formData.whatshapp = formData.mobile;
-  console.log(formData);
 
   return (
-
-      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
-        {/* Header */}
-        <div className="mb-6 pt-6">
-          <div className="flex items-center text-gray-600 mb-4 gap-4">
-            {" "}
+    <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
+      {/* Header */}
+      <div className="mb-6 pt-6">
+        <div className="flex items-center text-gray-600 mb-4 gap-4">
+          {" "}
+          {isEditMode && (
+            <button
+              onClick={() => navigate("/accepted")}
+              className="flex items-center text-blue-600 hover:text-blue-800 mr-2"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              Back
+            </button>
+          )}
+          <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-500 pr-5">
+            {isEditMode ? "Edit Student" : "Add Student"}
+          </h1>
+          <div className="flex items-center">
+            <Home className="w-5 h-5 text-blue-600" />
+            <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
+            <span className="text-gray-800">Dashboard</span>
             {isEditMode && (
-              <button
-                onClick={() => navigate("/accepted")}
-                className="flex items-center text-blue-600 hover:text-blue-800 mr-2"
-              >
-                <ArrowLeft className="w-5 h-5 mr-1" />
-                Back
-              </button>
+              <>
+                <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
+                <span className="text-gray-600">Edit Student</span>
+              </>
             )}
-            <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-500 pr-5">
-              {isEditMode ? "Edit Student" : "Add Student"}
-            </h1>
-            <div className="flex items-center">
-              <Home className="w-5 h-5 text-blue-600" />
-              <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
-              <span className="text-gray-800">Dashboard</span>
-              {isEditMode && (
-                <>
-                  <ChevronRight className="w-4 h-4 mx-2 text-gray-400" />
-                  <span className="text-gray-600">Edit Student</span>
-                </>
-              )}
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Status Message */}
-        {registrationStatus.message && (
-          <div
-            className={`mb-6 p-4 rounded-lg ${
-              registrationStatus.success
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            <div className="flex items-center">
-              {registrationStatus.success ? (
-                <CheckCircle className="w-5 h-5 mr-2" />
-              ) : (
-                <XCircle className="w-5 h-5 mr-2" />
-              )}
-              {registrationStatus.message}
+      {/* Status Message */}
+      {registrationStatus.message && (
+        <div
+          className={`mb-6 p-4 rounded-lg ${
+            registrationStatus.success
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          <div className="flex items-center">
+            {registrationStatus.success ? (
+              <CheckCircle className="w-5 h-5 mr-2" />
+            ) : (
+              <XCircle className="w-5 h-5 mr-2" />
+            )}
+            {registrationStatus.message}
+          </div>
+        </div>
+      )}
+
+      {/* Form */}
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Student Mobile Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student Primary Mobile Number *
+            </label>
+            <input
+              type="number"
+              placeholder="Enter 10-digit mobile number"
+              className={`w-full px-4 py-3 border ${
+                errors.mobile ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.mobile}
+              onChange={(e) => handleInputChange("mobile", e.target.value)}
+              maxLength="10"
+              onBlur={getRegStu}
+              disabled={isEditMode}
+            />
+            {errors.mobile && (
+              <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>
+            )}
+            <div className="ml-2 mt-2">
+              <input
+                type="checkbox"
+                checked={sameNum}
+                onChange={(e) => setSame(e.target.checked)}
+              />{" "}
+              Same Number for WhatsApp
             </div>
           </div>
-        )}
 
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Student Mobile Number */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Primary Mobile Number *
-              </label>
+          {/* {!sameNum && ( */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              WhatsApp Number
+            </label>
+            <input
+              type="number"
+              placeholder="Enter 10-digit mobile number"
+              className={`w-full px-4 py-3 border ${
+                errors.whatshapp ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.whatshapp}
+              onChange={(e) => handleInputChange("whatshapp", e.target.value)}
+              maxLength="10"
+            />
+            {errors.whatshapp && (
+              <p className="mt-1 text-sm text-red-600">{errors.whatshapp}</p>
+            )}
+          </div>
+          {/* )} */}
+
+          {/* Student Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student Name *
+            </label>
+            <input
+              type="text"
+              placeholder="Enter Student Name"
+              className={`w-full px-4 py-3 border ${
+                errors.studentName ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.studentName}
+              onChange={(e) => handleInputChange("studentName", e.target.value)}
+            />
+            {errors.studentName && (
+              <p className="mt-1 text-sm text-red-600">{errors.studentName}</p>
+            )}
+          </div>
+
+          {/* Choose Training */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Choose Training *
+            </label>
+            <select
+              className={`w-full px-4 py-3 border ${
+                errors.training ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.training}
+              onChange={(e) => handleInputChange("training", e.target.value)}
+              disabled={isLoading || isEditMode}
+            >
+              <option value="">-Choose Training-</option>
+              {Trainings?.map((item) => (
+                <option value={item._id} key={item._id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            {errors.training && (
+              <p className="mt-1 text-sm text-red-600">{errors.training}</p>
+            )}
+          </div>
+
+          {/* Choose Technology */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Choose Technology *
+            </label>
+            <select
+              className={`w-full px-4 py-3 border ${
+                errors.technology ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.technology}
+              onChange={(e) => handleInputChange("technology", e.target.value)}
+            >
+              <option value="">-Choose Technology-</option>
+              {TechnologiesData?.map((tech) => (
+                <option key={tech._id} value={tech._id}>
+                  {tech.name}
+                </option>
+              ))}
+            </select>
+            {errors.technology && (
+              <p className="mt-1 text-sm text-red-600">{errors.technology}</p>
+            )}
+          </div>
+
+          {/* Select Your Education */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Your Education *
+            </label>
+            <select
+              className={`w-full px-4 py-3 border ${
+                errors.education ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.education}
+              onChange={(e) => handleInputChange("education", e.target.value)}
+              disabled={isLoading || isEditMode}
+            >
+              <option value="">-Select Your Education-</option>
+              {Edication?.map((edu) => (
+                <option key={edu._id} value={edu._id}>
+                  {edu.name}
+                </option>
+              ))}
+            </select>
+            {errors.education && (
+              <p className="mt-1 text-sm text-red-600">{errors.education}</p>
+            )}
+          </div>
+
+          {/* Select eduyear */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Year *
+            </label>
+            <select
+              className={`w-full px-4 py-3 border ${
+                errors.eduYear ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.eduYear}
+              onChange={(e) => handleInputChange("eduYear", e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">-Select Year-</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="Passout">Passout</option>
+            </select>
+            {errors.eduYear && (
+              <p className="mt-1 text-sm text-red-600">{errors.eduYear}</p>
+            )}
+          </div>
+
+          {/* Student Father's Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student Father's / Guardian's Name *
+            </label>
+            <input
+              type="text"
+              placeholder="Enter Student Father's Name"
+              className={`w-full px-4 py-3 border ${
+                errors.fatherName ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.fatherName}
+              onChange={(e) => handleInputChange("fatherName", e.target.value)}
+            />
+            {errors.fatherName && (
+              <p className="mt-1 text-sm text-red-600">{errors.fatherName}</p>
+            )}
+          </div>
+
+          {/* Student Email ID */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student Email ID
+            </label>
+            <input
+              type="email"
+              placeholder="Enter Student Email ID"
+              className={`w-full px-4 py-3 border ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              disabled={isLoading || isEditMode}
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+            )}
+          </div>
+
+          {/* Student Alternate Mobile */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student Alternate Mobile (Optional)
+            </label>
+            <input
+              type="tel"
+              placeholder="Enter 10-digit alternate mobile"
+              className={`w-full px-4 py-3 border ${
+                errors.alternateMobile ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.alternateMobile}
+              onChange={(e) =>
+                handleInputChange("alternateMobile", e.target.value)
+              }
+              maxLength="10"
+            />
+            {errors.alternateMobile && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.alternateMobile}
+              </p>
+            )}
+          </div>
+
+          {/* Manage hr */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Admission By *
+            </label>
+            <select
+              className={`w-full px-4 py-3 border ${
+                errors.hrName ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.hrName}
+              onChange={(e) => handleInputChange("hrName", e.target.value)}
+              disabled={isLoading || isEditMode}
+            >
+              <option value="">-Select HR Name-</option>
+              {hr
+                .filter((data) => data.isActive)
+                .map((data) => (
+                  <option key={data._id} value={data._id}>
+                    {data.name}
+                  </option>
+                ))}
+            </select>
+            {errors.hrName && (
+              <p className="mt-1 text-sm text-red-600">{errors.hrName}</p>
+            )}
+          </div>
+
+          {/* Branches */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Branch / Mode *
+            </label>
+            <select
+              className={`w-full px-4 py-3 border ${
+                errors.branch ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.branch}
+              onChange={(e) => handleInputChange("branch", e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="">-Select Branch-</option>
+              {branchs
+                .filter((data) => data.isActive)
+                .map((data) => (
+                  <option key={data._id} value={data._id}>
+                    {data.name}
+                  </option>
+                ))}
+            </select>
+            {errors.branch && (
+              <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
+            )}
+          </div>
+
+          {/* Student College Name */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student College Name *
+            </label>
+            <Select
+              options={collegeOptions}
+              placeholder="Search & select college name"
+              // value={
+              //   formData.collegeName
+              //     ? {
+              //         label: formData.collegeName,
+              //         value: formData.collegeName,
+              //       }
+              //     : null
+              // }
+              // onChange={(selectedOption) =>
+              //   handleInputChange("collegeName", selectedOption?.value || "")
+              // }
+              value={
+                collegeOptions.find(
+                  (opt) => opt.value === formData.collegeName
+                ) || null
+              }
+              onChange={(selectedOption) =>
+                handleInputChange("collegeName", selectedOption?.value || "")
+              }
+              classNamePrefix="react-select"
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  borderColor: errors.collegeName ? "red" : base.borderColor,
+                  boxShadow: state.isFocused
+                    ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+                    : base.boxShadow,
+                  "&:hover": {
+                    borderColor: errors.collegeName ? "red" : "#a0aec0",
+                  },
+                }),
+              }}
+            />
+            {errors.collegeName && (
+              <p className="mt-1 text-sm text-red-600">{errors.collegeName}</p>
+            )}
+          </div>
+
+          {/* Total Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Total Fee Amount *
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-3 text-gray-500">₹</span>
               <input
                 type="number"
-                placeholder="Enter 10-digit mobile number"
-                className={`w-full px-4 py-3 border ${
-                  errors.mobile ? "border-red-500" : "border-gray-300"
+                className={`w-full pl-8 px-4 py-3 border ${
+                  errors.totalFee ? "border-red-500" : "border-gray-300"
                 } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.mobile}
-                onChange={(e) => handleInputChange("mobile", e.target.value)}
-                maxLength="10"
-                onBlur={getRegStu}
-                disabled={isEditMode}
+                value={formData.totalFee}
+                disabled
               />
-              {errors.mobile && (
-                <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>
-              )}
-              <div className="ml-2 mt-2">
-                <input
-                  type="checkbox"
-                  checked={sameNum}
-                  onChange={(e) => setSame(e.target.checked)}
-                />{" "}
-                Same Number for WhatsApp
-              </div>
             </div>
+            {errors.totalFee && (
+              <p className="mt-1 text-sm text-red-600">{errors.totalFee}</p>
+            )}
+          </div>
 
-            {/* {!sameNum && ( */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WhatsApp Number
-              </label>
+          {/* Discount Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Discount Fee Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-3 text-gray-500">₹</span>
               <input
                 type="number"
-                placeholder="Enter 10-digit mobile number"
-                className={`w-full px-4 py-3 border ${
-                  errors.whatshapp ? "border-red-500" : "border-gray-300"
+                className={`w-full pl-8 px-4 py-3 border ${
+                  errors.discount ? "border-red-500" : "border-gray-300"
                 } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.whatshapp}
-                onChange={(e) => handleInputChange("whatshapp", e.target.value)}
-                maxLength="10"
-              />
-              {errors.whatshapp && (
-                <p className="mt-1 text-sm text-red-600">{errors.whatshapp}</p>
-              )}
-            </div>
-            {/* )} */}
-
-            {/* Student Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Name *
-              </label>
-              <input
-                type="text"
-                placeholder="Enter Student Name"
-                className={`w-full px-4 py-3 border ${
-                  errors.studentName ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.studentName}
-                onChange={(e) =>
-                  handleInputChange("studentName", e.target.value)
-                }
-              />
-              {errors.studentName && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.studentName}
-                </p>
-              )}
-            </div>
-
-            {/* Choose Training */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Choose Training *
-              </label>
-              <select
-                className={`w-full px-4 py-3 border ${
-                  errors.training ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.training}
-                onChange={(e) => handleInputChange("training", e.target.value)}
-                disabled={isLoading || isEditMode}
-              >
-                <option value="">-Choose Training-</option>
-                {Trainings?.map((item) => (
-                  <option value={item._id} key={item._id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              {errors.training && (
-                <p className="mt-1 text-sm text-red-600">{errors.training}</p>
-              )}
-            </div>
-
-            {/* Choose Technology */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Choose Technology *
-              </label>
-              <select
-                className={`w-full px-4 py-3 border ${
-                  errors.technology ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.technology}
-                onChange={(e) =>
-                  handleInputChange("technology", e.target.value)
-                }
-              >
-                <option value="">-Choose Technology-</option>
-                {TechnologiesData?.map((tech) => (
-                  <option key={tech._id} value={tech._id}>
-                    {tech.name}
-                  </option>
-                ))}
-              </select>
-              {errors.technology && (
-                <p className="mt-1 text-sm text-red-600">{errors.technology}</p>
-              )}
-            </div>
-
-            {/* Select Your Education */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Your Education *
-              </label>
-              <select
-                className={`w-full px-4 py-3 border ${
-                  errors.education ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.education}
-                onChange={(e) => handleInputChange("education", e.target.value)}
-                disabled={isLoading || isEditMode}
-              >
-                <option value="">-Select Your Education-</option>
-                {Edication?.map((edu) => (
-                  <option key={edu._id} value={edu._id}>
-                    {edu.name}
-                  </option>
-                ))}
-              </select>
-              {errors.education && (
-                <p className="mt-1 text-sm text-red-600">{errors.education}</p>
-              )}
-            </div>
-
-            {/* Select eduyear */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Year *
-              </label>
-              <select
-                className={`w-full px-4 py-3 border ${
-                  errors.eduYear ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.eduYear}
-                onChange={(e) => handleInputChange("eduYear", e.target.value)}
-                disabled={isLoading}
-              >
-                <option value="">-Select Year-</option>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
-                <option value="Passout">Passout</option>
-              </select>
-              {errors.eduYear && (
-                <p className="mt-1 text-sm text-red-600">{errors.eduYear}</p>
-              )}
-            </div>
-
-            {/* Student Father's Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Father's Name *
-              </label>
-              <input
-                type="text"
-                placeholder="Enter Student Father's Name"
-                className={`w-full px-4 py-3 border ${
-                  errors.fatherName ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.fatherName}
-                onChange={(e) =>
-                  handleInputChange("fatherName", e.target.value)
-                }
-              />
-              {errors.fatherName && (
-                <p className="mt-1 text-sm text-red-600">{errors.fatherName}</p>
-              )}
-            </div>
-
-            {/* Student Email ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Email ID
-              </label>
-              <input
-                type="email"
-                placeholder="Enter Student Email ID"
-                className={`w-full px-4 py-3 border ${
-                  errors.email ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
+                value={formData.discount}
+                onChange={(e) => handleInputChange("discount", e.target.value)}
                 disabled={isLoading || isEditMode}
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
             </div>
+            {errors.discount && (
+              <p className="mt-1 text-sm text-red-600">{errors.discount}</p>
+            )}
+          </div>
 
-            {/* Student Alternate Mobile */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Alternate Mobile (Optional)
-              </label>
+          {/* Final Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Final Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-3 text-gray-500">₹</span>
               <input
-                type="tel"
-                placeholder="Enter 10-digit alternate mobile"
-                className={`w-full px-4 py-3 border ${
-                  errors.alternateMobile ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.alternateMobile}
-                onChange={(e) =>
-                  handleInputChange("alternateMobile", e.target.value)
-                }
-                maxLength="10"
+                type="number"
+                className="w-full pl-8 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.finalFee}
+                disabled
               />
-              {errors.alternateMobile && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.alternateMobile}
-                </p>
-              )}
             </div>
+          </div>
 
-            {/* Manage hr */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Admission By *
-              </label>
-              <select
-                className={`w-full px-4 py-3 border ${
-                  errors.hrName ? "border-red-500" : "border-gray-300"
+          {/* Amount To Pay Now */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Amount To Pay Now *
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-3 text-gray-500">₹</span>
+              <input
+                type="number"
+                className={`w-full pl-8 px-4 py-3 border ${
+                  errors.amount ? "border-red-500" : "border-gray-300"
                 } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.hrName}
-                onChange={(e) => handleInputChange("hrName", e.target.value)}
+                value={formData.amount}
+                onChange={(e) => handleInputChange("amount", e.target.value)}
                 disabled={isLoading || isEditMode}
-              >
-                <option value="">-Select HR Name-</option>
-                {hr
-                  .filter((data) => data.isActive)
-                  .map((data) => (
-                    <option key={data._id} value={data._id}>
-                      {data.name}
-                    </option>
-                  ))}
-              </select>
-              {errors.hrName && (
-                <p className="mt-1 text-sm text-red-600">{errors.hrName}</p>
-              )}
-            </div>
-
-            {/* Branches */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Branch / Mode *
-              </label>
-              <select
-                className={`w-full px-4 py-3 border ${
-                  errors.branch ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.branch}
-                onChange={(e) => handleInputChange("branch", e.target.value)}
-                disabled={isLoading}
-              >
-                <option value="">-Select Branch-</option>
-                {branchs
-                  .filter((data) => data.isActive)
-                  .map((data) => (
-                    <option key={data._id} value={data._id}>
-                      {data.name}
-                    </option>
-                  ))}
-              </select>
-              {errors.branch && (
-                <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
-              )}
-            </div>
-
-            {/* Student College Name */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student College Name *
-              </label>
-              <Select
-                options={collegeOptions}
-                placeholder="Search & select college name"
-                value={
-                  formData.collegeName
-                    ? {
-                        label: formData.collegeName,
-                        value: formData.collegeName,
-                      }
-                    : null
-                }
-                onChange={(selectedOption) =>
-                  handleInputChange("collegeName", selectedOption?.value || "")
-                }
-                classNamePrefix="react-select"
-                styles={{
-                  control: (base, state) => ({
-                    ...base,
-                    borderColor: errors.collegeName ? "red" : base.borderColor,
-                    boxShadow: state.isFocused
-                      ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
-                      : base.boxShadow,
-                    "&:hover": {
-                      borderColor: errors.collegeName ? "red" : "#a0aec0",
-                    },
-                  }),
-                }}
               />
-              {errors.collegeName && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.collegeName}
-                </p>
-              )}
             </div>
+            {errors.amount && (
+              <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+            )}
+          </div>
 
-            {/* Total Amount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total Fee Amount *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-500">₹</span>
+          {/* Due Fee Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Due Fee Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-3 text-gray-500">₹</span>
+              <input
+                type="number"
+                className="w-full pl-8 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.dueFee}
+                disabled
+              />
+            </div>
+          </div>
+
+          {/* Payment Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Type
+            </label>
+            <div className="flex items-center space-x-6">
+              <label className="flex items-center">
                 <input
-                  type="number"
-                  className={`w-full pl-8 px-4 py-3 border ${
-                    errors.totalFee ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  value={formData.totalFee}
-                  disabled
-                />
-              </div>
-              {errors.totalFee && (
-                <p className="mt-1 text-sm text-red-600">{errors.totalFee}</p>
-              )}
-            </div>
-
-            {/* Discount Amount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Discount Fee Amount
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-500">₹</span>
-                <input
-                  type="number"
-                  className={`w-full pl-8 px-4 py-3 border ${
-                    errors.discount ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  value={formData.discount}
+                  type="radio"
+                  name="paymentType"
+                  value="registration"
+                  checked={formData.paymentType === "registration"}
                   onChange={(e) =>
-                    handleInputChange("discount", e.target.value)
+                    handleInputChange("paymentType", e.target.value)
                   }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   disabled={isLoading || isEditMode}
                 />
-              </div>
-              {errors.discount && (
-                <p className="mt-1 text-sm text-red-600">{errors.discount}</p>
-              )}
-            </div>
-
-            {/* Final Amount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Final Amount
+                <span className="ml-2 text-sm text-gray-700">
+                  Registration Fee
+                </span>
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-500">₹</span>
+              <label className="flex items-center">
                 <input
-                  type="number"
-                  className="w-full pl-8 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.finalFee}
-                  disabled
-                />
-              </div>
-            </div>
-
-            {/* Amount To Pay Now */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Amount To Pay Now *
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-500">₹</span>
-                <input
-                  type="number"
-                  className={`w-full pl-8 px-4 py-3 border ${
-                    errors.amount ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange("amount", e.target.value)}
+                  type="radio"
+                  name="paymentType"
+                  value="full"
+                  checked={formData.paymentType === "full"}
+                  onChange={(e) =>
+                    handleInputChange("paymentType", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                   disabled={isLoading || isEditMode}
                 />
-              </div>
-              {errors.amount && (
-                <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
-              )}
-            </div>
-
-            {/* Due Fee Amount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Due Fee Amount
+                <span className="ml-2 text-sm text-gray-700">Full Fee</span>
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-500">₹</span>
-                <input
-                  type="number"
-                  className="w-full pl-8 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.dueFee}
-                  disabled
-                />
-              </div>
-            </div>
-
-            {/* Payment Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Type
-              </label>
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentType"
-                    value="registration"
-                    checked={formData.paymentType === "registration"}
-                    onChange={(e) =>
-                      handleInputChange("paymentType", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    disabled={isLoading || isEditMode}
-                  />
-                  <span className="ml-2 text-sm text-gray-700">
-                    Registration Fee
-                  </span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentType"
-                    value="full"
-                    checked={formData.paymentType === "full"}
-                    onChange={(e) =>
-                      handleInputChange("paymentType", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    disabled={isLoading || isEditMode}
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Full Fee</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Payment Method */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Method
-              </label>
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={formData.paymentMethod === "cash"}
-                    onChange={(e) =>
-                      handleInputChange("paymentMethod", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    disabled={isLoading || isEditMode}
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Cash</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="online"
-                    checked={formData.paymentMethod === "online"}
-                    onChange={(e) =>
-                      handleInputChange("paymentMethod", e.target.value)
-                    }
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    disabled={isLoading || isEditMode}
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Online</span>
-                </label>
-              </div>
-            </div>
-
-            {/* QR code selection */}
-            {formData.paymentMethod === "online" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select QR Code *
-                </label>
-                <select
-                  className={`w-full px-4 py-3 border ${
-                    errors.qrcode ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  value={formData.qrcode}
-                  onChange={(e) => handleInputChange("qrcode", e.target.value)}
-                  disabled={isLoading || isEditMode}
-                >
-                  <option value="">- Select QR Code -</option>
-                  {qrcodes
-                    .filter((data) => data.isActive)
-                    .map((data) => (
-                      <option key={data._id} value={data._id}>
-                        {data.name}
-                      </option>
-                    ))}
-                </select>
-                {errors.qrcode && (
-                  <p className="mt-1 text-sm text-red-600">{errors.qrcode}</p>
-                )}
-              </div>
-            )}
-
-            {/* QR code display */}
-            {formData.paymentMethod === "online" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Scan & Pay
-                </label>
-                {showQr ? (<QRCodeCanvas value={upiLink} size={100} />):(<span className="border rounded-full p-2  cursor-pointer hover:bg-gray-50 text-xs" onClick={()=>setshowQr(true)}>Show Qr code</span>)}
-                {/* <QRCodeCanvas value={upiLink} size={200} /> */}
-              </div>
-            )}
-            {/* Transaction ID / UTR */}
-            {formData.paymentMethod === "online" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transaction ID / UTR No.
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3 text-gray-500">UTR</span>
-                  <input
-                    type="number"
-                    className={`w-full pl-12 px-4 py-3 border ${
-                      errors.tnxId ? "border-red-500" : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    value={formData.tnxId}
-                    onChange={(e) => handleInputChange("tnxId", e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.tnxId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.tnxId}</p>
-                )}
-              </div>
-            )}
-            {/* Remark */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Remark
-              </label>
-              <textarea
-                placeholder="Enter Remark"
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                value={formData.remark}
-                onChange={(e) => handleInputChange("remark", e.target.value)}
-                disabled={isLoading}
-              />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-center mt-8 gap-4">
-            <button
-              type="button"
-              onClick={resetForm}
-              disabled={isLoading}
-              className="px-8 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200 font-medium text-lg"
-            >
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={handleRegister}
-              disabled={isLoading}
-              className="px-8 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 font-medium text-lg flex items-center justify-center min-w-40"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="animate-spin mr-2" />
-                  {isEditMode ? "Updating..." : "Registering..."}
-                </>
-              ) : isEditMode ? (
-                "Update Student"
-              ) : (
-                "Register Now"
+          {/* Payment Method */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Method
+            </label>
+            <div className="flex items-center space-x-6">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="cash"
+                  checked={formData.paymentMethod === "cash"}
+                  onChange={(e) =>
+                    handleInputChange("paymentMethod", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  disabled={isLoading || isEditMode}
+                />
+                <span className="ml-2 text-sm text-gray-700">Cash</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="online"
+                  checked={formData.paymentMethod === "online"}
+                  onChange={(e) =>
+                    handleInputChange("paymentMethod", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  disabled={isLoading || isEditMode}
+                />
+                <span className="ml-2 text-sm text-gray-700">Online</span>
+              </label>
+            </div>
+          </div>
+
+          {/* QR code selection */}
+          {formData.paymentMethod === "online" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select QR Code *
+              </label>
+              <select
+                className={`w-full px-4 py-3 border ${
+                  errors.qrcode ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                value={formData.qrcode}
+                onChange={(e) => handleInputChange("qrcode", e.target.value)}
+                disabled={isLoading || isEditMode}
+              >
+                <option value="">- Select QR Code -</option>
+                {qrcodes
+                  .filter((data) => data.isActive)
+                  .map((data) => (
+                    <option key={data._id} value={data._id}>
+                      {data.name}
+                    </option>
+                  ))}
+              </select>
+              {errors.qrcode && (
+                <p className="mt-1 text-sm text-red-600">{errors.qrcode}</p>
               )}
-            </button>
+            </div>
+          )}
+
+          {/* QR code display */}
+          {formData.paymentMethod === "online" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Scan & Pay
+              </label>
+
+              <span
+                className="border rounded-full p-2  cursor-pointer hover:bg-gray-50 text-xs"
+                onClick={() => handleQrView()}
+              >
+                Show Qr code
+              </span>
+            </div>
+          )}
+          {/* Transaction ID / UTR */}
+          {formData.paymentMethod === "online" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Transaction ID / UTR No.
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-gray-500">UTR</span>
+                <input
+                  type="number"
+                  className={`w-full pl-12 px-4 py-3 border ${
+                    errors.tnxId ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  value={formData.tnxId}
+                  onChange={(e) => handleInputChange("tnxId", e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.tnxId && (
+                <p className="mt-1 text-sm text-red-600">{errors.tnxId}</p>
+              )}
+            </div>
+          )}
+          {/* Remark */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Remark
+            </label>
+            <textarea
+              placeholder="Enter Remark"
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              value={formData.remark}
+              onChange={(e) => handleInputChange("remark", e.target.value)}
+              disabled={isLoading}
+            />
           </div>
         </div>
 
-        {/* Enrollments Modal */}
-        {showEnrollmentsModal && (
-          <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
-              <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
-                <h3 className="text-lg font-semibold">Select Enrollment</h3>
-                <button
-                  onClick={() => setShowEnrollmentsModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="p-4">
-                <p className="mb-4 text-gray-600">
-                  This student has multiple enrollments. Please select one to
-                  continue:
-                </p>
-                <div className="space-y-3">
-                  {studentEnrollments.map((enrollment) => (
-                    <div
-                      key={enrollment._id}
-                      onClick={() => selectEnrollment(enrollment)}
-                      className="p-4 border border-gray-300 shadow rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">
-                            {enrollment.userid || "Unknown Course"}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Name: {enrollment?.studentName || "Unknown Batch"}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Tranning :{" "}
-                            {enrollment?.training?.name || "Unknown Batch"}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">
-                            Due: ₹{enrollment.dueAmount || 0}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {new Date(
-                              enrollment.createdAt
-                            ).toLocaleDateString()}
-                          </p>
-                        </div>
+        {/* Action Buttons */}
+        <div className="flex justify-center mt-8 gap-4">
+          <button
+            type="button"
+            onClick={resetForm}
+            disabled={isLoading}
+            className="px-8 py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200 font-medium text-lg"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={handleRegister}
+            disabled={isLoading}
+            className="px-8 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 font-medium text-lg flex items-center justify-center min-w-40"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin mr-2" />
+                {isEditMode ? "Updating..." : "Registering..."}
+              </>
+            ) : isEditMode ? (
+              "Update Student"
+            ) : (
+              "Register Now"
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Enrollments Modal */}
+      {showEnrollmentsModal && (
+        <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-semibold">Select Enrollment</h3>
+              <button
+                onClick={() => setShowEnrollmentsModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <p className="mb-4 text-gray-600">
+                This student has multiple enrollments. Please select one to
+                continue:
+              </p>
+              <div className="space-y-3">
+                {studentEnrollments.map((enrollment) => (
+                  <div
+                    key={enrollment._id}
+                    onClick={() => selectEnrollment(enrollment)}
+                    className="p-4 border border-gray-300 shadow rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">
+                          {enrollment.userid || "Unknown Course"}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Name: {enrollment?.studentName || "Unknown Batch"}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Tranning :{" "}
+                          {enrollment?.training?.name || "Unknown Batch"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          Due: ₹{enrollment.dueAmount || 0}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(enrollment.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
-      </div>
- 
+        </div>
+      )}
+      {/* QR Code Modal */}
+      <Dialog
+        open={qrModalOpen}
+        onClose={handleQrModalClose}
+        maxWidth="xs"
+        fullWidth
+      >
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold">QR Code</h2>
+          <IconButton onClick={handleQrModalClose}>
+            <Close />
+          </IconButton>
+        </div>
+        <DialogContent className="flex flex-col items-center justify-center p-6">
+          {selectedQrCode ? (
+            <>
+              <img
+                src={`${import.meta.env.VITE_BASE_URI}${selectedQrCode}`}
+                alt="QR Code"
+                className="w-72 h-72 object-contain border rounded-lg"
+              />
+              {/* <p className="mt-4 text-gray-600">Scan this QR code for payment</p> */}
+            </>
+          ) : (
+            <p className="text-gray-500">No QR code available</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

@@ -221,6 +221,78 @@ export const menuItems = [
     ],
   },
   {
+    key: "Jobs",
+    icon: CheckCircle,
+    label: "Manage Jobs",
+    hasSubmenu: true,
+    roles: ["Admin", "Employee", "Intern"],
+    submenu: [
+      {
+        path: "/create-company",
+        icon: BookUser,
+        label: "Manage Company",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+      {
+        path: "/create-jobs",
+        icon: BookUser,
+        label: "Manage Jobs",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+      {
+        path: "/student-assing-job",
+        icon: BookUser,
+        label: "Student Assing Jobs",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+      {
+        path: "/job-applications",
+        icon: BookUser,
+        label: "Job Applications",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+    ],
+  },
+  {
+    key: "Reports",
+    icon: CheckCircle,
+    label: "Reports",
+    hasSubmenu: true,
+    roles: ["Admin", "Employee", "Intern"],
+    submenu: [
+      {
+        path: "/reg-reoprts",
+        icon: BookUser,
+        label: "Registration",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+      {
+        path: "/fee-reports",
+        icon: BookUser,
+        label: "Fee",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+      {
+        path: "/absent-stu-reports",
+        icon: BookUser,
+        label: "Absent Student",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+      {
+        path: "/attendenc-reports",
+        icon: BookUser,
+        label: "Attendenc Reports",
+        roles: ["Admin", "Employee", "Intern"],
+      },
+    ],
+  },
+  {
+    path: "/assignments",
+    icon: PointerOffIcon,
+    label: "Manage Assignments",
+    roles: ["Admin", "Employee"],
+  },
+  {
     path: "/profile",
     icon: PointerOffIcon,
     label: "Profile",

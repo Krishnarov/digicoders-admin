@@ -11,7 +11,7 @@ const useGetCount = () => {
     const fetchCounts = useCallback(async () => {
         try {
             const res = await axios.get("/counts",{withCredentials:true})
-            // console.log(res);
+
             
             if (res.data) {
                 dispatch(setCounts(res.data))
@@ -25,30 +25,6 @@ const useGetCount = () => {
         fetchCounts()
     }, [fetchCounts])
     return fetchCounts
-
-
-
-
-//   const [counts, setCounts] = useState({});
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const fetchCounts = async () => {
-//     try {
-//       setLoading(true);
-//       const { data } = await axios.get("/counts");
-
-//       setCounts(data || {});
-//     } catch (err) {
-//       setError(err.response?.data?.message || "Failed to fetch counts");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-//   useEffect(() => {
-//     fetchCounts();
-//   }, []);
-
-//   return { counts, loading, error,fetchCounts };
 };
 
 export default useGetCount;

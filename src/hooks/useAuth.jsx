@@ -24,7 +24,7 @@ export const useAuth = () => {
         `${import.meta.env.VITE_BASE_API}/auth/login`,
         credentials
       );
-      console.log(res);
+
       if (res.data.success) {
         if (res.data.isTwoFactor) {
           dispatch(loginSuccess({ user: res.data.user }));

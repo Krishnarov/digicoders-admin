@@ -1,76 +1,108 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Home,
+  ChevronRight,
+  Edit2,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, MenuItem, Select, TextField, Tooltip } from "@mui/material";
+import {
+  Button,
+  MenuItem,
+  Select,
+  TextField,
+  Tooltip,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import useGetTechnology from "../hooks/useGetTechnology";
-import { useSelector } from "react-redux";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { toast } from "react-toastify";
 
 function Technology() {
-  const data = useSelector((state) => state.technology.data);
-  const fetchTechnology = useGetTechnology();
-  useEffect(() => {
-    fetchTechnology();
-  }, []);
+  /* ================= HOOK ================= */
+  const {
+    fetchTechnology,
+    changePage,
+    changeLimit,
+    changeSearch,
+    changeSort,
+    changeFilters,
+    refreshTechnology,
+    techState,
+  } = useGetTechnology();
 
-  const [loading, setLoading] = useState("");
+  const { data, loading: tableLoading, pagination, filters } = techState;
+
+  /* ================= LOCAL STATE ================= */
+  const [loading, setLoading] = useState({
+    save: false,
+    delete: null,
+    status: null,
+  });
+
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     duration: "",
     price: "",
   });
-  const [editId, setEditId] = useState(null);
 
+  /* ================= INITIAL LOAD ================= */
+  // useEffect(() => {
+  //   fetchTechnology();
+  // }, [fetchTechnology]);
+ const didFetch = useRef(false);
+  
+    useEffect(() => {
+      if (didFetch.current) return;
+      didFetch.current = true;
+  
+      const fetchInitialData = async () => {
+        await fetchTechnology();
+      };
+  
+      fetchInitialData();
+    }, [fetchTechnology]);
+  /* ================= TABLE COLUMNS ================= */
   const columns = [
     {
       label: "Action",
       accessor: "action",
       Cell: ({ row }) => (
-        <div className="flex gap-2 items-center">
-          <Tooltip
-            title={<span className="font-bold ">Edit</span>}
-            placement="top"
-          >
+        <div className="flex gap-2">
+          <Tooltip title="Edit">
             <button
-              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
+              className="px-2 py-1 border rounded"
             >
-              <Edit2 size={20} />
+              <Edit2 size={18} />
             </button>
           </Tooltip>
 
           <DeleteConfirmationModal
-            id={row.id}
+            id={row._id}
             itemName={row.name}
             onConfirm={() => handleDelete(row._id)}
-            loading={loading}
+            loading={loading.delete === row._id}
           >
-            {/* <Button
-              variant="outlined"
-              size="small"
-              color="error"
-              startIcon={<Trash2 size={16} />}
-            >
-              {loading === `deleting-${row._id}` ? "Deleting..." : "Delete"}
-            </Button> */}
-            <Tooltip
-              title={<span className="font-bold ">Delete</span>}
-              placement="top"
-            >
+            <Tooltip title="Delete">
               <button
-                className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
-                disabled={row.status === "rejected"}
+                className="px-2 py-1 border rounded text-red-600"
+                disabled={loading.delete === row._id}
               >
-                {loading === `deleting-${row._id}` ? (
-                  <Loader2 className="animate-spin" />
+                {loading.delete === row._id ? (
+                  <Loader2 className="animate-spin w-4 h-4" />
                 ) : (
-                  <Trash2 size={20} />
+                  <Trash2 size={18} />
                 )}
               </button>
             </Tooltip>
@@ -78,205 +110,211 @@ function Technology() {
         </div>
       ),
     },
-    { label: "Technology Name", accessor: "name", filter: false },
-    { label: "Training Type", accessor: "duration", filter: true },
-    { label: "Price", accessor: "price", filter: true },
+    { label: "Technology Name", accessor: "name" },
+    { label: "Duration", accessor: "duration", filter: true },
     {
-      label: "Status",
-      accessor: "isActive",
-      Cell: ({ row }) => (
-        <div className="flex items-center gap-4">
-          <span className="ml-2 text-sm font-medium text-gray-700">
-            {row.isActive ? "Active" : "Inactive"}
-          </span>
-          <button
-            onClick={() => toggleStatus(row._id)}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
-          >
-            <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
-            >
-              {" "}
-              {loading === `status-${row._id}` && (
-                <Loader2 className="animate-spin w-4 h-4" />
-              )}
-            </span>
-          </button>
-        </div>
-      ),
-      filter: true,
+      label: "Price",
+      accessor: "price",
+      Cell: ({ row }) => `₹${row.price}`,
     },
+
+    {
+          label: "Status",
+          accessor: "isActive",
+          sortable: true,
+          filter: true,
+          Cell: ({ row }) => (
+            <div className="flex items-center gap-4">
+              <span className="ml-2 text-sm font-medium text-gray-700">
+                {row.isActive ? "Active" : "Inactive"}
+              </span>
+              <button
+                onClick={() => toggleStatus(row._id)}
+                disabled={loading === `status-${row._id}`}
+                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
+                  row.isActive ? "bg-green-500" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
+                    row.isActive ? "translate-x-6" : "translate-x-1"
+                  }`}
+                >
+                  {loading === `status-${row._id}` && (
+                    <Loader2 className="animate-spin w-4 h-4" />
+                  )}
+                </span>
+              </button>
+            </div>
+          ),
+        },
   ];
 
+  /* ================= HANDLERS ================= */
+  const handlePageChange = (page) => changePage(page);
+  const handleRowsPerPageChange = (limit) => changeLimit(limit);
+  const handleSearch = (value) => changeSearch(value);
+  const handleSort = ({ sortBy, sortOrder }) =>
+    changeSort(sortBy, sortOrder);
+  const handleFilter = (newFilters) => changeFilters(newFilters);
+  const clearFilters = () => changeFilters({});
+
   const handleEdit = (row) => {
-    setFormData({ name: row.name, duration: row.duration, price: row.price });
     setEditId(row._id);
+    setFormData({
+      name: row.name,
+      duration: row.duration,
+      price: row.price,
+    });
     setOpen(true);
   };
 
   const handleDelete = async (id) => {
-    setLoading(`deleting-${id}`);
     try {
-      const res = await axios.delete(`/technology/delete/${id}`, {
+      setLoading((p) => ({ ...p, delete: id }));
+      await axios.delete(`/technology/delete/${id}`, {
         withCredentials: true,
       });
-      if (res.data.success) {
-        toast.success(res.data.message || "successfull");
-      }
-    } catch (error) {
-      toast.error(error.response.data.message || error.message);
-      console.error("Error deleting technology:", error);
+      toast.success("Deleted successfully");
+      refreshTechnology();
+    } catch (err) {
+      toast.error("Delete failed");
     } finally {
-      fetchTechnology();
-      setLoading("");
+      setLoading((p) => ({ ...p, delete: null }));
     }
   };
 
   const toggleStatus = async (id) => {
     try {
-      setLoading(`status-${id}`);
-      const item = data.find((item) => item._id === id);
-      const newStatus = !item.isActive;
-
-      const res = await axios.patch(
+      setLoading((p) => ({ ...p, status: id }));
+      const item = data.find((i) => i._id === id);
+      await axios.patch(
         `/technology/update/${id}`,
-        {
-          isActive: newStatus,
-        },
-        {
-          withCredentials: true,
-        }
+        { isActive: !item.isActive },
+        { withCredentials: true }
       );
-      if (res.data.success) {
-        toast.success(res.data.message || "successfull");
-      }
-    } catch (error) {
-      toast.error(error.response.data.message || error.message);
-      console.error("Error toggling status:", error);
+      toast.success("Status updated");
+      refreshTechnology();
+    } catch {
+      toast.error("Status update failed");
     } finally {
-      fetchTechnology();
-      setLoading("");
+      setLoading((p) => ({ ...p, status: null }));
     }
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     try {
-       setLoading("Save");
-      let res;
+      setIsSubmitting(true);
+      setLoading((p) => ({ ...p, save: true }));
+
+      if (!formData.name || !formData.duration || !formData.price) {
+        toast.error("All fields required");
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        price: Number(formData.price),
+      };
+
       if (editId) {
-        res = await axios.patch(`/technology/update/${editId}`, formData, {
+        await axios.patch(`/technology/update/${editId}`, payload, {
           withCredentials: true,
         });
       } else {
-        res = await axios.post("/technology/create", formData, {
+        await axios.post("/technology/create", payload, {
           withCredentials: true,
         });
       }
-      if (res.data.success) {
-        toast.success(res.data.message || "successfull");
-      }
-    } catch (error) {
-      toast.error(error.response.data.message || error.message);
-      console.error("Error submitting form:", error);
-    } finally {
+
+      toast.success("Saved successfully");
+      refreshTechnology();
       handleClose();
-      fetchTechnology();
+    } catch {
+      toast.error("Save failed");
+    } finally {
+      setIsSubmitting(false);
+      setLoading((p) => ({ ...p, save: false }));
     }
   };
 
   const handleClose = () => {
     setOpen(false);
-    setFormData({ name: "", duration: "" });
     setEditId(null);
+    setFormData({ name: "", duration: "", price: "" });
   };
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
+  /* ================= UI ================= */
   return (
- 
-      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-              Technology
-            </h1>
-            <Link
-              to="/dashboard"
-              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <Home className="w-5 h-5 text-blue-600 mr-1" />
-              <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
-              <span>Dashboard</span>
-            </Link>
-          </div>
-          <Button
-            variant="contained"
-            onClick={() => setOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Add New Technology
-          </Button>
-        </div>
+    <div className="max-w-6xl mx-auto p-4">
+      <div className="flex justify-between mb-6">
+        <h1 className="text-xl font-semibold">Technology</h1>
+        <Button variant="contained" onClick={() => setOpen(true)}>
+          Add Technology
+        </Button>
+      </div>
 
-        {/* DataTable */}
-        <DataTable columns={columns} data={data} loading={loading} />
+      <DataTable
+        mode="server"
+        columns={columns}
+        data={data}
+        loading={tableLoading}
+        page={pagination.page}
+        limit={pagination.limit}
+        total={pagination.total}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
+        onLimitChange={handleRowsPerPageChange}
+        onSearch={handleSearch}
+        onSortChange={handleSort}
+        onFilterChange={handleFilter}
+        filters={filters}
+        onClearFilters={clearFilters}
+      />
 
-        {/* Modal */}
-        <CustomModal
-          open={open}
-          onClose={handleClose}
-          loading={loading}
-          onSubmit={handleSubmit}
-          title={editId ? "Edit Technology" : "Add New Technology"}
-          submitText={editId ? "Update" : "Create"}
-        >
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            <TextField
-              label="Technology Name"
-              name="name"
-              fullWidth
-              value={formData.name}
-              onChange={handleChange}
-              variant="outlined"
-              autoFocus
-            />
-            <TextField
-              select
-              label="Duration"
-              name="duration"
-              variant="outlined"
-              value={formData.duration || ""}
-              onChange={handleChange}
-              fullWidth
+      <CustomModal
+        open={open}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+        loading={loading.save}
+        title={editId ? "Edit Technology" : "Add Technology"}
+      >
+        <Stack spacing={2}>
+          <TextField
+            label="Technology Name"
+            name="name"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData({ ...formData, name: e.target.value })
+            }
+            fullWidth
+          />
+          <FormControl fullWidth>
+            <InputLabel>Duration</InputLabel>
+            <Select
+              value={formData.duration}
+              onChange={(e) =>
+                setFormData({ ...formData, duration: e.target.value })
+              }
             >
-              <MenuItem value="">
-                <em>- Select Duration -</em>
-              </MenuItem>
               <MenuItem value="45 days">45 days</MenuItem>
               <MenuItem value="28 days">28 days</MenuItem>
               <MenuItem value="6 months">6 months</MenuItem>
-            </TextField>
-            <TextField
-              label="Price"
-              name="price"
-              type="number"
-              fullWidth
-              value={formData.price}
-              onChange={handleChange}
-              variant="outlined"
-              autoFocus
-            />
-          </Stack>
-        </CustomModal>
-      </div>
-    
+            </Select>
+          </FormControl>
+          <TextField
+            label="Price"
+            type="number"
+            value={formData.price}
+            onChange={(e) =>
+              setFormData({ ...formData, price: e.target.value })
+            }
+            fullWidth
+          />
+        </Stack>
+      </CustomModal>
+    </div>
   );
 }
 

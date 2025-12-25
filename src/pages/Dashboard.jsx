@@ -9,7 +9,6 @@ import { useSelector } from "react-redux";
 
 function Dashboard() {
   const counts=useSelector((state) => state.count.data)
-console.log(counts);
 
   
   return (

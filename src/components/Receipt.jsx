@@ -6,7 +6,14 @@ import { saveAs } from "file-saver";
 import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
 import { Button } from "@mui/material";
-import { FileText, Image, ImageDown, PanelsRightBottom, PhoneCall, PhoneCallIcon } from "lucide-react";
+import {
+  FileText,
+  Image,
+  ImageDown,
+  PanelsRightBottom,
+  PhoneCall,
+  PhoneCallIcon,
+} from "lucide-react";
 
 function Receipt() {
   const param = useParams();
@@ -24,7 +31,7 @@ function Receipt() {
   useEffect(() => {
     fetchData();
   }, []);
-  // console.log(feeData);
+
   // Add this function at the top of your file
   function numberToWords(num) {
     const a = [
@@ -127,12 +134,12 @@ function Receipt() {
     return <div className="text-sm p-4">Loading receipt data...</div>;
   }
 
-const shareOnWhatsApp = () => {
-  const whatsappNumber =
-    feeData?.registrationId?.whatshapp || feeData?.registrationId?.mobile; // Student ka mobile no
-  const receiptUrl = `${import.meta.env.VITE_UI_URI}/receipt/${param.id}`;
+  const shareOnWhatsApp = () => {
+    const whatsappNumber =
+      feeData?.registrationId?.whatshapp || feeData?.registrationId?.mobile; // Student ka mobile no
+    const receiptUrl = `${import.meta.env.VITE_UI_URI}/receipt/${param.id}`;
 
-  const message = `Hello *${feeData?.registrationId?.studentName}*,
+    const message = `Hello *${feeData?.registrationId?.studentName}*,
 
 🧾 *Payment Receipt*
 ────────────────────────────
@@ -148,19 +155,21 @@ const shareOnWhatsApp = () => {
 
 Thank you for your payment 🙏`;
 
-  // WhatsApp API link
-  const url = `https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(message)}`;
-  window.open(url, "_blank");
-};
+    // WhatsApp API link
+    const url = `https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(url, "_blank");
+  };
 
 
-
-console.log(feeData);
 
   return (
     <div className="p-2 max-w-3xl mx-auto text-xs">
       <div className="flex justify-between items-center my-5 gap-5">
-        <h1 className="text-xl font-bold whitespace-nowrap ">Payment Receipt</h1>
+        <h1 className="text-xl font-bold whitespace-nowrap ">
+          Payment Receipt
+        </h1>
         <div className="flex flex-wrap gap-5">
           <Button
             variant="outlined"
@@ -269,7 +278,7 @@ console.log(feeData);
           <div className="mb-3 flex">
             <span className="font-semibold w-30">College:</span>
             <span className="border-b border-black flex-1">
-              {feeData.registrationId?.collegeName}
+              {feeData.registrationId?.collegeName.name}
             </span>
           </div>
           <div className="mb-3 flex gap-4">
@@ -307,7 +316,7 @@ console.log(feeData);
         <div className="mb-3 flex items-center">
           <h3 className="font-semibold mb-1">Payment Mode:</h3>
           <div className="flex space-x-10 ml-7">
-            {["cash", "online",].map((mode) => (
+            {["cash", "online"].map((mode) => (
               <div key={mode} className="flex items-center">
                 <input
                   type="checkbox"
@@ -319,6 +328,14 @@ console.log(feeData);
               </div>
             ))}
           </div>
+          {feeData.mode === "online" && (
+            <div className="flex items-center ml-7">
+              <h3 className="font-semibold mb-1">UTR No:</h3>
+              <span className="flex-1 block min-w-0 border-b border-black ml-3 pb-0.5">
+                {feeData?.tnxId}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Amount Section */}
@@ -362,7 +379,9 @@ console.log(feeData);
                 feeData.tnxStatus === "paid"
                   ? "/img/paid.png"
                   : feeData.tnxStatus === "full paid"
-                  ? "/img/paid.png" :feeData.tnxStatus === "failed" ? "/img/failed.png"
+                  ? "/img/paid.png"
+                  : feeData.tnxStatus === "failed"
+                  ? "/img/failed.png"
                   : "/img/pending.jpg"
               }
               width={100}

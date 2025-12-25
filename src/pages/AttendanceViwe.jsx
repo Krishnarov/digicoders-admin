@@ -60,7 +60,7 @@ function AttendanceView() {
     try {
       setLoading(true);
       const res = await axios.get(`/attendance/batch/${batchId}`);
-      console.log("API Response:", res);
+
 
       // Handle both array and object response formats
       const data = Array.isArray(res.data) ? res.data : [res.data];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Home, ChevronRight, Edit2, Trash2, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -24,33 +24,96 @@ function Teacher() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    expertise: [],
+    branch: "",
   });
   const [editId, setEditId] = useState(null);
   const [teachers, setTeachers] = useState([]);
+  const [branches, setBranches] = useState([]);
+  
+  // State for pagination and filters
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
+  
+  const [tableLoading, setTableLoading] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [sortConfig, setSortConfig] = useState({});
 
-  // 🔹 Fetch all teachers
-  const getAllTeachers = async () => {
+  // Memoized fetch function for teachers
+  const getAllTeachers = useCallback(async (search = "", newFilters = {}, sortBy = "", sortOrder = "") => {
     try {
-      const res = await axios.get("/teachers");
-      console.log(res);
+      setTableLoading(true);
+      const params = new URLSearchParams();
 
-      setTeachers(res.data.teachers || []); // backend se teachers return hote hain
+      // Add search if provided
+      if (search) {
+        params.append("search", search);
+      }
+
+      // Add filters
+      Object.keys(newFilters).forEach((key) => {
+        if (newFilters[key] && newFilters[key] !== "All") {
+          params.append(key, newFilters[key]);
+        }
+      });
+
+      // Add sorting
+      if (sortBy && sortOrder) {
+        params.append("sortBy", sortBy);
+        params.append("sortOrder", sortOrder);
+      }
+
+      // Add pagination params
+      params.append("page", pagination.page);
+      params.append("limit", pagination.limit);
+
+      const res = await axios.get(`/teachers?${params.toString()}`);
+
+
+      if (res.data.success) {
+        setTeachers(res.data.teachers || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: res.data.total || 0,
+          pages: res.data.pages || 1,
+        }));
+      }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message || error.message);
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setTableLoading(false);
+    }
+  }, [pagination.page, pagination.limit]);
+
+  // 🔹 Fetch branches
+  const getAllBranches = async () => {
+    try {
+      const res = await axios.get("/branches");
+      if (res.data.success) {
+        setBranches(res.data.data.filter((b) => b.isActive));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      console.error(error);
     }
   };
 
+  // Initial fetch
   useEffect(() => {
     getAllTeachers();
-  }, []);
+    getAllBranches();
+  }, [getAllTeachers]);
 
   // 🔹 Table Columns
   const columns = [
     {
       label: "Action",
       accessor: "action",
+      sortable: false,
+      show: true,
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <Tooltip
@@ -74,7 +137,10 @@ function Teacher() {
               title={<span className="font-bold ">Delete</span>}
               placement="top"
             >
-              <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
+              <button 
+                className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+                disabled={loading === `deleting-${row._id}`}
+              >
                 {loading === `deleting-${row._id}` ? (
                   <Loader2 className="animate-spin" />
                 ) : (
@@ -86,11 +152,33 @@ function Teacher() {
         </div>
       ),
     },
-    { label: "Teacher Name", accessor: "name" },
-    { label: "Phone", accessor: "phone" },
+    { 
+      label: "Teacher Name", 
+      accessor: "name",
+      sortable: true 
+    },
+    { 
+      label: "Phone", 
+      accessor: "phone",
+      sortable: true 
+    },
+    {
+      label: "Branch",
+      accessor: "branch.name", // 👈 display ke liye
+      filter: true,
+      filterKey: "branch", // 👈 API ko objectId bhejne ke liye
+      filterOptions: branches.map((b) => ({
+        label: b.name,
+        value: b._id,
+      })),
+      sortable: true,
+      Cell: ({ row }) => row.branch?.name || "N/A",
+    },
     {
       label: "Status",
       accessor: "isActive",
+      sortable: true,
+      filter: true,
       Cell: ({ row }) => (
         <div className="flex items-center gap-4">
           <span className="ml-2 text-sm font-medium text-gray-700">
@@ -98,6 +186,7 @@ function Teacher() {
           </span>
           <button
             onClick={() => toggleStatus(row)}
+            disabled={loading === `status-${row._id}`}
             className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
               row.isActive ? "bg-green-500" : "bg-gray-300"
             }`}
@@ -114,33 +203,34 @@ function Teacher() {
           </button>
         </div>
       ),
-      filter: true,
     },
   ];
+
   const toggleStatus = async (data) => {
     try {
       setLoading(`status-${data._id}`);
       const res = await axios.patch(`/teachers/${data._id}`, {
         isActive: !data.isActive,
       });
-      // console.log(res);
+      
       if (res.data.success) {
-        toast.success(res.data.message || "successfull");
+        toast.success(res.data.message || "Status updated successfully");
+        getAllTeachers();
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      toast.error(error.response?.data?.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
-      setLoading(false);
-      getAllTeachers();
+      setLoading("");
     }
   };
+
   // 🔹 Handle Edit
   const handleEdit = (row) => {
     setFormData({
       name: row.name,
       phone: row.phone,
-      expertise: row.expertise || [],
+      branch: row?.branch?._id || ""
     });
     setEditId(row._id);
     setOpen(true);
@@ -153,19 +243,25 @@ function Teacher() {
       const res = await axios.delete(`/teachers/${id}`);
 
       if (res.data.success) {
-        toast.success(res.data.message || "successfull");
+        toast.success(res.data.message || "Teacher deleted successfully");
+        getAllTeachers();
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      toast.error(error.response?.data?.message || error.message);
       console.error("Error deleting teacher:", error);
     } finally {
       setLoading("");
-      getAllTeachers();
     }
   };
 
   // 🔹 Submit Form (Create / Update Teacher)
   const handleSubmit = async () => {
+    // Validation
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
     try {
       setLoading("Save");
       let res;
@@ -174,23 +270,24 @@ function Teacher() {
       } else {
         res = await axios.post("/teachers/create", formData);
       }
+      
       if (res.data.success) {
-        toast.success(res.data.message || "successfull");
+        toast.success(res.data.message || "Operation successful");
+        getAllTeachers();
+        handleClose();
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      toast.error(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
-      getAllTeachers();
-      handleClose();
     }
   };
 
   // 🔹 Close Modal
   const handleClose = () => {
     setOpen(false);
-    setFormData({ name: "", phone: "", expertise: [] });
+    setFormData({ name: "", phone: "", branch: "" });
     setEditId(null);
   };
 
@@ -200,70 +297,145 @@ function Teacher() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle search from DataTable
+  const handleSearch = useCallback(
+    (searchTerm) => {
+      setPagination((prev) => ({ ...prev, page: 1 }));
+      getAllTeachers(searchTerm, filters, sortConfig.sortBy, sortConfig.sortOrder);
+    },
+    [getAllTeachers, filters, sortConfig]
+  );
+
+  // Handle sort from DataTable
+  const handleSort = useCallback(
+    (column, order) => {
+      setSortConfig({ sortBy: column, sortOrder: order });
+      setPagination((prev) => ({ ...prev, page: 1 }));
+      getAllTeachers("", filters, column, order);
+    },
+    [getAllTeachers, filters]
+  );
+
+  // Handle filter from DataTable
+  const handleFilter = useCallback(
+    (newFilters) => {
+      setFilters(newFilters);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+      getAllTeachers("", newFilters, sortConfig.sortBy, sortConfig.sortOrder);
+    },
+    [getAllTeachers, sortConfig]
+  );
+
+  // Handle page change
+  const handlePageChange = useCallback(
+    (page) => {
+      setPagination((prev) => ({ ...prev, page }));
+      getAllTeachers("", filters, sortConfig.sortBy, sortConfig.sortOrder);
+    },
+    [getAllTeachers, filters, sortConfig]
+  );
+
+  // Handle rows per page change
+  const handleRowsPerPageChange = useCallback(
+    (limit) => {
+      setPagination((prev) => ({ ...prev, limit, page: 1 }));
+      getAllTeachers("", filters, sortConfig.sortBy, sortConfig.sortOrder);
+    },
+    [getAllTeachers, filters, sortConfig]
+  );
+
   return (
-   
-      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-              Teachers
-            </h1>
-            <Link
-              to="/dashboard"
-              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <Home className="w-5 h-5 text-blue-600 mr-1" />
-              <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
-              <span>Dashboard</span>
-            </Link>
-          </div>
-          <Button
-            variant="contained"
-            onClick={() => setOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+    <div className="max-w-sm md:max-w-6xl mx-auto px-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div className="flex items-center">
+          <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
+            Teachers
+          </h1>
+          <Link
+            to="/dashboard"
+            className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
           >
-            Add New Teacher
-          </Button>
+            <Home className="w-5 h-5 text-blue-600 mr-1" />
+            <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
+            <span>Dashboard</span>
+          </Link>
         </div>
-
-        {/* DataTable */}
-        <DataTable columns={columns} data={teachers} loading={loading} />
-
-        {/* Modal */}
-        <CustomModal
-          open={open}
-          onClose={handleClose}
-          onSubmit={handleSubmit}
-          title={editId ? "Edit Teacher" : "Add New Teacher"}
-          submitText={editId ? "Update" : "Create"}
-          loading={loading}
+        <Button
+          variant="contained"
+          onClick={() => setOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700"
         >
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            <TextField
-              label="Teacher Name"
-              name="name"
-              fullWidth
-              value={formData.name}
-              onChange={handleChange}
-              variant="outlined"
-              required
-            />
-            <TextField
-              label="Phone Number"
-              name="phone"
-              fullWidth
-              value={formData.phone}
-              onChange={handleChange}
-              variant="outlined"
-              required
-            />
-
-       
-          </Stack>
-        </CustomModal>
+          Add New Teacher
+        </Button>
       </div>
- 
+
+      {/* DataTable */}
+      <DataTable
+        mode="server"
+        columns={columns}
+        data={teachers}
+        loading={tableLoading}
+        page={pagination.page}
+        limit={pagination.limit}
+        total={pagination.total}
+        onPageChange={handlePageChange}
+        onLimitChange={handleRowsPerPageChange}
+        onSortChange={handleSort}
+        onFilterChange={handleFilter}
+        onSearch={handleSearch}
+      />
+
+      {/* Modal */}
+      <CustomModal
+        open={open}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+        title={editId ? "Edit Teacher" : "Add New Teacher"}
+        submitText={editId ? "Update" : "Create"}
+        loading={loading === "Save"}
+      >
+        <Stack spacing={3} sx={{ mt: 2 }}>
+          <TextField
+            label="Teacher Name *"
+            name="name"
+            fullWidth
+            value={formData.name}
+            onChange={handleChange}
+            variant="outlined"
+            required
+          />
+          <TextField
+            label="Phone Number *"
+            name="phone"
+            fullWidth
+            value={formData.phone}
+            onChange={handleChange}
+            variant="outlined"
+            required
+          />
+          {/* Branch Dropdown */}
+          <FormControl fullWidth>
+            <InputLabel>Branch</InputLabel>
+            <Select
+              name="branch"
+              value={formData.branch}
+              onChange={handleChange}
+              label="Branch"
+            >
+              <MenuItem value="">
+                <em>Select Branch</em>
+              </MenuItem>
+              {branches.map((b) => (
+                <MenuItem key={b._id} value={b._id}>
+                  {b.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+      </CustomModal>
+    </div>
   );
 }
 

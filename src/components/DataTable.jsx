@@ -1,250 +1,4 @@
-// // components/DataTable.jsx
-// import React, { useState, useMemo, useCallback } from "react";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TablePagination,
-//   TableRow,
-//   TextField,
-//   Paper,
-//   TableSortLabel,
-//   MenuItem,
-//   Select,
-//   InputLabel,
-//   FormControl,
-//   Grid,
-//   Box,
-// } from "@mui/material";
-
-// function DataTable({ columns, data }) {
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [orderBy, setOrderBy] = useState("");
-//   const [order, setOrder] = useState("asc");
-//   const [page, setPage] = useState(0);
-//   const [rowsPerPage, setRowsPerPage] = useState(5);
-//   const [filters, setFilters] = useState({});
-
-//   // Handle sort toggle
-//   const handleSort = (column) => {
-//     const isAsc = orderBy === column && order === "asc";
-//     setOrder(isAsc ? "desc" : "asc");
-//     setOrderBy(column);
-//   };
-
-//   // Handle filters
-//   const handleFilterChange = (column, value) => {
-//     setFilters((prev) => ({
-//       ...prev,
-//       [column]: value,
-//     }));
-//   };
-
-//   const filteredData = useMemo(() => {
-//     return data
-//       ?.filter((row) =>
-//         Object.values(row).some((val) =>
-//           String(val).toLowerCase().includes(searchTerm.toLowerCase())
-//         )
-//       )
-//       .filter((row) => {
-//         return Object.entries(filters).every(([column, value]) => {
-//           if (!value) return true;
-//           return (
-//             String(row?.[column] ?? "").toLowerCase() ===
-//             String(value ?? "").toLowerCase()
-//           );
-//         });
-//       });
-//   }, [data, searchTerm, filters]);
-
-//   const sortedData = useMemo(() => {
-//     if (!orderBy) return filteredData;
-//     return [...filteredData].sort((a, b) => {
-//       const aValue = a[orderBy];
-//       const bValue = b[orderBy];
-//       if (aValue < bValue) return order === "asc" ? -1 : 1;
-//       if (aValue > bValue) return order === "asc" ? 1 : -1;
-//       return 0;
-//     });
-//   }, [filteredData, orderBy, order]);
-
-//   const paginatedData = useMemo(() => {
-//     return sortedData.slice(
-//       page * rowsPerPage,
-//       page * rowsPerPage + rowsPerPage
-//     );
-//   }, [sortedData, page, rowsPerPage]);
-
-//   // Function to get the maximum content width for a column
-//   const getMaxContentWidth = useCallback(
-//     (accessor) => {
-//       const visibleData = filteredData || [];
-//       const headerContent =
-//         columns.find((col) => col.accessor === accessor)?.label || "";
-
-//       // Get all cell contents for this column
-//       const cellContents = visibleData.map((row) => {
-//         const colConfig = columns.find((col) => col.accessor === accessor);
-//         if (colConfig?.Cell) {
-//           // For custom cells, we'll estimate based on the accessor value
-//           return String(row[accessor] || "");
-//         }
-//         return String(row[accessor] || "");
-//       });
-
-//       // Combine header and all cell values
-//       const allContents = [headerContent, ...cellContents];
-
-//       // Find the longest content
-//       const longestContent = allContents.reduce((longest, current) => {
-//         return current.length > longest.length ? current : longest;
-//       }, "");
-
-//       // Calculate approximate width based on content length
-//       // This is a rough estimation - you might need to adjust the multiplier
-//       return Math.min(Math.max(longestContent.length * 10, 120), 300); // Min 120px, max 300px
-//     },
-//     [filteredData, columns]
-//   );
-
-//   return (
-//     <Paper elevation={3} className="p-4">
-//       <Grid container spacing={2} className="mb-4">
-//         <Grid item xs={12} md={6} className="w-60">
-//           <TextField
-//             label="Search"
-//             variant="outlined"
-//             fullWidth
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//           />
-//         </Grid>
-//         <Grid item xs={12} md={6}>
-//           <Grid container spacing={1}>
-//             {columns.map(
-//               (col) =>
-//                 col.filter && (
-//                   <Grid item xs={12} md={12} key={col.accessor}>
-//                     <FormControl fullWidth>
-//                       <InputLabel>{col.label}</InputLabel>
-//                       <Select
-//                         value={filters[col.accessor] || ""}
-//                         label={col.label}
-//                         className="min-w-40"
-//                         onChange={(e) =>
-//                           handleFilterChange(col.accessor, e.target.value)
-//                         }
-//                       >
-//                         <MenuItem value="">All</MenuItem>
-//                         {[...new Set(data?.map((d) => d[col.accessor]))].map(
-//                           (option) => (
-//                             <MenuItem key={option} value={option}>
-//                               {`${option}`}
-//                             </MenuItem>
-//                           )
-//                         )}
-//                       </Select>
-//                     </FormControl>
-//                   </Grid>
-//                 )
-//             )}
-//           </Grid>
-//         </Grid>
-//       </Grid>
-
-//       <TableContainer
-//         className="w-full overflow-x-scroll"
-//         sx={{
-//           maxWidth: "100%",
-//         }}
-//       >
-//         <Table sx={{ tableLayout: "auto", width: "100%", minWidth: 300 }}>
-//           <TableHead className="bg-slate-50">
-//             <TableRow>
-//               {columns
-//                 .filter((col) => col.show !== false)
-//                 .map((col) => (
-//                   <TableCell
-//                     key={col.accessor}
-//                     sx={{
-//                       fontWeight: "bold",
-//                       whiteSpace: "nowrap",
-//                       padding: "12px 16px",
-//                       borderRight: "1px solid #e0e0e0",
-//                       "&:last-child": {
-//                         borderRight: "none",
-//                       },
-//                     }}
-//                   >
-//                     <TableSortLabel
-//                       active={orderBy === col.accessor}
-//                       direction={orderBy === col.accessor ? order : "asc"}
-//                       onClick={() => handleSort(col.accessor)}
-//                     >
-//                       {col.label}
-//                     </TableSortLabel>
-//                   </TableCell>
-//                 ))}
-//             </TableRow>
-//           </TableHead>
-
-//           <TableBody>
-//             {paginatedData.map((row, idx) => (
-//               <TableRow key={idx} hover>
-//                 {columns
-//                   .filter((col) => col.show !== false)
-//                   .map((col) => (
-//                     <TableCell
-//                       key={col.accessor}
-//                       sx={{
-//                         whiteSpace: "nowrap",
-//                         padding: "12px 16px",
-//                         borderRight: "1px solid #f0f0f0",
-//                         "&:last-child": {
-//                           borderRight: "none",
-//                         },
-//                       }}
-//                     >
-//                       <div
-//                         style={{
-//                           display: "block",
-//                           whiteSpace: "nowrap",
-//                           overflow: "hidden",
-//                           textOverflow: "ellipsis",
-//                         }}
-//                       >
-//                         {col.Cell ? col.Cell({ row }) : row[col.accessor]}
-//                       </div>
-//                     </TableCell>
-//                   ))}
-//               </TableRow>
-//             ))}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-
-//       <TablePagination
-//         component="div"
-//         count={sortedData.length}
-//         page={page}
-//         rowsPerPage={rowsPerPage}
-//         onPageChange={(_, newPage) => setPage(newPage)}
-//         onRowsPerPageChange={(e) => {
-//           setRowsPerPage(parseInt(e.target.value, 10));
-//           setPage(0);
-//         }}
-//         rowsPerPageOptions={[5, 10, 25]}
-//       />
-//     </Paper>
-//   );
-// }
-
-// export default DataTable;
-// components/DataTable.jsx
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -261,296 +15,427 @@ import {
   InputLabel,
   FormControl,
   Grid,
+  CircularProgress,
   Box,
+  Button,
+  Stack,
+  Tooltip,
 } from "@mui/material";
+import { Calendar, X } from "lucide-react";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { format } from "date-fns";
 
-// Helper function to get nested property values
-const getNestedValue = (obj, path) => {
-  return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-};
+function DataTable({
+  columns,
+  data = [],
+  loading = false,
 
-function DataTable({ columns, data }) {
+  /* server side props */
+  page = 1,
+  limit = 10,
+  total = 0,
+  totalPages = 0,
+
+  /* feature flags */
+  pagination = true,
+  search = true,
+  filter = true,
+  sort = true,
+
+  /* callbacks */
+  onPageChange,
+  onLimitChange,
+  onSortChange,
+  onFilterChange,
+  onSearch,
+
+  /* additional props */
+  showDateFilter = false,
+  filters = {},
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [orderBy, setOrderBy] = useState("");
   const [order, setOrder] = useState("asc");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [filters, setFilters] = useState({});
+  const [localFilters, setLocalFilters] = useState(filters);
 
-  // Handle sort toggle
+  // Initialize local filters from parent filters
+  // useEffect(() => {
+  //   setLocalFilters(filters);
+  //   // Reset search term when filters change
+  //   if (Object.keys(filters).length === 0) {
+  //     setSearchTerm("");
+  //   }
+  // }, [filters]);
+
+  /* 🔍 debounce search */
+  useEffect(() => {
+    if (!search) return;
+
+    const t = setTimeout(() => {
+      onSearch?.(searchTerm);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [searchTerm, search]);
+
+  /* ↕ sort */
   const handleSort = (column) => {
+    if (!sort) return;
+
     const isAsc = orderBy === column && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
+    const newOrder = isAsc ? "desc" : "asc";
+    setOrder(newOrder);
     setOrderBy(column);
+    onSortChange?.(column, newOrder);
   };
 
-  // Handle filters
+  /* 🎯 filter */
   const handleFilterChange = (column, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [column]: value,
-    }));
+    if (!filter) return;
+
+    const updated = { ...localFilters, [column]: value || undefined };
+    Object.keys(updated).forEach(
+      (k) => updated[k] === undefined && delete updated[k]
+    );
+    setLocalFilters(updated);
+    onFilterChange?.(updated);
   };
 
-  const filteredData = useMemo(() => {
-    return data
-      ?.filter((row) =>
-        Object.values(row).some((val) =>
-          String(val).toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      )
-      .filter((row) => {
-        return Object.entries(filters).every(([column, value]) => {
-          if (!value) return true;
-          
-          // Find the column configuration
-          const colConfig = columns.find(col => col.accessor === column);
-          
-          // Get the actual value from the row
-          let rowValue;
-          
-          if (colConfig && colConfig.accessor.includes('.')) {
-            // Handle nested properties
-            rowValue = getNestedValue(row, colConfig.accessor);
-          } else {
-            // Handle regular properties
-            rowValue = row[column];
-          }
-          
-          // For objects, try to get the name property if it exists
-          if (typeof rowValue === 'object' && rowValue !== null && rowValue.name) {
-            rowValue = rowValue.name;
-          }
-          
-          return (
-            String(rowValue ?? "").toLowerCase() ===
-            String(value ?? "").toLowerCase()
-          );
-        });
-      });
-  }, [data, searchTerm, filters, columns]);
+  /* 📅 Handle date change immediately */
+  const handleDateChange = (type, date) => {
+    let updated = { ...localFilters };
 
-  const sortedData = useMemo(() => {
-    if (!orderBy) return filteredData;
-    
-    return [...filteredData].sort((a, b) => {
-      // Find the column configuration
-      const colConfig = columns.find(col => col.accessor === orderBy);
-      
-      // Get values for comparison
-      let aValue, bValue;
-      
-      if (colConfig && colConfig.accessor.includes('.')) {
-        // Handle nested properties
-        aValue = getNestedValue(a, colConfig.accessor);
-        bValue = getNestedValue(b, colConfig.accessor);
-      } else {
-        // Handle regular properties
-        aValue = a[orderBy];
-        bValue = b[orderBy];
-      }
-      
-      // For objects, try to get the name property if it exists
-      if (typeof aValue === 'object' && aValue !== null && aValue.name) {
-        aValue = aValue.name;
-      }
-      
-      if (typeof bValue === 'object' && bValue !== null && bValue.name) {
-        bValue = bValue.name;
-      }
-      
-      // Convert to string for comparison
-      aValue = String(aValue || "");
-      bValue = String(bValue || "");
-      
-      if (aValue < bValue) return order === "asc" ? -1 : 1;
-      if (aValue > bValue) return order === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [filteredData, orderBy, order, columns]);
+    if (date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      updated[type] = formattedDate;
+    } else {
+      // If date is null, remove it from filters
+      delete updated[type];
+    }
 
-  const paginatedData = useMemo(() => {
-    return sortedData.slice(
-      page * rowsPerPage,
-      page * rowsPerPage + rowsPerPage
-    );
-  }, [sortedData, page, rowsPerPage]);
+    // Apply filter only if both dates are selected
+    if (updated.startDate && updated.endDate) {
+      // Validate date range
+      const start = new Date(updated.startDate);
+      const end = new Date(updated.endDate);
+
+      if (start > end) {
+        // Swap dates if start is after end
+        const temp = updated.startDate;
+        updated.startDate = updated.endDate;
+        updated.endDate = temp;
+      }
+    }
+
+    setLocalFilters(updated);
+    onFilterChange?.(updated);
+  };
+
+  /* pagination */
+  const handlePageChange = (_, newPage) => {
+    if (!pagination) return;
+    onPageChange?.(newPage + 1);
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    if (!pagination) return;
+    const newLimit = parseInt(e.target.value, 10);
+    onLimitChange?.(newLimit);
+    onPageChange?.(1);
+  };
+
+  // Check if any filter is active
+  const isAnyFilterActive = () => {
+    return Object.keys(localFilters).length > 0 || searchTerm.trim() !== "";
+  };
+
+  // Check if date filter is active
+  const isDateFilterActive = localFilters.startDate && localFilters.endDate;
+
+  // Get date values for DatePicker
+  const getDateValue = (type) => {
+    if (!localFilters[type]) return null;
+    try {
+      return new Date(localFilters[type]);
+    } catch (e) {
+      return null;
+    }
+  };
 
   // Get unique filter options for each column
   const getFilterOptions = (column) => {
-    const options = new Set();
-    
-    data?.forEach((row) => {
-      let value;
-      
-      if (column.accessor.includes('.')) {
-        // Handle nested properties
-        value = getNestedValue(row, column.accessor);
+    if (column.filterOptions) {
+      return column.filterOptions;
+    }
+
+    const set = new Set();
+    data.forEach((row) => {
+      let value = column.accessor;
+      if (column.accessor.includes(".")) {
+        const keys = column.accessor.split(".");
+        value = keys.reduce((obj, key) => obj?.[key], row);
       } else {
-        // Handle regular properties
         value = row[column.accessor];
       }
-      
-      // For objects, try to get the name property if it exists
-      if (typeof value === 'object' && value !== null && value.name) {
-        value = value.name;
+
+      if (value && typeof value === "boolean") {
+        value = value ? "Active" : "Inactive";
       }
-      
-      if (value !== undefined && value !== null) {
-        options.add(String(value));
-      }
+
+      if (value) set.add(String(value));
     });
-    
-    return Array.from(options).sort();
+    return Array.from(set).sort();
   };
 
   return (
-    <Paper elevation={3} className="p-4">
-      <Grid container spacing={2} className="mb-4">
-        <Grid item xs={12} md={6} className="w-60">
-          <TextField
-            label="Search"
-            variant="outlined"
-            fullWidth
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Grid container spacing={1}>
-            {columns.map(
-              (col) =>
-                col.filter && (
-                  <Grid item xs={12} md={12} key={col.accessor}>
-                    <FormControl fullWidth>
-                      <InputLabel>{col.label}</InputLabel>
-                      <Select
-                        value={filters[col.accessor] || ""}
-                        label={col.label}
-                        className="min-w-40"
-                        onChange={(e) =>
-                          handleFilterChange(col.accessor, e.target.value)
-                        }
-                      >
-                        <MenuItem value="">All</MenuItem>
-                        {getFilterOptions(col).map(
-                          (option) => (
-                            <MenuItem key={option} value={option}>
-                              {option}
-                            </MenuItem>
-                          )
-                        )}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                )
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Paper elevation={3} className="p-4">
+        {/* SEARCH + FILTER UI */}
+        {(search || filter || showDateFilter) && (
+          <Grid container spacing={2} className="mb-4" alignItems="center">
+            {search && (
+              <Grid item xs={12} md={3}>
+                <TextField
+                  label="Search"
+                  variant="outlined"
+                  fullWidth
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search..."
+                  size="small"
+                />
+              </Grid>
             )}
-          </Grid>
-        </Grid>
-      </Grid>
 
-      <TableContainer
-        className="w-full overflow-x-scroll"
-        sx={{
-          maxWidth: "100%",
-        }}
-      >
-        <Table sx={{ tableLayout: "auto", width: "100%", minWidth: 300 }}>
-          <TableHead className="bg-slate-50">
-            <TableRow>
-              {columns
-                .filter((col) => col.show !== false)
-                .map((col) => (
-                  <TableCell
-                    key={col.accessor}
-                    sx={{
-                      fontWeight: "bold",
-                      whiteSpace: "nowrap",
-                      padding: "12px 16px",
-                      borderRight: "1px solid #e0e0e0",
-                      "&:last-child": {
-                        borderRight: "none",
+            {filter && (
+              <Grid
+                item
+                xs={12}
+                md={search ? (showDateFilter ? 4 : 7) : showDateFilter ? 6 : 9}
+              >
+                <Grid container spacing={1}>
+                  {columns.map(
+                    (col) =>
+                      col.filter && (
+                        <Grid item xs={12} sm={6} md={4} key={col.accessor}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>{col.label}</InputLabel>
+                            <Select
+                              value={
+                                localFilters[col.filterKey || col.accessor] ||
+                                ""
+                              }
+                              label={col.label}
+                              className="min-w-40"
+                              onChange={(e) =>
+                                handleFilterChange(
+                                  col.filterKey || col.accessor,
+                                  e.target.value
+                                )
+                              }
+                              disabled={loading}
+                            >
+                              <MenuItem value="">All</MenuItem>
+                              {getFilterOptions(col).map((option) =>
+                                typeof option === "object" ? (
+                                  <MenuItem
+                                    key={option.value}
+                                    value={option.value}
+                                  >
+                                    {option.label}
+                                  </MenuItem>
+                                ) : (
+                                  <MenuItem key={option} value={option}>
+                                    {option}
+                                  </MenuItem>
+                                )
+                              )}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      )
+                  )}
+                </Grid>
+              </Grid>
+            )}
+            {/* Date Range Filter - Direct DatePickers */}
+            {showDateFilter && (
+              <Grid item xs={12} md={4}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <DatePicker
+                    label="Start Date"
+                    value={getDateValue("startDate")}
+                    onChange={(newValue) =>
+                      handleDateChange("startDate", newValue)
+                    }
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          minWidth: 140,
+                          "& .MuiInputBase-root": {
+                            height: 36,
+                            padding: "0 6px",
+                          },
+                          "& input": {
+                            padding: "6px 4px",
+                            fontSize: "13px",
+                          },
+                        },
                       },
                     }}
-                  >
-                    <TableSortLabel
-                      active={orderBy === col.accessor}
-                      direction={orderBy === col.accessor ? order : "asc"}
-                      onClick={() => handleSort(col.accessor)}
-                    >
-                      {col.label}
-                    </TableSortLabel>
-                  </TableCell>
-                ))}
-            </TableRow>
-          </TableHead>
+                  />
 
-          <TableBody>
-            {paginatedData.map((row, idx) => (
-              <TableRow key={idx} hover>
+                  <span className="text-gray-500 text-sm">to</span>
+
+                  <DatePicker
+                    label="End Date"
+                    value={getDateValue("endDate")}
+                    onChange={(newValue) =>
+                      handleDateChange("endDate", newValue)
+                    }
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          minWidth: 140,
+                          "& .MuiInputBase-root": {
+                            height: 36,
+                            padding: "0 6px",
+                          },
+                          "& input": {
+                            padding: "6px 4px",
+                            fontSize: "13px",
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </Stack>
+              </Grid>
+            )}
+          </Grid>
+        )}
+
+        {/* TABLE UI */}
+        <TableContainer className="w-full overflow-x-auto">
+          <Table sx={{ minWidth: 650 }}>
+            <TableHead className="bg-slate-50">
+              <TableRow>
                 {columns
                   .filter((col) => col.show !== false)
-                  .map((col) => {
-                    // Get the cell value
-                    let cellValue;
-                    
-                    if (col.accessor.includes('.')) {
-                      // Handle nested properties
-                      cellValue = getNestedValue(row, col.accessor);
-                    } else {
-                      // Handle regular properties
-                      cellValue = row[col.accessor];
-                    }
-                    
-                    // For objects, try to get the name property if it exists
-                    if (typeof cellValue === 'object' && cellValue !== null && cellValue.name) {
-                      cellValue = cellValue.name;
-                    }
-                    
-                    return (
-                      <TableCell
-                        key={col.accessor}
-                        sx={{
-                          whiteSpace: "nowrap",
-                          padding: "12px 16px",
-                          borderRight: "1px solid #f0f0f0",
-                          "&:last-child": {
-                            borderRight: "none",
-                          },
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "block",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
+                  .map((col) => (
+                    <TableCell
+                      key={col.accessor}
+                      sx={{
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                        padding: "12px 16px",
+                        borderRight: "1px solid #e0e0e0",
+                        "&:last-child": {
+                          borderRight: "none",
+                        },
+                      }}
+                    >
+                      {col.sortable !== false && sort ? (
+                        <TableSortLabel
+                          active={orderBy === col.accessor}
+                          direction={orderBy === col.accessor ? order : "asc"}
+                          onClick={() => handleSort(col.accessor)}
+                          disabled={loading}
                         >
-                          {col.Cell ? col.Cell({ row }) : cellValue}
-                        </div>
-                      </TableCell>
-                    );
-                  })}
+                          {col.label}
+                        </TableSortLabel>
+                      ) : (
+                        col.label
+                      )}
+                    </TableCell>
+                  ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
 
-      <TablePagination
-        component="div"
-        count={sortedData.length}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        onPageChange={(_, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
-    </Paper>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    align="center"
+                    sx={{ py: 8 }}
+                  >
+                    <CircularProgress />
+                    <Box sx={{ mt: 2 }}>Loading data...</Box>
+                  </TableCell>
+                </TableRow>
+              ) : data.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    align="center"
+                    sx={{ py: 8 }}
+                  >
+                    No data found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((row, idx) => (
+                  <TableRow
+                    key={row._id || idx}
+                    hover
+                    sx={{
+                      "&:last-child td, &:last-child th": { border: 0 },
+                      bgcolor:
+                        idx % 2 === 0 ? "background.default" : "action.hover",
+                    }}
+                  >
+                    {columns
+                      .filter((col) => col.show !== false)
+                      .map((col) => {
+                        let value = col.accessor;
+                        if (col.accessor.includes(".")) {
+                          const keys = col.accessor.split(".");
+                          value = keys.reduce((obj, key) => obj?.[key], row);
+                        } else {
+                          value = row[col.accessor];
+                        }
+
+                        return (
+                          <TableCell
+                            key={col.accessor}
+                            sx={{
+                              whiteSpace: "nowrap",
+                              padding: "8px 12px",
+                              borderRight: "1px solid #e0e0e0",
+                              "&:last-child": {
+                                borderRight: "none",
+                              },
+                            }}
+                          >
+                            {col.Cell ? col.Cell({ row }) : value ?? "-"}
+                          </TableCell>
+                        );
+                      })}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* PAGINATION UI */}
+        {pagination && (
+          <TablePagination
+            component="div"
+            count={total}
+            page={page - 1}
+            rowsPerPage={limit}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            disabled={loading}
+          />
+        )}
+      </Paper>
+    </LocalizationProvider>
   );
 }
 

@@ -1,44 +1,106 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Home,
   ChevronRight,
-  Edit2,
   Eye,
-  Trash,
-  Trash2,
+  Check,
+  X,
+  Printer,
   Loader2,
+  Filter,
+  XCircle,
+  Trash2,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
-import { Button, TextField, Chip, Tooltip } from "@mui/material";
-import CustomModal from "../components/CustomModal";
-import { Stack } from "@mui/system";
+import {
+  Chip,
+  Tooltip,
+  Dialog,
+  DialogContent,
+  IconButton,
+  Button,
+  Box,
+  Typography,
+  Badge,
+} from "@mui/material";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
-import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import useGetCount from "../hooks/useGetCount";
+import { Close } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import useGetTechnology from "../hooks/useGetTechnology";
 
 function RejectReg() {
-  const rejectedStudents = useSelector((state) => state.student.data).filter(
-    (student) => student.status === "rejected"
-  );
-  const fetchStudents = useGetStudents();
+  // Default filter for new registrations - ALWAYS applied
+  const defaultFilters = { status: "rejected" };
+  
+  const {
+    fetchStudents,
+    changePage,
+    changeLimit,
+    changeSort,
+    changeFilters,
+    changeSearch,
+    clearAllFilters,
+    currentState,
+    defaultFilters: hookDefaults
+  } = useGetStudents(defaultFilters);
+  const {techState,fetchTechnology,changeLimittech}=useGetTechnology()
+  const { data: students, pagination, loading, filters, searchTerm } = currentState;
+  const [actionLoading, setActionLoading] = useState(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [selectedQrCode, setSelectedQrCode] = useState(null);
+ const [branches, setBranches] = useState([]);
+  const fetchCount = useGetCount();
 
-  const [loading, setLoading] = useState(false);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [editFormData, setEditFormData] = useState({
-    studentName: "",
-    fatherName: "",
-    email: "",
-    mobile: "",
-    alternateMobile: "",
-    collegeName: "",
-    eduYear: "",
-    remark: "",
-  });
+   const didFetch = useRef(false);
+  
+    useEffect(() => {
+      if (didFetch.current) return;
+      didFetch.current = true;
+  
+      const fetchInitialData = async () => {
+        await fetchStudents({ forceRefresh: true, filters: {} });
+        changeLimittech(100)
+        await fetchTechnology();
+        await getAllBranches();
+      };
+  
+      fetchInitialData();
+    }, [fetchStudents]);
+
+ const getAllBranches = async () => {
+    try {
+      const res = await axios.get("/branches");
+      if (res.data.success) {
+        setBranches(res.data.data.filter((b) => b.isActive));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      console.error(error);
+    }
+  };
+
+ 
+  const handlePrint = (student) => {
+    window.open(`/receipt/${student._id}`, "_blank");
+  };
+
+  const handleQrView = (row) => {
+    if (row.qrcode?.image?.url) {
+      setSelectedQrCode(row.qrcode.image.url);
+      setQrModalOpen(true);
+    }
+  };
+
+  const handleQrModalClose = () => {
+    setQrModalOpen(false);
+    setSelectedQrCode(null);
+  };
 
   const columns = [
     {
@@ -82,101 +144,246 @@ function RejectReg() {
       ),
     },
     {
-      label: "Tra Fee Status",
-      accessor: "trainingFeeStatus",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.trainingFeeStatus}
-          color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
-    {
-      label: "Tnx Status",
-      accessor: "tnxStatus",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.tnxStatus}
-          color={row.tnxStatus === "paid" ? "success" : "warning"}
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
-    { label: "Enroll ID", accessor: "userid", filter: false },
-    { label: "Student Name", accessor: "studentName", filter: false },
-    { label: "Father Name", accessor: "fatherName", filter: false },
-    { label: "Mobile", accessor: "mobile", filter: false },
-    { label: "Whatshapp", accessor: "whatshapp", filter: false },
-    { label: "AlternateMobile", accessor: "alternateMobile", filter: false },
-    { label: "College Name", accessor: "collegeName", filter: true },
-    { label: "Edu Year", accessor: "eduYear", filter: true },
-    {
-      label: "Tranning",
-      accessor: "training.name",
-      Cell: ({ row }) => <span>{row.training.name}</span>,
-      filter: true,
-      show: true,
-    },
-    {
-      label: "Technology",
-      accessor: "technology.name",
-      Cell: ({ row }) => <span>{row.technology.name}</span>,
-      filter: true,
-      show: true,
-    },
-    {
-      label: "Education",
-      accessor: "education.name",
-      Cell: ({ row }) => <span>{row.education.name}</span>,
-      filter: true,
-      show: true,
-    },
-    { label: "Amount", accessor: "amount", filter: false, show: true },
-    { label: "TotalFee", accessor: "totalFee", filter: false, show: true },
-    { label: "Discount", accessor: "discount", filter: false, show: true },
-    { label: "FinalFee", accessor: "finalFee", filter: false, show: true },
-    { label: "PaidAmount", accessor: "paidAmount", filter: false, show: true },
-    { label: "DueAmount", accessor: "dueAmount", filter: false, show: true },
-    {
-      label: "Branch",
-      accessor: "branch.name",
-      Cell: ({ row }) => <span>{row.branch.name}</span>,
-      filter: true,
-      show: true,
-    },
-    {
-      label: "Hr Name",
-      accessor: "hrName",
-      Cell: ({ row }) => <span>{row.hrName?.name}</span>,
-      filter: false,
-      show: true,
-    },
-    {
-      label: "Payment Method",
-      accessor: "paymentMethod",
-      filter: true,
-      show: true,
-    },
-    {
-      label: "Reg Date",
-      accessor: "createdAt",
-      Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
-      filter: false,
-      show: true,
-    },
-    {
-      label: "Qr code",
-      accessor: "qrcode.name",
-
-      filter: false,
-      show: true,
-    },
-    { label: "Remark", accessor: "remark", filter: false, show: true },
+          label: "Tra Fee Status",
+          accessor: "trainingFeeStatus",
+          sortable: true,
+          filter: true,
+          filterKey: "trainingFeeStatus",
+          Cell: ({ row }) => (
+            <Chip
+              label={row.trainingFeeStatus || "pending"}
+              color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
+              variant="outlined"
+              size="small"
+            />
+          ),
+        },
+        {
+          label: "Tnx Status",
+          accessor: "tnxStatus",
+          sortable: true,
+          filter: false,
+          filterKey: "tnxStatus",
+          Cell: ({ row }) => (
+            <Chip
+              label={row.tnxStatus || "pending"}
+              color={row.tnxStatus === "paid" ? "success" : "warning"}
+              variant="outlined"
+              size="small"
+            />
+          ),
+        },
+        {
+          label: "Enroll ID",
+          accessor: "userid",
+          sortable: true,
+        },
+        {
+          label: "Student Name",
+          accessor: "studentName",
+          sortable: true,
+        },
+    
+        {
+          label: "Amount",
+          accessor: "amount",
+          sortable: true,
+        },
+        {
+          label: "Total Fee",
+          accessor: "totalFee",
+          sortable: true,
+        },
+        {
+          label: "Discount Fee",
+          accessor: "discount",
+          sortable: true,
+        },
+        {
+          label: "Final Fee",
+          accessor: "finalFee",
+          sortable: true,
+        },
+        {
+          label: "Paid Amount",
+          accessor: "paidAmount",
+          sortable: true,
+        },
+        {
+          label: "Due Amount",
+          accessor: "dueAmount",
+          sortable: true,
+        },
+    
+        {
+          label: "Payment Method",
+          accessor: "paymentMethod",
+          sortable: true,
+          filter: true,
+          filterKey: "paymentMethod",
+        },
+        {
+          label: "Payment Type",
+          accessor: "paymentType",
+          sortable: true,
+          filter: false,
+        },
+        {
+          label: "Payment qrcode",
+          accessor: "qrcode.name",
+          sortable: true,
+          Cell: ({ row }) => (
+            <div
+              className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
+              onClick={() => handleQrView(row)}
+            >
+              {row.qrcode?.name}
+            </div>
+          ),
+        },
+        {
+          label: "UTR No",
+          accessor: "tnxId",
+          sortable: true,
+        },
+        {
+          label: "Mobile",
+          accessor: "mobile",
+          sortable: true,
+        },
+        {
+          label: "Whatshapp",
+          accessor: "whatshapp",
+          sortable: true,
+        },
+        {
+          label: "Alternate Mobile",
+          accessor: "alternateMobile",
+          sortable: true,
+        },
+        {
+          label: "Email",
+          accessor: "email",
+          sortable: true,
+        },
+        {
+          label: "Father Name",
+          accessor: "fatherName",
+          sortable: true,
+        },
+    
+        {
+          label: "College Name",
+          accessor: "collegeName",
+          sortable: true,
+          filter: false,
+          filterKey: "collegeName",
+          Cell: ({ row }) => <span>{row.collegeName?.name || "-"}</span>,
+        },
+        {
+          label: "Education",
+          accessor: "education.name",
+          sortable: true,
+        },
+        {
+          label: "Edu Year",
+          accessor: "eduYear",
+          sortable: true,
+        },
+        {
+          label: "Training",
+          accessor: "training.name",
+          sortable: true,
+        },
+        
+        {
+          label: "Technology",
+          accessor: "technology.name",
+          sortable: true,
+          filter: true,
+          filterKey: "technology",
+           filterOptions: techState.data.map((t) => ({
+            label: t.name,
+            value: t._id,
+          })),
+          Cell: ({ row }) => <span>{row.technology?.name || "N/A"}</span>,
+        },
+        {
+          label: "Branch",
+          accessor: "branch.name", // 👈 display ke liye
+          filter: true,
+          filterKey: "branch", // 👈 API ko objectId bhejne ke liye
+          filterOptions: branches.map((b) => ({
+            label: b.name,
+            value: b._id,
+          })),
+          sortable: true,
+          Cell: ({ row }) => row.branch?.name || "N/A",
+        },
+         {
+          label: "Batch",
+          accessor: "batch",
+          sortable: true,
+          Cell:({row})=><div>
+            {row.batch?.map((b,i)=>(<div key={b._id}> {b.batchName}</div>))}
+          </div>
+        },
+        {
+          label: "Hr Name",
+          accessor: "hrName.name",
+          sortable: true,
+        },
+        {
+          label: "Reg Date",
+          accessor: "createdAt",
+          sortable: true,
+          Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
+        },
+        {
+          label: "Remark",
+          accessor: "remark",
+    
+        },
   ];
-  // Format date to Indian format
+
+  const handleAccept = async (id) => {
+    try {
+      setActionLoading(`Accept-${id}`);
+      const res = await axios.patch(`/registration/status/${id}`, {
+        status: "accepted",
+      });
+      if (res.data.success) {
+        toast.success("Registration accepted successfully");
+        fetchCount();
+        // Refresh current page with same filters
+        fetchStudents({ forceRefresh: true });
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      setActionLoading(`Reject-${id}`);
+      const res = await axios.patch(`/registration/status/${id}`, {
+        status: "rejected",
+      });
+      if (res.data.success) {
+        toast.success("Registration rejected successfully");
+        fetchCount();
+        // Refresh current page with same filters
+        fetchStudents({ forceRefresh: true });
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -184,271 +391,105 @@ function RejectReg() {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
-  const handleDelete = async (id) => {
-    try {
-      setLoading(`deleting-${id}`);
-      const res = await axios.delete(`/registration/user/${id}`);
-      if (res.data.success) {
-        toast.success(res.data.message || "successfull");
-      }
-    } catch (error) {
-      toast.error(error.response.data.message || error.message);
-    } finally {
-      fetchStudents();
-      setLoading(false);
-    }
-  };
-  const handleView = (row) => {
-    setSelectedStudent(row);
-    setViewModalOpen(true);
+
+  // Get user-applied filters (excluding default filters)
+  const getUserAppliedFilters = () => {
+    const userFilters = { ...filters };
+    // Remove default filters
+    Object.keys(defaultFilters).forEach(key => {
+      delete userFilters[key];
+    });
+    
+    return Object.entries(userFilters)
+      .filter(([key, value]) => value && value !== "All")
+      .map(([key, value]) => ({ key, value }));
   };
 
-  const handleViewModalClose = () => {
-    setViewModalOpen(false);
-    setSelectedStudent(null);
-  };
+  const appliedFilters = getUserAppliedFilters();
+  const appliedFiltersCount = appliedFilters.length;
 
-  useEffect(() => {
-    fetchStudents(); // Initial fetch when component mounts
-  }, [fetchStudents]);
   return (
-
-      <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-              Rejected Registrations
-            </h1>
-            <Link
-              to="/dashboard"
-              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <Home className="w-5 h-5 text-blue-600 mr-1" />
-              <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
-              <span>Dashboard</span>
-            </Link>
-          </div>
-          <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg">
-            <span className="font-semibold">
-              Total Rejected: {rejectedStudents.length}
-            </span>
-          </div>
+    <div className="max-w-sm md:max-w-6xl mx-auto px-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <div className="flex items-center">
+          <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
+            Rejected Registrations
+          </h1>
+          <Link
+            to="/dashboard"
+            className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Home className="w-5 h-5 text-blue-600 mr-1" />
+            <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
+            <span>Dashboard</span>
+          </Link>
         </div>
-
-        {/* DataTable */}
-        <DataTable
-          columns={columns}
-          data={rejectedStudents}
-          loading={loading}
-        />
-
-        {/* View Student Details Modal */}
-        <CustomModal
-          open={viewModalOpen}
-          onClose={handleViewModalClose}
-          title="Student Registration Details"
-          hideSubmitButton={true}
-        >
-          {selectedStudent && (
-            <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    User ID
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.userid}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Student Name
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.studentName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Father Name
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.fatherName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.email}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mobile
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.mobile}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Alternate Mobile
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.alternateMobile || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    College Name
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.collegeName}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Education Year
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.eduYear}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Training
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.training?.name || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Technology
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.technology?.name || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Type
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.paymentType}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    ₹{selectedStudent.amount}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Status
-                  </label>
-                  <Chip
-                    label={selectedStudent.paymentStatus}
-                    color={
-                      selectedStudent.paymentStatus === "success"
-                        ? "success"
-                        : "warning"
-                    }
-                    variant="outlined"
-                    size="small"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Registration Status
-                  </label>
-                  <Chip
-                    label={selectedStudent.status}
-                    color="success"
-                    variant="outlined"
-                    size="small"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Method
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.paymentMethod || "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              {selectedStudent.couponCode && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Coupon Code
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {selectedStudent.couponCode}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Coupon Discount
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      ₹{selectedStudent.couponDiscount}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {selectedStudent.remark && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Remark
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {selectedStudent.remark}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Registration Date
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.createdAt).toLocaleDateString(
-                      "en-IN"
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Transaction Date
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {new Date(selectedStudent.txnDateTime).toLocaleDateString(
-                      "en-IN"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
+        
+        {/* Applied Filters Badge */}
+        <Box className="flex items-center gap-2">
+       
+          
+          {appliedFiltersCount > 0 && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<XCircle size={16} />}
+              onClick={clearAllFilters}
+              className="text-red-600 border-red-300 hover:bg-red-50"
+            >
+              Clear Filters
+            </Button>
           )}
-        </CustomModal>
-
+        </Box>
       </div>
 
+    
+
+      {/* DataTable */}
+      <DataTable
+        mode="server"
+        columns={columns}
+        data={students}
+        loading={loading}
+        page={pagination.page}
+        limit={pagination.limit}
+        total={pagination.total}
+        onPageChange={changePage}
+        onLimitChange={changeLimit}
+        onSortChange={changeSort}
+        onFilterChange={changeFilters} // This uses our custom handler
+        onSearch={changeSearch}
+      />
+
+      {/* QR Code Modal */}
+      <Dialog
+        open={qrModalOpen}
+        onClose={handleQrModalClose}
+        maxWidth="xs"
+        fullWidth
+      >
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-xl font-semibold">QR Code</h2>
+          <IconButton onClick={handleQrModalClose}>
+            <Close />
+          </IconButton>
+        </div>
+        <DialogContent className="flex flex-col items-center justify-center p-6">
+          {selectedQrCode ? (
+            <img
+              src={`${import.meta.env.VITE_BASE_URI}${selectedQrCode}`}
+              alt="QR Code"
+              className="w-72 h-72 object-contain border rounded-lg"
+            />
+          ) : (
+            <p className="text-gray-500">No QR code available</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

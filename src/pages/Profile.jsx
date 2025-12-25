@@ -144,11 +144,11 @@ const Profile = () => {
       oldpassword: formData.currentPassword,
       newpassword: formData.newPassword,
     };
-    console.log(data);
+
     
     try {
       const res = await axiosInstance.put(`/auth/update/${userId}`, data);
-      console.log(res);
+
 
       if (res.status === 200) {
         showMessage("success", "Password updated successfully");
@@ -208,7 +208,6 @@ const Profile = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      console.log(res);
 
       if (res.status === 200) {
         showMessage("success", "Profile image updated successfully");

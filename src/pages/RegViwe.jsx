@@ -14,6 +14,14 @@ import {
   MessageSquare,
   Mail as MailIcon,
   Phone as PhoneIcon,
+  FileText,
+  Home,
+  Briefcase,
+  Award,
+  ShieldCheck,
+  Camera,
+  FileCheck,
+  MapPin,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -25,8 +33,9 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
+  Avatar,
 } from "@mui/material";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
 import { toast } from "react-toastify";
 
@@ -45,7 +54,7 @@ function RegView() {
 
   const fetchStudentData = async () => {
     try {
-      const res = await axiosInstance.get(`/registration/user/?id=${param.id}`);
+      const res = await axiosInstance.get(`/registration/user?id=${param.id}`);
       setStudentData(res.data.data);
     } catch (error) {
       console.log(error);
@@ -62,21 +71,10 @@ function RegView() {
       console.log(error);
     }
   };
-  const fetchbatch = async () => {
-    try {
-      const res = await axiosInstance.get(`/batches/student/${param.id}`);
-      setBatchData(res.data.batch);
-      console.log(res);
-      
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   useEffect(() => {
     fetchStudentData();
     fetchData();
-    fetchbatch();
   }, []);
 
   const formatDate = (dateString) => {
@@ -88,6 +86,11 @@ function RegView() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatSimpleDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-IN");
   };
 
   const getStatusBadge = (status) => {
@@ -127,7 +130,6 @@ function RegView() {
   };
 
   const handleSendReminder = (type) => {
-    // Set default message based on type
     let defaultMessage = "";
 
     if (type === "whatsapp") {
@@ -164,8 +166,6 @@ support@digicoders.in | www.digicoders.in`;
 
   const confirmSendReminder = async () => {
     try {
-      // API call to send reminder
-
       const payload = {
         studentId: studentData._id,
         type: reminderDialog.type,
@@ -181,7 +181,7 @@ support@digicoders.in | www.digicoders.in`;
       }
     } catch (error) {
       console.error("Error sending reminder:", error);
-      toast.error('Error sending reminder')
+      toast.error("Error sending reminder");
     } finally {
       setReminderDialog({ open: false, type: "", message: "" });
     }
@@ -193,14 +193,6 @@ support@digicoders.in | www.digicoders.in`;
       accessor: "action",
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          {/* <Tooltip
-            title={<span className="font-bold ">View</span>}
-            placement="top"
-          >
-            <button className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600">
-              <Eye size={20} />
-            </button>
-          </Tooltip> */}
           <Tooltip
             title={<span className="font-bold ">Print</span>}
             placement="top"
@@ -229,7 +221,6 @@ support@digicoders.in | www.digicoders.in`;
     {
       label: "Payment Type",
       accessor: "paymentType",
-      filter: true,
     },
     {
       label: "Mode",
@@ -255,7 +246,6 @@ support@digicoders.in | www.digicoders.in`;
           size="small"
         />
       ),
-      filter: true,
     },
   ];
 
@@ -268,25 +258,70 @@ support@digicoders.in | www.digicoders.in`;
       <div className="h-96 flex items-center justify-center">Loading...</div>
     );
   }
-  // console.log(studentData)
+
+  // Document download functions
+  const downloadDocument = (url, filename) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
+    <div className="max-w-sm md:max-w-7xl mx-auto px-2">
       {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-blue-600" />
+            <div className="relative">
+              {studentData.profilePhoto?.url ? (
+                <Avatar
+                  src={`${import.meta.env.VITE_BASE_URI}${studentData.profilePhoto.url}`}
+                  alt={studentData.studentName}
+                  sx={{ width: 64, height: 64 }}
+                  className="border-2 border-blue-200"
+                />
+              ) : (
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                  <User className="w-8 h-8 text-blue-600" />
+                </div>
+              )}
+              {studentData.photoSummited && (
+                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
+                  <Camera className="w-4 h-4 text-white" />
+                </div>
+              )}
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {studentData.studentName}
               </h1>
               <p className="text-gray-600">Student ID: {studentData?.userid}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm text-gray-500">
+                  {studentData.gender === "female" ? "👩" : "👨"} {studentData.gender?.charAt(0).toUpperCase() + studentData.gender?.slice(1)}
+                </span>
+                <span className="text-sm text-gray-500">•</span>
+                <span className="text-sm text-gray-500">
+                  DOB: {formatSimpleDate(studentData.dateOfBirth)}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            {getStatusBadge(studentData?.status)}
+          <div className="flex flex-col items-end gap-3">
+            <div>{getStatusBadge(studentData?.status)}</div>
+            <Button
+              variant="outlined"
+              component={Link}
+              to={`/update-student/${studentData._id}`}
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              size="small"
+            >
+              Update Student
+            </Button>
           </div>
         </div>
 
@@ -330,47 +365,138 @@ support@digicoders.in | www.digicoders.in`;
             </h2>
           </div>
           <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Student Name
-              </label>
-              <p className="text-gray-900">{studentData?.studentName}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Student Name
+                </label>
+                <p className="text-gray-900">{studentData?.studentName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Father's Name
+                </label>
+                <p className="text-gray-900">{studentData?.fatherName}</p>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Father's Name
-              </label>
-              <p className="text-gray-900">{studentData?.fatherName}</p>
-            </div>
+            
             <div>
               <label className="text-sm font-medium text-gray-500">Email</label>
               <p className="text-gray-900 break-all">{studentData?.email}</p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Mobile
-              </label>
-              <p className="text-gray-900">{studentData?.mobile}</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Mobile
+                </label>
+                <p className="text-gray-900">{studentData?.mobile}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  WhatsApp
+                </label>
+                <p className="text-gray-900">{studentData?.whatshapp || "N/A"}</p>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                WhatsApp
-              </label>
-              <p className="text-gray-900">{studentData?.whatshapp || "N/A"}</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Alternate Mobile
+                </label>
+                <p className="text-gray-900">
+                  {studentData?.alternateMobile || "N/A"}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Gender
+                </label>
+                <p className="text-gray-900 capitalize">{studentData?.gender}</p>
+              </div>
             </div>
+
             <div>
               <label className="text-sm font-medium text-gray-500">
-                Alternate Mobile
+                Date of Birth
               </label>
               <p className="text-gray-900">
-                {studentData?.alternateMobile || "N/A"}
+                {formatSimpleDate(studentData.dateOfBirth)}
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Address Information */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Home className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Address Information
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Address
+              </label>
+              <p className="text-gray-900">{studentData?.address}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  District
+                </label>
+                <p className="text-gray-900">{studentData?.district}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Pincode
+                </label>
+                <p className="text-gray-900">{studentData?.pincode}</p>
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
-                College
+                College Name
               </label>
-              <p className="text-gray-900">{studentData?.collegeName}</p>
+              <p className="text-gray-900">{studentData?.collegeName?.name}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Guardian Information */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <ShieldCheck className="w-5 h-5 text-purple-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Guardian Information
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Guardian Relation
+              </label>
+              <p className="text-gray-900">{studentData?.guardianRelation}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Guardian Mobile
+              </label>
+              <p className="text-gray-900">{studentData?.guardianMobile}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Mobile Verification
+              </label>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.guardianMobileVerification ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">
+                  {studentData?.guardianMobileVerification ? "Verified" : "Not Verified"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -392,6 +518,18 @@ support@digicoders.in | www.digicoders.in`;
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
+                Higher Education
+              </label>
+              <p className="text-gray-900">{studentData?.higherEducation}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Last Qualification
+              </label>
+              <p className="text-gray-900">{studentData?.lastQualification}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
                 Academic Year
               </label>
               <p className="text-gray-900">{studentData?.eduYear}</p>
@@ -402,6 +540,18 @@ support@digicoders.in | www.digicoders.in`;
               </label>
               <p className="text-gray-900">{studentData?.technology?.name}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Training Information */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Briefcase className="w-5 h-5 text-orange-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Training Information
+            </h2>
+          </div>
+          <div className="space-y-3">
             <div>
               <label className="text-sm font-medium text-gray-500">
                 Training Program
@@ -416,15 +566,32 @@ support@digicoders.in | www.digicoders.in`;
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
+                Joining Date
+              </label>
+              <p className="text-gray-900">
+                {formatSimpleDate(studentData?.joiningData)}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
                 Branch Name
               </label>
               <p className="text-gray-900">{studentData?.branch?.name}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
-                Batch
+                Batch Information
               </label>
-              {batchData?.map((b)=>(<p className="text-gray-900">{b.batchName || "N/A"},({b?.startDate?.split('T')[0] || "N/A"})</p>)) || "NA"}
+              <div className="space-y-1">
+                {studentData?.batch?.map((b, index) => (
+                  <div key={b._id} className="flex items-center gap-2">
+                    <span className="text-gray-900">{b.batchName}</span>
+                    <span className="text-sm text-gray-500">
+                      ({formatSimpleDate(b.startDate)})
+                    </span>
+                  </div>
+                )) || "N/A"}
+              </div>
             </div>
           </div>
         </div>
@@ -446,38 +613,43 @@ support@digicoders.in | www.digicoders.in`;
                 {getPaymentStatusBadge(studentData?.trainingFeeStatus)}
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Total Fee
-              </label>
-              <p className="text-gray-900 text-lg font-semibold">
-                ₹{studentData?.totalFee?.toLocaleString()}
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Total Fee
+                </label>
+                <p className="text-gray-900 text-lg font-semibold">
+                  ₹{studentData?.totalFee?.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Discount
+                </label>
+                <p className="text-gray-900">
+                  ₹{studentData?.discount?.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Discount
-              </label>
-              <p className="text-gray-900">
-                ₹{studentData?.discount?.toLocaleString()}
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Final Fee
+                </label>
+                <p className="text-gray-900">
+                  ₹{studentData?.finalFee?.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Paid Amount
+                </label>
+                <p className="text-green-600 font-semibold">
+                  ₹{studentData?.paidAmount?.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Final Fee
-              </label>
-              <p className="text-gray-900">
-                ₹{studentData?.finalFee?.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Paid Amount
-              </label>
-              <p className="text-green-600 font-semibold">
-                ₹{studentData?.paidAmount?.toLocaleString()}
-              </p>
-            </div>
+            <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-gray-500">
                 Due Amount
@@ -486,22 +658,175 @@ support@digicoders.in | www.digicoders.in`;
                 ₹{studentData?.dueAmount?.toLocaleString()}
               </p>
             </div>
-
             <div>
               <label className="text-sm font-medium text-gray-500">
-                Payment Method
+                Reg Amount
               </label>
-              <p className="text-gray-900 capitalize">
-                {studentData?.paymentMethod}
+              <p className="text-blue-600 font-semibold">
+                ₹{studentData?.amount?.toLocaleString()}
               </p>
             </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Payment Method
+                </label>
+                <p className="text-gray-900 capitalize">
+                  {studentData?.paymentMethod}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  UPI ID
+                </label>
+                <p className="text-gray-900">
+                  {studentData?.qrcode?.upi || "N/A"}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Transaction ID
+                </label>
+                <p className="text-gray-900">{studentData?.tnxId || "N/A"}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Transaction Status
+                </label>
+                <p className="text-gray-900">{studentData?.tnxStatus || "N/A"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Documents & Status */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <FileText className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Documents & Status
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.aadharCardUploded ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">Aadhar Card</span>
+                {studentData?.aadharCard?.url && (
+                  <Button
+                    size="small"
+                    onClick={() => downloadDocument(studentData.aadharCard.url, 'AadharCard')}
+                    className="text-xs"
+                  >
+                    View
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.cvUploded ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">CV</span>
+                {studentData?.cv?.url && (
+                  <Button
+                    size="small"
+                    onClick={() => downloadDocument(studentData.cv.url, 'CV')}
+                    className="text-xs"
+                  >
+                    View
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.photoSummited ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">Photo Submitted</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.hardForm ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">Hard Form</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.certificateIssued ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">Certificate Issued</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.idCardIssued ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">ID Card Issued</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.tSartIssued ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">T-Shirt Issued</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${studentData?.placementStatus ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-gray-900">Placement Status</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Placement Information */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Award className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Placement Information
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Job Need
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${studentData?.isJobNeed ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-gray-900">
+                    {studentData?.isJobNeed ? "Yes" : "No"}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Joined
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${studentData?.isJoin ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-gray-900">
+                    {studentData?.isJoin ? "Yes" : "No"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
             <div>
               <label className="text-sm font-medium text-gray-500">
-                UPI ID
+                Place in Company
               </label>
-              <p className="text-gray-900">
-                {studentData?.qrcode?.upi || "N/A"}
-              </p>
+              <p className="text-gray-900">{studentData?.placeInCompany || "N/A"}</p>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Interviewed Companies
+              </label>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {studentData?.interviewInCompanines?.map((company, index) => (
+                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 rounded-md text-sm">
+                    {company}
+                  </span>
+                )) || "N/A"}
+              </div>
             </div>
           </div>
         </div>
@@ -585,38 +910,40 @@ support@digicoders.in | www.digicoders.in`;
               <label className="text-sm font-medium text-gray-500">
                 System ID
               </label>
-              <p className="text-gray-900 font-mono text-sm">
+              <p className="text-gray-900 font-mono text-sm break-all">
                 {studentData?._id}
               </p>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Login Status
-              </label>
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                ></div>
-                <span className="text-gray-900">
-                  {studentData?.isLogin ? "Online" : "Offline"}
-                </span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Login Status
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  ></div>
+                  <span className="text-gray-900">
+                    {studentData?.isLogin ? "Online" : "Offline"}
+                  </span>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Account Status
-              </label>
-              <div className="flex items-center space-x-2">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    studentData?.isStatus ? "bg-green-500" : "bg-red-500"
-                  }`}
-                ></div>
-                <span className="text-gray-900">
-                  {studentData?.isStatus ? "Active" : "Inactive"}
-                </span>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Account Status
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      studentData?.isStatus ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></div>
+                  <span className="text-gray-900">
+                    {studentData?.isStatus ? "Active" : "Inactive"}
+                  </span>
+                </div>
               </div>
             </div>
             <div>
@@ -625,26 +952,6 @@ support@digicoders.in | www.digicoders.in`;
               </label>
               <p className="text-gray-900">
                 {formatDate(studentData.txnDateTime)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <Users className="w-5 h-5 text-orange-600" />
-            <h2 className="text-lg font-semibold text-gray-900">
-              Additional Information
-            </h2>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Remarks
-              </label>
-              <p className="text-gray-900 bg-gray-50 p-3 rounded-md">
-                {studentData?.remark || "No remarks"}
               </p>
             </div>
             <div>
@@ -669,10 +976,40 @@ support@digicoders.in | www.digicoders.in`;
             </div>
           </div>
         </div>
+
+        {/* Additional Information */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Users className="w-5 h-5 text-orange-600" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Additional Information
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                Remarks
+              </label>
+              <p className="text-gray-900 bg-gray-50 p-3 rounded-md min-h-[80px]">
+                {studentData?.remark || "No remarks"}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                QR Code Name
+              </label>
+              <p className="text-gray-900">{studentData?.qrcode?.name || "N/A"}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Payment History Table */}
       <div className="mt-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <CreditCard className="w-5 h-5" />
+          Payment History
+        </h2>
         <DataTable columns={columns} data={feeData} loading={loading} />
       </div>
 
@@ -682,6 +1019,8 @@ support@digicoders.in | www.digicoders.in`;
         onClose={() =>
           setReminderDialog({ open: false, type: "", message: "" })
         }
+        maxWidth="md"
+        fullWidth
       >
         <DialogTitle>
           Send{" "}
@@ -695,8 +1034,7 @@ support@digicoders.in | www.digicoders.in`;
             margin="dense"
             label="Message"
             type="text"
-            // sx={{width:500}}
-            className="md:w-lg w-sm"
+            fullWidth
             variant="outlined"
             multiline
             rows={7}
