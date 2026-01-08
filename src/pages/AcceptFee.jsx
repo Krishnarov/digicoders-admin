@@ -45,6 +45,8 @@ function AcceptFee() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   const columns = [
     {
@@ -100,7 +102,7 @@ function AcceptFee() {
       sortable: true,
       Cell: ({ row }) => (
         <Chip
-          label={row.tnxStatus}
+          label={capitalizeFirst(row.tnxStatus)}
           color={row.tnxStatus === "paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
@@ -121,7 +123,7 @@ function AcceptFee() {
       label: "Student Name",
       accessor: "registrationId.studentName",
       sortable: true,
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
+      Cell: ({ row }) => capitalizeFirst(row.registrationId?.studentName || "N/A"),
     },
     {
       label: "Amount",
@@ -158,6 +160,7 @@ function AcceptFee() {
       accessor: "mode",
       sortable: true,
       filter: true,
+      Cell: ({ row }) => capitalizeFirst(row.mode || "N/A"),
       filterKey: "paymentMethod",
     },
     {
@@ -165,6 +168,7 @@ function AcceptFee() {
       accessor: "paymentType",
       sortable: true,
       filter: true,
+      Cell: ({ row }) => capitalizeFirst(row.paymentType)
     },
     {
       label: "QR Code",
@@ -176,9 +180,9 @@ function AcceptFee() {
           onClick={() => handleQrView(row.qrcode?.image?.url)}
           title={row.qrcode?.name || "View QR"}
         >
-          {row.qrcode?.name}
+          {capitalizeFirst(row.qrcode?.name)}
         </div>
-      ),
+      )
     },
     {
       label: "Transaction ID",
@@ -225,6 +229,7 @@ function AcceptFee() {
       label: "Father Name",
       accessor: "registrationId.fatherName",
       sortable: true,
+      Cell: ({ row }) => capitalizeFirst(row.registrationId?.fatherName || "N/A"),
     },
     {
       label: "Remark",
@@ -287,7 +292,6 @@ function AcceptFee() {
     try {
       setLoading(`Reject-${id}`);
       await axios.patch(`/fee/status/${id}`, { status: "rejected" });
-      fetchFee();
     } catch (error) {
       console.error("Error rejecting payment:", error);
     } finally {
@@ -507,8 +511,8 @@ function AcceptFee() {
                       selectedPayment.status === "accepted"
                         ? "success"
                         : selectedPayment.status === "rejected"
-                        ? "error"
-                        : "warning"
+                          ? "error"
+                          : "warning"
                     }
                     variant="outlined"
                     size="small"

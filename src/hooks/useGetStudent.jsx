@@ -36,7 +36,7 @@ const useGetStudents = (defaultFilters = {}) => {
         params.append("limit", limit);
         params.append("sortBy", sortBy);
         params.append("sortOrder", sortOrder);
-        
+
         // Add search if provided
         if (search && search.trim()) {
           params.append("search", search);
@@ -95,16 +95,16 @@ const useGetStudents = (defaultFilters = {}) => {
       }
     },
     [[
-  dispatch,
-  studentState.pagination.page,
-  studentState.pagination.limit,
-  studentState.searchTerm,
-  studentState.sortConfig.sortBy,
-  studentState.sortConfig.sortOrder,
-  studentState.filters,
-  defaultFilters
-]
-]
+      dispatch,
+      studentState.pagination.page,
+      studentState.pagination.limit,
+      studentState.searchTerm,
+      studentState.sortConfig.sortBy,
+      studentState.sortConfig.sortOrder,
+      studentState.filters,
+      defaultFilters
+    ]
+    ]
   );
 
   // Helper functions for common operations
@@ -128,16 +128,16 @@ const useGetStudents = (defaultFilters = {}) => {
   const handleFilterChange = useCallback((newFilters) => {
     // For RegReport page, we need to merge with default status filter
     const userFilters = { ...newFilters };
-    
+
     // Remove status from user filters if it's same as default
     if (defaultFilters.status && userFilters.status === defaultFilters.status) {
       delete userFilters.status;
     }
-    
-    fetchStudents({ 
-      page: 1, 
+
+    fetchStudents({
+      page: 1,
       filters: userFilters,
-      mergeWithDefaults: true 
+      mergeWithDefaults: true
     });
   }, [fetchStudents, defaultFilters]);
 
@@ -148,10 +148,10 @@ const useGetStudents = (defaultFilters = {}) => {
   const clearAllFilters = useCallback(() => {
     dispatch(clearFilters());
     // Keep default filters, clear only user filters
-    fetchStudents({ 
-      page: 1, 
+    fetchStudents({
+      page: 1,
       filters: {},
-      mergeWithDefaults: true 
+      mergeWithDefaults: true
     });
   }, [dispatch, fetchStudents]);
 
@@ -163,7 +163,7 @@ const useGetStudents = (defaultFilters = {}) => {
   return {
     // Main fetch function
     fetchStudents,
-    
+
     // Helper functions
     refreshStudents,
     changePage,
@@ -172,7 +172,7 @@ const useGetStudents = (defaultFilters = {}) => {
     changeFilters: handleFilterChange, // Use the custom handler
     changeSearch,
     clearAllFilters,
-    
+
     // Current state with merged filters
     currentState: {
       ...studentState,

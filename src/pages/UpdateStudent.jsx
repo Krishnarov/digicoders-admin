@@ -21,6 +21,12 @@ import {
   Shirt,
   Briefcase,
 } from "lucide-react";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetTranning from "../hooks/useGetTranning";
@@ -114,8 +120,8 @@ function UpdateStudent() {
 
   const fetchCollegeNames = useCallback(async () => {
     try {
-      const params={limit: 1000}
-      const response = await axios.get(`/college`,{ params });
+      const params = { limit: 1000 }
+      const response = await axios.get(`/college`, { params });
       if (response.data.success) setCollegeNames(response.data.colleges);
     } catch (error) {
       console.error("Error fetching college names:", error);
@@ -163,7 +169,6 @@ function UpdateStudent() {
 
           setFormData((prev) => ({
             ...prev,
-            amount: amount.toString(),
           }));
         }
       } catch (error) {
@@ -244,7 +249,7 @@ function UpdateStudent() {
             profilePhoto: studentData.profilePhoto || null,
             hrName: studentData.hrName?._id || "",
             branch: studentData.branch?._id || "",
-            collegeName: studentData.collegeName || "",
+            collegeName: studentData.collegeName?._id || "",
             totalFee: studentData.totalFee || 0,
             discount: studentData.discount || 0,
             finalFee: studentData.finalFee || 0,
@@ -257,7 +262,7 @@ function UpdateStudent() {
             tnxId: studentData.tnxId || "",
             remark: studentData.remark || "",
             pincode: studentData.pincode || "",
-            
+
           };
           setPreview(studentData?.profilePhoto?.url)
           setFormData(initialFormData);
@@ -901,7 +906,7 @@ function UpdateStudent() {
                   value={formData.technology}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  // disabled={!formData.training}
+                // disabled={!formData.training}
                 >
                   <option value="">Select Technology</option>
                   {technologiesData.map((tech) => (
@@ -964,20 +969,30 @@ function UpdateStudent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Guardian Relation
                 </label>
-                <input
-                  type="text"
+
+                <select
                   name="guardianRelation"
                   value={formData.guardianRelation}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. Father, Mother, etc."
-                />
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Relation</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Brother">Brother</option>
+                  <option value="Sister">Sister</option>
+                  <option value="Uncle">Uncle</option>
+                  <option value="Aunt">Aunt</option>
+                  <option value="Grandfather">Grandfather</option>
+                  <option value="Grandmother">Grandmother</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
+
 
               <div className="flex items-center">
                 <input
@@ -1117,7 +1132,7 @@ function UpdateStudent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   accept=".pdf,.doc,.docx"
                 />
-                    <p className="text-xs text-green-500 ">{formData.cv?.public_id}</p>
+                <p className="text-xs text-green-500 ">{formData.cv?.public_id}</p>
               </div>
             </div>
           </div>
@@ -1338,6 +1353,7 @@ function UpdateStudent() {
                   name="amount"
                   value={formData.amount}
                   onChange={handleChange}
+                  readOnly
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

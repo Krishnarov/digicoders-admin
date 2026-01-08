@@ -34,6 +34,7 @@ import {
   DialogTitle,
   TextField,
   Avatar,
+  CircularProgress,
 } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
@@ -50,11 +51,14 @@ function RegView() {
     type: "",
     message: "",
   });
+  const [sendingReminder, setSendingReminder] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
 
   const fetchStudentData = async () => {
     try {
       const res = await axiosInstance.get(`/registration/user?id=${param.id}`);
+      console.log(res);
+
       setStudentData(res.data.data);
     } catch (error) {
       console.log(error);
@@ -102,9 +106,8 @@ function RegView() {
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-medium border ${
-          statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
-        }`}
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
+          }`}
       >
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
@@ -120,9 +123,8 @@ function RegView() {
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-medium border ${
-          statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
-        }`}
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
+          }`}
       >
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
@@ -139,9 +141,8 @@ function RegView() {
     } else if (type === "email") {
       defaultMessage = `Dear ${studentData.studentName},
 
-We hope you are doing well. This is a gentle reminder from DigiCoders technologies pvt ltd. Training & Placement Cell regarding your pending fee of ₹${
-        studentData.dueAmount
-      } for the **${studentData.training?.name}** training program.
+We hope you are doing well. This is a gentle reminder from DigiCoders technologies pvt ltd. Training & Placement Cell regarding your pending fee of ₹${studentData.dueAmount
+        } for the **${studentData.training?.name}** training program.
 
 📌 Training Details:
 - Training Program: ${studentData.training?.name}
@@ -165,6 +166,7 @@ support@digicoders.in | www.digicoders.in`;
   };
 
   const confirmSendReminder = async () => {
+    setSendingReminder(true);
     try {
       const payload = {
         studentId: studentData._id,
@@ -183,6 +185,7 @@ support@digicoders.in | www.digicoders.in`;
       console.error("Error sending reminder:", error);
       toast.error("Error sending reminder");
     } finally {
+      setSendingReminder(false);
       setReminderDialog({ open: false, type: "", message: "" });
     }
   };
@@ -239,8 +242,8 @@ support@digicoders.in | www.digicoders.in`;
             row.status === "accepted"
               ? "success"
               : row.status === "rejected"
-              ? "error"
-              : "warning"
+                ? "error"
+                : "warning"
           }
           variant="outlined"
           size="small"
@@ -379,12 +382,12 @@ support@digicoders.in | www.digicoders.in`;
                 <p className="text-gray-900">{studentData?.fatherName}</p>
               </div>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-gray-500">Email</label>
               <p className="text-gray-900 break-all">{studentData?.email}</p>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">
@@ -562,7 +565,7 @@ support@digicoders.in | www.digicoders.in`;
               <label className="text-sm font-medium text-gray-500">
                 Duration
               </label>
-              <p className="text-gray-900">{studentData?.training?.duration}</p>
+              <p className="text-gray-900">{studentData?.training?.duration?.name}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
@@ -650,22 +653,22 @@ support@digicoders.in | www.digicoders.in`;
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Due Amount
-              </label>
-              <p className="text-red-600 font-semibold">
-                ₹{studentData?.dueAmount?.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">
-                Reg Amount
-              </label>
-              <p className="text-blue-600 font-semibold">
-                ₹{studentData?.amount?.toLocaleString()}
-              </p>
-            </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Due Amount
+                </label>
+                <p className="text-red-600 font-semibold">
+                  ₹{studentData?.dueAmount?.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Reg Amount
+                </label>
+                <p className="text-blue-600 font-semibold">
+                  ₹{studentData?.amount?.toLocaleString()}
+                </p>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -739,7 +742,7 @@ support@digicoders.in | www.digicoders.in`;
                 )}
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${studentData?.photoSummited ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -808,14 +811,14 @@ support@digicoders.in | www.digicoders.in`;
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-gray-500">
                 Place in Company
               </label>
               <p className="text-gray-900">{studentData?.placeInCompany || "N/A"}</p>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-gray-500">
                 Interviewed Companies
@@ -921,9 +924,8 @@ support@digicoders.in | www.digicoders.in`;
                 </label>
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
+                      }`}
                   ></div>
                   <span className="text-gray-900">
                     {studentData?.isLogin ? "Online" : "Offline"}
@@ -936,9 +938,8 @@ support@digicoders.in | www.digicoders.in`;
                 </label>
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      studentData?.isStatus ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${studentData?.isStatus ? "bg-green-500" : "bg-red-500"
+                      }`}
                   ></div>
                   <span className="text-gray-900">
                     {studentData?.isStatus ? "Active" : "Inactive"}
@@ -1050,8 +1051,16 @@ support@digicoders.in | www.digicoders.in`;
           >
             Cancel
           </Button>
-          <Button onClick={confirmSendReminder} variant="contained">
-            Send
+          <Button
+            onClick={confirmSendReminder}
+            variant="contained"
+            disabled={sendingReminder}
+          >
+            {sendingReminder ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Send"
+            )}
           </Button>
         </DialogActions>
       </Dialog>

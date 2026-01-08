@@ -36,7 +36,7 @@ import useGetTechnology from "../hooks/useGetTechnology";
 function AcceptReg() {
   // Default filter for new registrations - ALWAYS applied
   const defaultFilters = { status: "accepted" };
-  
+
   const {
     fetchStudents,
     changePage,
@@ -48,33 +48,32 @@ function AcceptReg() {
     currentState,
     defaultFilters: hookDefaults
   } = useGetStudents(defaultFilters);
-  const {techState,fetchTechnology,changeLimittech}=useGetTechnology()
+  const { techState, fetchTechnology } = useGetTechnology()
 
   const { data: students, pagination, loading, filters, searchTerm } = currentState;
   const [actionLoading, setActionLoading] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
- const [branches, setBranches] = useState([]);
+  const [branches, setBranches] = useState([]);
   const fetchCount = useGetCount();
- const navigate = useNavigate();
+  const navigate = useNavigate();
   // Initial fetch with default filters for new registrations
   const didFetch = useRef(false);
- useEffect(() => {
-     if (didFetch.current) return;
-     didFetch.current = true;
- 
-     const fetchInitialData = async () => {
-       await fetchStudents({ forceRefresh: true, filters: {} });
-       changeLimittech(100)
-       await fetchTechnology();
-       await getAllBranches();
-     };
- 
-     fetchInitialData();
-   }, [fetchStudents]);
+  useEffect(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
+
+    const fetchInitialData = async () => {
+      await fetchStudents({ forceRefresh: true, filters: {} });
+      await fetchTechnology();
+      await getAllBranches();
+    };
+
+    fetchInitialData();
+  }, [fetchStudents]);
 
 
- const getAllBranches = async () => {
+  const getAllBranches = async () => {
     try {
       const res = await axios.get("/branches");
       if (res.data.success) {
@@ -86,7 +85,7 @@ function AcceptReg() {
     }
   };
 
-  
+
 
   const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
@@ -103,6 +102,8 @@ function AcceptReg() {
     setQrModalOpen(false);
     setSelectedQrCode(null);
   };
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   const columns = [
     {
@@ -147,206 +148,218 @@ function AcceptReg() {
       ),
     },
     {
-          label: "Tra Fee Status",
-          accessor: "trainingFeeStatus",
-          sortable: true,
-          filter: true,
-          filterKey: "trainingFeeStatus",
-          Cell: ({ row }) => (
-            <Chip
-              label={row.trainingFeeStatus || "pending"}
-              color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
-              variant="outlined"
-              size="small"
-            />
-          ),
-        },
-        {
-          label: "Tnx Status",
-          accessor: "tnxStatus",
-          sortable: true,
-          filter: false,
-          filterKey: "tnxStatus",
-          Cell: ({ row }) => (
-            <Chip
-              label={row.tnxStatus || "pending"}
-              color={row.tnxStatus === "paid" ? "success" : "warning"}
-              variant="outlined"
-              size="small"
-            />
-          ),
-        },
-        {
-          label: "Enroll ID",
-          accessor: "userid",
-          sortable: true,
-        },
-        {
-          label: "Student Name",
-          accessor: "studentName",
-          sortable: true,
-        },
-    
-        {
-          label: "Amount",
-          accessor: "amount",
-          sortable: true,
-        },
-        {
-          label: "Total Fee",
-          accessor: "totalFee",
-          sortable: true,
-        },
-        {
-          label: "Discount Fee",
-          accessor: "discount",
-          sortable: true,
-        },
-        {
-          label: "Final Fee",
-          accessor: "finalFee",
-          sortable: true,
-        },
-        {
-          label: "Paid Amount",
-          accessor: "paidAmount",
-          sortable: true,
-        },
-        {
-          label: "Due Amount",
-          accessor: "dueAmount",
-          sortable: true,
-        },
-    
-        {
-          label: "Payment Method",
-          accessor: "paymentMethod",
-          sortable: true,
-          filter: true,
-          filterKey: "paymentMethod",
-        },
-        {
-          label: "Payment Type",
-          accessor: "paymentType",
-          sortable: true,
-          filter: false,
-        },
-        {
-          label: "Payment qrcode",
-          accessor: "qrcode.name",
-          sortable: true,
-          Cell: ({ row }) => (
-            <div
-              className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
-              onClick={() => handleQrView(row)}
-            >
-              {row.qrcode?.name}
-            </div>
-          ),
-        },
-        {
-          label: "UTR No",
-          accessor: "tnxId",
-          sortable: true,
-        },
-        {
-          label: "Mobile",
-          accessor: "mobile",
-          sortable: true,
-        },
-        {
-          label: "Whatshapp",
-          accessor: "whatshapp",
-          sortable: true,
-        },
-        {
-          label: "Alternate Mobile",
-          accessor: "alternateMobile",
-          sortable: true,
-        },
-        {
-          label: "Email",
-          accessor: "email",
-          sortable: true,
-        },
-        {
-          label: "Father Name",
-          accessor: "fatherName",
-          sortable: true,
-        },
-    
-        {
-          label: "College Name",
-          accessor: "collegeName",
-          sortable: true,
-          filter: false,
-          filterKey: "collegeName",
-          Cell: ({ row }) => <span>{row.collegeName?.name || "-"}</span>,
-        },
-        {
-          label: "Education",
-          accessor: "education.name",
-          sortable: true,
-        },
-        {
-          label: "Edu Year",
-          accessor: "eduYear",
-          sortable: true,
-        },
-        {
-          label: "Training",
-          accessor: "training.name",
-          sortable: true,
-        },
-        
-        {
-          label: "Technology",
-          accessor: "technology.name",
-          sortable: true,
-          filter: true,
-          filterKey: "technology",
-           filterOptions: techState.data.map((t) => ({
-            label: t.name,
-            value: t._id,
-          })),
-          Cell: ({ row }) => <span>{row.technology?.name || "N/A"}</span>,
-        },
-        {
-          label: "Branch",
-          accessor: "branch.name", // 👈 display ke liye
-          filter: true,
-          filterKey: "branch", // 👈 API ko objectId bhejne ke liye
-          filterOptions: branches.map((b) => ({
-            label: b.name,
-            value: b._id,
-          })),
-          sortable: true,
-          Cell: ({ row }) => row.branch?.name || "N/A",
-        },
-        {
-          label: "Batch",
-          accessor: "batch",
-          sortable: true,
-          Cell:({row})=><div>
-            {row.batch?.map((b,i)=>(<div key={b._id}> {b.batchName}</div>))}
-          </div>
-        },
-        {
-          label: "Hr Name",
-          accessor: "hrName.name",
-          sortable: true,
-        },
-        {
-          label: "Reg Date",
-          accessor: "createdAt",
-          sortable: true,
-          Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
-        },
-        {
-          label: "Remark",
-          accessor: "remark",
-    
-        },
+      label: "Tra Fee Status",
+      accessor: "trainingFeeStatus",
+      sortable: true,
+      filter: true,
+      filterKey: "trainingFeeStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={capitalizeFirst(row.trainingFeeStatus || "pending")}
+          color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Tnx Status",
+      accessor: "tnxStatus",
+      sortable: true,
+      filter: false,
+      filterKey: "tnxStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={capitalizeFirst(row.tnxStatus || "pending")}
+          color={row.tnxStatus === "paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Enroll ID",
+      accessor: "userid",
+      sortable: true,
+    },
+    {
+      label: "Student Name",
+      accessor: "studentName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.studentName)}</span>),
+      sortable: true,
+    },
+
+    {
+      label: "Amount",
+      accessor: "amount",
+      sortable: true,
+    },
+    {
+      label: "Total Fee",
+      accessor: "totalFee",
+      sortable: true,
+    },
+    {
+      label: "Discount Fee",
+      accessor: "discount",
+      sortable: true,
+    },
+    {
+      label: "Final Fee",
+      accessor: "finalFee",
+      sortable: true,
+    },
+    {
+      label: "Paid Amount",
+      accessor: "paidAmount",
+      sortable: true,
+    },
+    {
+      label: "Due Amount",
+      accessor: "dueAmount",
+      sortable: true,
+    },
+
+    {
+      label: "Payment Method",
+      accessor: "paymentMethod",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.paymentMethod)}</span>),
+
+      filter: true,
+      filterKey: "paymentMethod",
+    },
+    {
+      label: "Payment Type",
+      accessor: "paymentType",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.paymentType)}</span>),
+      filter: false,
+    },
+    {
+      label: "Payment qrcode",
+      accessor: "qrcode.name",
+      sortable: true,
+      Cell: ({ row }) => (
+        <div
+          className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
+          onClick={() => handleQrView(row)}
+        >
+          {row.qrcode?.name}
+        </div>
+      ),
+    },
+    {
+      label: "UTR No",
+      accessor: "tnxId",
+      sortable: true,
+    },
+    {
+      label: "Mobile",
+      accessor: "mobile",
+      sortable: true,
+    },
+    {
+      label: "Whatshapp",
+      accessor: "whatshapp",
+      sortable: true,
+    },
+    {
+      label: "Alternate Mobile",
+      accessor: "alternateMobile",
+      sortable: true,
+    },
+    {
+      label: "Email",
+      accessor: "email",
+      sortable: true,
+    },
+    {
+      label: "Father Name",
+      accessor: "fatherName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.fatherName)}</span>),
+      sortable: true,
+    },
+
+    {
+      label: "College Name",
+      accessor: "collegeName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName?.name)}</span>),
+      sortable: true,
+      filter: false,
+      filterKey: "collegeName",
+
+    },
+    {
+      label: "Education",
+      accessor: "education.name",
+      sortable: true,
+    },
+    {
+      label: "Edu Year",
+      accessor: "eduYear",
+      sortable: true,
+    },
+    {
+      label: "Training",
+      accessor: "training.name",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.training.name)}</span>),
+    },
+
+    {
+      label: "Technology",
+      accessor: "technology.name",
+      sortable: true,
+      filter: true,
+      filterKey: "technology",
+      filterOptions: techState.data.map((t) => ({
+        label: t.name,
+        value: t._id,
+      })),
+      Cell: ({ row }) => <span>{capitalizeFirst(row.technology?.name || "N/A")}</span>,
+    },
+    {
+      label: "Branch",
+      accessor: "branch.name", // 👈 display ke liye
+      filter: true,
+      filterKey: "branch", // 👈 API ko objectId bhejne ke liye
+      filterOptions: branches.map((b) => ({
+        label: b.name,
+        value: b._id,
+      })),
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.branch?.name || "N/A")}</span>),
+    },
+    {
+      label: "Batch",
+      accessor: "batch",
+      sortable: true,
+      Cell: ({ row }) => (
+        <div>
+          {row.batch?.map((b, i) => (
+            <div key={b._id}> {capitalizeFirst(b.batchName)}</div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      label: "Hr Name",
+      accessor: "hrName.name",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.hrName?.name || "N/A")}</span>),
+    },
+    {
+      label: "Reg Date",
+      accessor: "createdAt",
+      sortable: true,
+      Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
+    },
+    {
+      label: "Remark",
+      accessor: "remark",
+
+    },
   ];
 
   const handleAccept = async (id) => {
@@ -386,7 +399,7 @@ function AcceptReg() {
       setActionLoading(null);
     }
   };
- const handleEdit = (row) => {
+  const handleEdit = (row) => {
     // navigate(`/AddStudent/${row._id}`);
     navigate(`/update-student/${row._id}`);
   };
@@ -407,7 +420,7 @@ function AcceptReg() {
     Object.keys(defaultFilters).forEach(key => {
       delete userFilters[key];
     });
-    
+
     return Object.entries(userFilters)
       .filter(([key, value]) => value && value !== "All")
       .map(([key, value]) => ({ key, value }));
@@ -423,7 +436,7 @@ function AcceptReg() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <div className="flex items-center">
           <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-           Accepted Registrations
+            Accepted Registrations
           </h1>
           <Link
             to="/dashboard"
@@ -434,11 +447,11 @@ function AcceptReg() {
             <span>Dashboard</span>
           </Link>
         </div>
-        
+
         {/* Applied Filters Badge */}
         <Box className="flex items-center gap-2">
-        
-          
+
+
           {appliedFiltersCount > 0 && (
             <Button
               variant="outlined"
@@ -453,7 +466,7 @@ function AcceptReg() {
         </Box>
       </div>
 
-     
+
 
       {/* DataTable */}
       <DataTable

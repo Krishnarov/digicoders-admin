@@ -18,18 +18,20 @@ function Employee() {
     email: "",
     password: "",
     role: "",
+    branch: ""
   });
   const [preview, setPreview] = useState(null);
   const [editId, setEditId] = useState(null);
   const [employees, setEmployees] = useState([]);
-  
+  const [branchs, setBranch] = useState([]);
+
   // State for pagination and filters
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
   });
-  
+
   const [tableLoading, setTableLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({});
@@ -79,9 +81,23 @@ function Employee() {
     }
   }, [pagination.page, pagination.limit]);
 
+  // Fetch active batches
+  const fetchBranches = async () => {
+    try {
+      const res = await axios.get("/branches");
+      console.log(res);
+
+      if (res.data.success) {
+        setBranch(res.data.data.filter((item) => item.isActive) || []);
+      }
+    } catch (error) {
+      console.error("Error fetching batches:", error);
+    }
+  };
   // Initial fetch
   useEffect(() => {
     getAllEmployees();
+    fetchBranches()
   }, [getAllEmployees]);
 
   const columns = [
@@ -113,7 +129,7 @@ function Employee() {
               title={<span className="font-bold ">Delete</span>}
               placement="top"
             >
-              <button 
+              <button
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
                 disabled={loading === `deleting-${row._id}`}
               >
@@ -128,21 +144,27 @@ function Employee() {
         </div>
       ),
     },
-    { 
-      label: "Name", 
+    {
+      label: "Name",
       accessor: "name",
-      sortable: true 
+      sortable: true
     },
-    { 
-      label: "Email", 
+    {
+      label: "Email",
       accessor: "email",
-      sortable: true 
+      sortable: true
     },
-    { 
-      label: "Role", 
+    {
+      label: "Role",
       accessor: "role",
       sortable: true,
       filter: true,
+    },
+    {
+      label: "branch",
+      accessor: "branch.name",
+      sortable: true,
+      filter: false,
     },
     {
       label: "Profile Image",
@@ -172,14 +194,12 @@ function Employee() {
           <button
             onClick={() => toggleStatus(row)}
             disabled={loading === `status-${row._id}`}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
+                }`}
             >
               {loading === `status-${row._id}` && (
                 <Loader2 className="animate-spin w-4 h-4" />
@@ -192,11 +212,14 @@ function Employee() {
   ];
 
   const handleEdit = (row) => {
+
+
     setFormData({
       name: row.name,
       email: row.email,
       password: "", // Don't prefill password for security
       role: row.role,
+      branch: row.branch?._id,
       image: null,
     });
     setPreview(row.image?.url); // Set preview if image exists
@@ -255,6 +278,7 @@ function Employee() {
     formDataToSend.append("name", formData.name);
     formDataToSend.append("email", formData.email);
     formDataToSend.append("role", formData.role);
+    formDataToSend.append("branch", formData.branch);
 
     if (formData.password) {
       formDataToSend.append("password", formData.password);
@@ -280,7 +304,7 @@ function Employee() {
           },
         });
       }
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Operation successful");
         getAllEmployees();
@@ -370,7 +394,7 @@ function Employee() {
     },
     [getAllEmployees, filters, sortConfig]
   );
-console.log(employees);
+  console.log(employees);
 
   return (
     <div className="max-w-sm md:max-w-6xl mx-auto px-2">
@@ -470,6 +494,24 @@ console.log(employees);
             <MenuItem value="Admin">Admin</MenuItem>
             <MenuItem value="Employee">Employee</MenuItem>
             <MenuItem value="Intern">Intern</MenuItem>
+          </TextField>
+          <TextField
+            select
+            label="Branch *"
+            name="branch"
+            fullWidth
+            value={formData.branch}
+            onChange={handleChange}
+            variant="outlined"
+            required
+          >
+            <MenuItem value="">
+              <em>- Select branch -</em>
+            </MenuItem>
+            {branchs.map((branch) => (<MenuItem key={branch._id} value={branch._id}>{branch.name}</MenuItem>))}
+            {/* <MenuItem value="Admin">Admin</MenuItem>
+            <MenuItem value="Employee">Employee</MenuItem>
+            <MenuItem value="Intern">Intern</MenuItem> */}
           </TextField>
 
           <div>

@@ -28,7 +28,7 @@ import { Close } from "@mui/icons-material";
 
 function NewFee() {
   // Use custom hook for fee data with default status "new"
-    const defaultFilters = useMemo(() => ({ status: "new" }), []);
+  const defaultFilters = useMemo(() => ({ status: "new" }), []);
   const {
     feeData,
     loading: tableLoading,
@@ -154,6 +154,8 @@ function NewFee() {
       minute: "2-digit",
     });
   };
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   // Define columns for DataTable
   const columns = [
@@ -163,14 +165,14 @@ function NewFee() {
       sortable: false,
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <Tooltip title={<span className="font-bold">View</span>} placement="top">
+          {/* <Tooltip title={<span className="font-bold">View</span>} placement="top">
             <button
               className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
               onClick={() => handleView(row)}
             >
               <Eye size={20} />
             </button>
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip title={<span className="font-bold">Accept</span>} placement="top">
             <button
               className="px-2 py-1 rounded-md hover:bg-green-100 transition-colors border text-green-600"
@@ -215,19 +217,19 @@ function NewFee() {
       sortable: true,
       Cell: ({ row }) => (
         <Chip
-          label={row.tnxStatus}
+          label={capitalizeFirst(row.tnxStatus)}
           color={row.tnxStatus === "paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
         />
       ),
     },
-    { 
-      label: "Receipt No", 
+    {
+      label: "Receipt No",
       accessor: "receiptNo",
       sortable: true,
     },
-     {
+    {
       label: "Enroll ID",
       accessor: "registrationId.userid",
       sortable: true,
@@ -236,9 +238,9 @@ function NewFee() {
       label: "Student Name",
       accessor: "registrationId.studentName",
       sortable: true,
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
+      Cell: ({ row }) => capitalizeFirst(row.registrationId?.studentName || "N/A"),
     },
-   {
+    {
       label: "Amount",
       accessor: "amount",
       sortable: true,
@@ -268,11 +270,12 @@ function NewFee() {
       accessor: "dueAmount",
       sortable: true,
     },
- {
+    {
       label: "Payment mode",
       accessor: "mode",
       sortable: true,
       filter: true,
+      Cell: ({ row }) => capitalizeFirst(row.mode || "N/A"),
       filterKey: "paymentMethod",
     },
     {
@@ -280,24 +283,25 @@ function NewFee() {
       accessor: "paymentType",
       sortable: true,
       filter: true,
+      Cell: ({ row }) => capitalizeFirst(row.paymentType)
     },
     {
       label: "QR Code",
       accessor: "qrcode",
       sortable: false,
       Cell: ({ row }) => (
-          <div
-            className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
-            onClick={() => handleQrView(row.qrcode?.image?.url)}
-            title={row.qrcode?.name || "View QR"}
-          >
-            {row.qrcode?.name }
-          </div>
-        )
+        <div
+          className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
+          onClick={() => handleQrView(row.qrcode?.image?.url)}
+          title={row.qrcode?.name || "View QR"}
+        >
+          {capitalizeFirst(row.qrcode?.name)}
+        </div>
+      )
     },
-    { 
-      label: "Transaction ID", 
-      accessor: "tnxId", 
+    {
+      label: "Transaction ID",
+      accessor: "tnxId",
       sortable: true,
       Cell: ({ row }) => (
         <div
@@ -305,7 +309,7 @@ function NewFee() {
           onClick={() => handleQrView(row?.image?.url)}
           title={row.tnxId || "N/A"}
         >
-          {row.tnxId }
+          {row.tnxId}
         </div>
       ),
     },
@@ -340,14 +344,15 @@ function NewFee() {
       label: "Father Name",
       accessor: "registrationId.fatherName",
       sortable: true,
+      Cell: ({ row }) => capitalizeFirst(row.registrationId?.fatherName || "N/A"),
     },
     {
       label: "Remark",
       accessor: "remark",
     },
-    
+
   ];
-   // Get user-applied filters (excluding default filters)
+  // Get user-applied filters (excluding default filters)
   const getUserAppliedFilters = () => {
     const userFilters = { ...filters };
     // Remove default filters
@@ -360,7 +365,7 @@ function NewFee() {
       .map(([key, value]) => ({ key, value }));
   };
 
-   const appliedFilters = getUserAppliedFilters();
+  const appliedFilters = getUserAppliedFilters();
   const appliedFiltersCount = appliedFilters.length;
 
 
@@ -431,7 +436,7 @@ function NewFee() {
           </div>
         )}
       </CustomModal>
-      
+
       {/* QR Code Modal */}
       <Dialog
         open={qrModalOpen}

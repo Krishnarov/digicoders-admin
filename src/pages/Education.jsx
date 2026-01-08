@@ -12,9 +12,9 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { toast } from "react-toastify";
 
 function Education() {
-  const educations = useSelector((state) => state.education.data);
+  const { data: educations, pagination: paginationData } = useSelector((state) => state.education);
   const fetchEducations = useGetEducations();
-  
+
   const [loading, setLoading] = useState({
     table: false,
     save: false,
@@ -26,21 +26,63 @@ function Education() {
   const [editId, setEditId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Server-side state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState({});
+  const [sortConfig, setSortConfig] = useState({ column: "createdAt", order: "desc" });
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(prev => ({ ...prev, table: true }));
-        await fetchEducations();
-      } catch (error) {
-        console.error("Error loading education data:", error);
-        toast.error("Failed to load education data");
-      } finally {
-        setLoading(prev => ({ ...prev, table: false }));
-      }
-    };
-    
+    if (paginationData) {
+      setPagination(prev => ({
+        ...prev,
+        page: paginationData.currentPage || prev.page,
+        total: paginationData.totalRecords || 0,
+        // limit: paginationData.limit || prev.limit
+      }));
+    }
+  }, [paginationData]);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(prev => ({ ...prev, table: true }));
+      await fetchEducations({
+        page: pagination.page,
+        limit: pagination.limit,
+        search,
+        sortBy: sortConfig.column,
+        sortOrder: sortConfig.order,
+        ...filters
+      });
+    } catch (error) {
+      console.error("Error loading education data:", error);
+      toast.error("Failed to load education data");
+    } finally {
+      setLoading(prev => ({ ...prev, table: false }));
+    }
+  }, [fetchEducations, pagination.page, pagination.limit, search, sortConfig, filters]);
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
+
+
+  // Handlers for DataTable
+  const handlePageChange = (newPage) => setPagination(prev => ({ ...prev, page: newPage }));
+  const handleRowsPerPageChange = (newLimit) => setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+  const handleSearch = (term) => {
+    setSearch(term);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+  const handleSort = (column, order) => setSortConfig({ column, order });
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
 
   const columns = [
     {
@@ -85,8 +127,8 @@ function Education() {
         </div>
       ),
     },
-    { 
-      label: "Education Name", 
+    {
+      label: "Education Name",
       accessor: "name",
       Cell: ({ row }) => (
         <span className="font-medium">{row.name}</span>
@@ -103,14 +145,12 @@ function Education() {
           <button
             onClick={() => toggleStatus(row._id)}
             disabled={loading.status === row._id}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none disabled:opacity-50 ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none disabled:opacity-50 ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
+                }`}
             />
             {loading.status === row._id && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -120,7 +160,7 @@ function Education() {
           </button>
         </div>
       ),
-      filter: true,
+      filter: false,
     },
   ];
 
@@ -134,11 +174,11 @@ function Education() {
     try {
       setLoading(prev => ({ ...prev, delete: id }));
       const res = await axios.delete(`/education/${id}?action=delete`);
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Deleted successfully");
         // Refresh data immediately after delete
-        await fetchEducations();
+        await loadData();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || "Failed to delete");
@@ -155,11 +195,11 @@ function Education() {
       const res = await axios.put(`/education/${id}?action=update`, {
         isActive: !item.isActive,
       });
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Status updated successfully");
         // Refresh data immediately after status change
-        await fetchEducations();
+        await loadData();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || "Failed to update status");
@@ -171,11 +211,11 @@ function Education() {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
+
     try {
       setIsSubmitting(true);
       setLoading(prev => ({ ...prev, save: true }));
-      
+
       // Validate form data
       if (!formData.name.trim()) {
         toast.error("Please enter education name");
@@ -188,11 +228,11 @@ function Education() {
       } else {
         res = await axios.post("/education?action=add", formData);
       }
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Saved successfully");
         // Refresh data immediately after save
-        await fetchEducations();
+        await loadData();
         handleClose();
       }
     } catch (error) {
@@ -251,9 +291,23 @@ function Education() {
 
       {/* DataTable */}
       <DataTable
+        mode="server"
         columns={columns}
         data={educations}
         loading={loading.table}
+        page={pagination.page}
+        limit={pagination.limit}
+        total={pagination.total}
+        onPageChange={handlePageChange}
+        onLimitChange={handleRowsPerPageChange}
+        onSearch={handleSearch}
+        onSortChange={handleSort}
+        onFilterChange={handleFilterChange}
+        filters={filters}
+        pagination={true}
+        search={true}
+        filter={true}
+        sort={true}
       />
 
       {/* Modal */}

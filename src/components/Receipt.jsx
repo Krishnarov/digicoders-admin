@@ -94,7 +94,7 @@ function Receipt() {
     str +=
       n[5] != 0
         ? (str != "" ? "AND " : "") +
-          (a[Number(n[5])] || b[n[5][0]] + " " + a[n[5][1]])
+        (a[Number(n[5])] || b[n[5][0]] + " " + a[n[5][1]])
         : "";
     return str.trim() + " RUPEES";
   }
@@ -161,6 +161,10 @@ Thank you for your payment 🙏`;
     )}`;
     window.open(url, "_blank");
   };
+
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
+
 
 
 
@@ -265,7 +269,7 @@ Thank you for your payment 🙏`;
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Name:</span>
               <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
-                {feeData.registrationId?.studentName}
+                {capitalizeFirst(feeData.registrationId?.studentName)}
               </span>
             </div>
             <div className="flex items-center w-[30%]">
@@ -285,8 +289,8 @@ Thank you for your payment 🙏`;
             <div className="flex items-center w-[70%]">
               <span className="font-semibold w-30 shrink-0">Course:</span>
               <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
-                {feeData.registrationId?.education?.name} (
-                {feeData.registrationId?.technology?.name})
+                {feeData.registrationId?.education?.name}
+                {/* ({feeData.registrationId?.technology?.name}) */}
               </span>
             </div>
             <div className="flex items-center w-[30%]">
@@ -357,7 +361,7 @@ Thank you for your payment 🙏`;
                     type="checkbox"
                     checked={
                       (item === "Training Fee" &&
-                        feeData.paymentType === "installment") ||
+                        feeData.paymentType === "installment" || feeData.paymentType === "full") ||
                       (item === "Registration Fee" &&
                         feeData.paymentType === "registration")
                     }
@@ -371,7 +375,6 @@ Thank you for your payment 🙏`;
           </div>
         </div>
 
-        {/* QR Code and Note Section */}
         <div className=" mt-8 relative ">
           <div className=" absolute -top-10 left-[55%]">
             <img
@@ -379,10 +382,10 @@ Thank you for your payment 🙏`;
                 feeData.tnxStatus === "paid"
                   ? "/img/paid.png"
                   : feeData.tnxStatus === "full paid"
-                  ? "/img/paid.png"
-                  : feeData.tnxStatus === "failed"
-                  ? "/img/failed.png"
-                  : "/img/pending.jpg"
+                    ? "/img/fullPaid.png"
+                    : feeData.tnxStatus === "failed"
+                      ? "/img/failed.png"
+                      : "/img/pending.jpg"
               }
               width={100}
               alt=""
@@ -408,15 +411,14 @@ Thank you for your payment 🙏`;
               <p>
                 <span>Payment Status : </span>{" "}
                 <span
-                  className={`uppercase ${
-                    feeData?.tnxStatus === "paid"
-                      ? "text-green-600"
-                      : feeData.tnxStatus === "full paid"
+                  className={`uppercase ${feeData?.tnxStatus === "paid"
+                    ? "text-green-600"
+                    : feeData.tnxStatus === "full paid"
                       ? "text-green-600"
                       : feeData.tnxStatus === "failed"
-                      ? "text-red-600"
-                      : "text-orange-400"
-                  }`}
+                        ? "text-red-600"
+                        : "text-orange-400"
+                    }`}
                 >
                   {feeData?.tnxStatus}
                 </span>

@@ -141,8 +141,8 @@ const AddStudent = () => {
   // Data fetching functions
   const fetchCollegeNames = useCallback(async () => {
     try {
-const params={limit:1000}
-      const response = await axios.get("/college",{params});
+      const params = { limit: 1000 }
+      const response = await axios.get("/college", { params });
       setCollegeNames(response.data.colleges);
     } catch (error) {
       console.error("Error fetching college names:", error);
@@ -571,7 +571,7 @@ const params={limit:1000}
       collegeName: formData.collegeName,
       discount: Number(formData.discount),
       amount: Number(formData.amount),
-      tnxStatus: "paid",
+      tnxStatus: formData.paymentType === "full" ? "full paid" : "paid",
       paymentType: formData.paymentType,
       paymentMethod: formData.paymentMethod,
       qrcode: formData.qrcode,
@@ -632,9 +632,9 @@ const params={limit:1000}
       });
       toast.error(
         error.response?.data?.message ||
-          (isEditMode
-            ? "Update failed. Please try again."
-            : "Registration failed. Please try again.")
+        (isEditMode
+          ? "Update failed. Please try again."
+          : "Registration failed. Please try again.")
       );
     } finally {
       setIsLoading(false);
@@ -693,11 +693,10 @@ const params={limit:1000}
       {/* Status Message */}
       {registrationStatus.message && (
         <div
-          className={`mb-6 p-4 rounded-lg ${
-            registrationStatus.success
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
+          className={`mb-6 p-4 rounded-lg ${registrationStatus.success
+            ? "bg-green-100 text-green-800"
+            : "bg-red-100 text-red-800"
+            }`}
         >
           <div className="flex items-center">
             {registrationStatus.success ? (
@@ -721,9 +720,8 @@ const params={limit:1000}
             <input
               type="number"
               placeholder="Enter 10-digit mobile number"
-              className={`w-full px-4 py-3 border ${
-                errors.mobile ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.mobile ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.mobile}
               onChange={(e) => handleInputChange("mobile", e.target.value)}
               maxLength="10"
@@ -751,9 +749,8 @@ const params={limit:1000}
             <input
               type="number"
               placeholder="Enter 10-digit mobile number"
-              className={`w-full px-4 py-3 border ${
-                errors.whatshapp ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.whatshapp ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.whatshapp}
               onChange={(e) => handleInputChange("whatshapp", e.target.value)}
               maxLength="10"
@@ -772,9 +769,8 @@ const params={limit:1000}
             <input
               type="text"
               placeholder="Enter Student Name"
-              className={`w-full px-4 py-3 border ${
-                errors.studentName ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.studentName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.studentName}
               onChange={(e) => handleInputChange("studentName", e.target.value)}
             />
@@ -782,16 +778,32 @@ const params={limit:1000}
               <p className="mt-1 text-sm text-red-600">{errors.studentName}</p>
             )}
           </div>
-
+          {/* Student Email ID */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student Email ID *
+            </label>
+            <input
+              type="email"
+              placeholder="Enter Student Email ID"
+              className={`w-full px-4 py-3 border ${errors.email ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              disabled={isLoading || isEditMode}
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+            )}
+          </div>
           {/* Choose Training */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Choose Training *
             </label>
             <select
-              className={`w-full px-4 py-3 border ${
-                errors.training ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.training ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.training}
               onChange={(e) => handleInputChange("training", e.target.value)}
               disabled={isLoading || isEditMode}
@@ -814,9 +826,8 @@ const params={limit:1000}
               Choose Technology *
             </label>
             <select
-              className={`w-full px-4 py-3 border ${
-                errors.technology ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.technology ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.technology}
               onChange={(e) => handleInputChange("technology", e.target.value)}
             >
@@ -838,9 +849,8 @@ const params={limit:1000}
               Select Your Education *
             </label>
             <select
-              className={`w-full px-4 py-3 border ${
-                errors.education ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.education ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.education}
               onChange={(e) => handleInputChange("education", e.target.value)}
               disabled={isLoading || isEditMode}
@@ -863,9 +873,8 @@ const params={limit:1000}
               Select Year *
             </label>
             <select
-              className={`w-full px-4 py-3 border ${
-                errors.eduYear ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.eduYear ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.eduYear}
               onChange={(e) => handleInputChange("eduYear", e.target.value)}
               disabled={isLoading}
@@ -890,9 +899,8 @@ const params={limit:1000}
             <input
               type="text"
               placeholder="Enter Student Father's Name"
-              className={`w-full px-4 py-3 border ${
-                errors.fatherName ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.fatherName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.fatherName}
               onChange={(e) => handleInputChange("fatherName", e.target.value)}
             />
@@ -901,25 +909,7 @@ const params={limit:1000}
             )}
           </div>
 
-          {/* Student Email ID */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student Email ID
-            </label>
-            <input
-              type="email"
-              placeholder="Enter Student Email ID"
-              className={`w-full px-4 py-3 border ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              disabled={isLoading || isEditMode}
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-            )}
-          </div>
+
 
           {/* Student Alternate Mobile */}
           <div>
@@ -929,9 +919,8 @@ const params={limit:1000}
             <input
               type="tel"
               placeholder="Enter 10-digit alternate mobile"
-              className={`w-full px-4 py-3 border ${
-                errors.alternateMobile ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.alternateMobile ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.alternateMobile}
               onChange={(e) =>
                 handleInputChange("alternateMobile", e.target.value)
@@ -951,9 +940,8 @@ const params={limit:1000}
               Select Admission By *
             </label>
             <select
-              className={`w-full px-4 py-3 border ${
-                errors.hrName ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.hrName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.hrName}
               onChange={(e) => handleInputChange("hrName", e.target.value)}
               disabled={isLoading || isEditMode}
@@ -978,9 +966,8 @@ const params={limit:1000}
               Select Branch / Mode *
             </label>
             <select
-              className={`w-full px-4 py-3 border ${
-                errors.branch ? "border-red-500" : "border-gray-300"
-              } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className={`w-full px-4 py-3 border ${errors.branch ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               value={formData.branch}
               onChange={(e) => handleInputChange("branch", e.target.value)}
               disabled={isLoading}
@@ -1054,9 +1041,8 @@ const params={limit:1000}
               <span className="absolute left-3 top-3 text-gray-500">₹</span>
               <input
                 type="number"
-                className={`w-full pl-8 px-4 py-3 border ${
-                  errors.totalFee ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full pl-8 px-4 py-3 border ${errors.totalFee ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.totalFee}
                 disabled
               />
@@ -1075,9 +1061,8 @@ const params={limit:1000}
               <span className="absolute left-3 top-3 text-gray-500">₹</span>
               <input
                 type="number"
-                className={`w-full pl-8 px-4 py-3 border ${
-                  errors.discount ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full pl-8 px-4 py-3 border ${errors.discount ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.discount}
                 onChange={(e) => handleInputChange("discount", e.target.value)}
                 disabled={isLoading || isEditMode}
@@ -1113,12 +1098,11 @@ const params={limit:1000}
               <span className="absolute left-3 top-3 text-gray-500">₹</span>
               <input
                 type="number"
-                className={`w-full pl-8 px-4 py-3 border ${
-                  errors.amount ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full pl-8 px-4 py-3 border ${errors.amount ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.amount}
                 onChange={(e) => handleInputChange("amount", e.target.value)}
-                disabled={isLoading || isEditMode}
+                disabled={formData.paymentType === "full" || isLoading || isEditMode}
               />
             </div>
             {errors.amount && (
@@ -1225,9 +1209,8 @@ const params={limit:1000}
                 Select QR Code *
               </label>
               <select
-                className={`w-full px-4 py-3 border ${
-                  errors.qrcode ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full px-4 py-3 border ${errors.qrcode ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.qrcode}
                 onChange={(e) => handleInputChange("qrcode", e.target.value)}
                 disabled={isLoading || isEditMode}
@@ -1272,9 +1255,8 @@ const params={limit:1000}
                 <span className="absolute left-3 top-3 text-gray-500">UTR</span>
                 <input
                   type="number"
-                  className={`w-full pl-12 px-4 py-3 border ${
-                    errors.tnxId ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  className={`w-full pl-12 px-4 py-3 border ${errors.tnxId ? "border-red-500" : "border-gray-300"
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   value={formData.tnxId}
                   onChange={(e) => handleInputChange("tnxId", e.target.value)}
                   disabled={isLoading}

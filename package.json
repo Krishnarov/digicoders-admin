@@ -39,6 +39,7 @@
     "react-router-dom": "^7.6.3",
     "react-select": "^5.10.2",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.6.0",
     "redux-persist": "^6.0.0",
     "tailwindcss": "^4.1.11",
     "xlsx": "^0.18.5"

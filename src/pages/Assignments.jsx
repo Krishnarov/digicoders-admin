@@ -77,11 +77,8 @@ function Assignments() {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [filePreviews, setFilePreviews] = useState([]);
 
-  const allStudents = useSelector((state) => state.student.data).filter(
-    (item) => item.status === "accepted"
-  );
 
-  const fetchStudents = useGetStudents();
+
   const navigate = useNavigate();
   // 🔹 Fetch all assignments
   const getAllAssignments = async () => {
@@ -112,7 +109,7 @@ function Assignments() {
   useEffect(() => {
     getAllAssignments();
     getAllBatches();
-    fetchStudents();
+
   }, []);
 
   // Filter assignments based on search and filters
@@ -482,8 +479,9 @@ function Assignments() {
     }
   };
 
+
   return (
-    <div className="max-w-sm md:max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-sm md:max-w-6xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div className="flex items-center">

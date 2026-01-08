@@ -18,7 +18,7 @@ const CustomModal = ({
   children,
   onSubmit,
   isBtnHide,
-  boxWidth,loading
+  boxWidth, loading
 }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth={boxWidth}>
@@ -42,9 +42,9 @@ const CustomModal = ({
             Cancel
           </Button>
           <Button onClick={onSubmit} variant="contained" color="primary">
-             {loading === `Save` && (
-                <Loader2 className="animate-spin  mr-2" />
-              )} Save
+            {loading && (
+              <Loader2 className="animate-spin  mr-2" />
+            )} Save
           </Button>
         </DialogActions>
       )}

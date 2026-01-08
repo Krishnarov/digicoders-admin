@@ -17,6 +17,13 @@ import {
   DialogContent,
   IconButton,
   TextField,
+  Chip,
+  OutlinedInput,
+  Box,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
@@ -25,23 +32,35 @@ import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { toast } from "react-toastify";
 
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
 function Collages() {
   const [collegeNames, setCollegeNames] = useState([]);
   const [viewData, setViewData] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
-  
+
   // State for pagination and filters
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
   });
-  
+
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [sortOrder, setSortOrder] = useState("");
-  
+  const [courses, setCourses] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -50,7 +69,7 @@ function Collages() {
     district: "",
     state: "",
     address: "",
-    course: "",
+    course: [],
     tpoNo1: "",
     tpoNo2: "",
     hodNo: "",
@@ -61,7 +80,7 @@ function Collages() {
   const fetchCollegeNames = useCallback(async () => {
     try {
       setTableLoading(true);
-      
+
       // Clean filters
       const cleanFilters = {};
       Object.keys(filters).forEach(key => {
@@ -80,7 +99,7 @@ function Collages() {
       };
 
       const response = await axios.get(`/college`, { params });
-      
+
       if (response.data.success) {
         setCollegeNames(response.data.colleges || response.data.data || []);
         setPagination(prev => ({
@@ -97,10 +116,26 @@ function Collages() {
     }
   }, [pagination.page, pagination.limit, search, sortBy, sortOrder, filters]);
 
+
+
+  const fetchCourses = useCallback(async () => {
+    try {
+      const response = await axios.get(`/course`);
+      if (response.data.success) {
+        setCourses(response.data.courses || response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch courses");
+    }
+  }, []);
+
   // Initial fetch and when dependencies change
   useEffect(() => {
     fetchCollegeNames();
+    fetchCourses()
   }, [fetchCollegeNames]);
+  console.log(courses);
 
   const columns = [
     {
@@ -151,7 +186,7 @@ function Collages() {
       label: "College Name",
       accessor: "name",
       sortable: true,
-      filter: true,
+      filter: false,
     },
     {
       label: "District",
@@ -162,10 +197,10 @@ function Collages() {
     {
       label: "State",
       accessor: "state",
-      filter: true,
+      filter: false,
       sortable: true,
       filterOptions: [
-        "Maharashtra", "Delhi", "Karnataka", "Tamil Nadu", 
+        "Maharashtra", "Delhi", "Karnataka", "Tamil Nadu",
         "Uttar Pradesh", "Gujarat", "Rajasthan", "Punjab"
       ]
     },
@@ -179,7 +214,16 @@ function Collages() {
       accessor: "course",
       filter: true,
       sortable: true,
-      filterOptions: ["B.Tech", "B.E", "MCA", "MBA", "B.Sc", "M.Tech"]
+      filterOptions: courses.map((course) => course.name),
+      Cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {Array.isArray(row.course) ? row.course.map((c, i) => (
+            <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs border border-blue-100">
+              {c}
+            </span>
+          )) : row.course}
+        </div>
+      )
     },
     {
       label: "HOD Number",
@@ -200,28 +244,25 @@ function Collages() {
       label: "Status",
       accessor: "isActive",
       sortable: true,
-      filter: true,
+      filter: false,
       filterOptions: ["Active", "Inactive"],
       Cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.isActive 
-              ? "bg-green-100 text-green-800" 
-              : "bg-red-100 text-red-800"
-          }`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.isActive
+            ? "bg-green-100 text-green-800"
+            : "bg-red-100 text-red-800"
+            }`}>
             {row.isActive ? "Active" : "Inactive"}
           </span>
           <button
             onClick={() => toggleStatus(row)}
             disabled={loading}
-            className={`relative inline-flex items-center h-5 rounded-full w-9 transition-colors ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            className={`relative inline-flex items-center h-5 rounded-full w-9 transition-colors ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-3 h-3 transform transition-transform rounded-full bg-white ${
-                row.isActive ? "translate-x-5" : "translate-x-1"
-              }`}
+              className={`inline-block w-3 h-3 transform transition-transform rounded-full bg-white ${row.isActive ? "translate-x-5" : "translate-x-1"
+                }`}
             />
           </button>
         </div>
@@ -241,7 +282,8 @@ function Collages() {
       district: row.district || "",
       state: row.state || "",
       address: row.address || "",
-      course: row.course || "",
+      // Ensure course is always an array for multi-select
+      course: Array.isArray(row.course) ? row.course : (row.course ? [row.course] : []),
       tpoNo1: row.tpoNo1 || "",
       tpoNo2: row.tpoNo2 || "",
       hodNo: row.hodNo || "",
@@ -270,7 +312,7 @@ function Collages() {
       setLoading(true);
       const endpoint = row.isActive ? "deactivate" : "reactivate";
       const res = await axios.patch(`/college/${row._id}/${endpoint}`);
-      
+
       if (res.data.success) {
         toast.success("Status updated successfully");
         fetchCollegeNames();
@@ -290,10 +332,10 @@ function Collages() {
 
     try {
       setLoading(true);
-      const res = editId 
+      const res = editId
         ? await axios.put(`/college/${editId}`, formData)
         : await axios.post("/college", formData);
-      
+
       if (res.data.success) {
         toast.success(editId ? "College updated" : "College created");
         fetchCollegeNames();
@@ -313,7 +355,7 @@ function Collages() {
       district: "",
       state: "",
       address: "",
-      course: "",
+      course: [],
       tpoNo1: "",
       tpoNo2: "",
       hodNo: "",
@@ -342,7 +384,7 @@ function Collages() {
     const processedFilters = { ...newFilters };
     if (processedFilters.isActive === "Active") processedFilters.isActive = true;
     if (processedFilters.isActive === "Inactive") processedFilters.isActive = false;
-    
+
     setFilters(processedFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
   };
@@ -411,21 +453,24 @@ function Collages() {
                 <DetailItem label="College Name" value={viewData.name} />
                 <DetailItem label="District" value={viewData.district} />
                 <DetailItem label="State" value={viewData.state} />
-                <DetailItem label="Course" value={viewData.course} />
+                <DetailItem label="Course" value={
+                  Array.isArray(viewData.course)
+                    ? viewData.course.join(", ")
+                    : viewData.course
+                } />
                 <DetailItem label="TPO Contact 1" value={viewData.tpoNo1} />
                 <DetailItem label="TPO Contact 2" value={viewData.tpoNo2} />
                 <DetailItem label="HOD Contact" value={viewData.hodNo} />
-                <DetailItem 
-                  label="Status" 
+                <DetailItem
+                  label="Status"
                   value={
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      viewData.isActive 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-red-100 text-red-800"
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${viewData.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                      }`}>
                       {viewData.isActive ? "Active" : "Inactive"}
                     </span>
-                  } 
+                  }
                 />
               </div>
               <DetailItem label="Address" value={viewData.address} fullWidth />
@@ -481,14 +526,32 @@ function Collages() {
             onChange={handleChange}
             variant="outlined"
           />
-          <TextField
-            label="Course"
-            name="course"
-            fullWidth
-            value={formData.course}
-            onChange={handleChange}
-            variant="outlined"
-          />
+          <FormControl fullWidth>
+            <InputLabel id="course-select-label">Course</InputLabel>
+            <Select
+              labelId="course-select-label"
+              id="course-select"
+              multiple
+              name="course"
+              value={formData.course}
+              onChange={handleChange}
+              input={<OutlinedInput label="Course" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => (
+                    <Chip key={value} label={value} size="small" />
+                  ))}
+                </Box>
+              )}
+              MenuProps={MenuProps}
+            >
+              {courses.map((course) => (
+                <MenuItem key={course._id} value={course.name}>
+                  {course.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <TextField
               label="TPO Contact 1"

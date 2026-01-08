@@ -17,9 +17,10 @@ import {
   Grid,
   CircularProgress,
   Box,
-  Button,
   Stack,
   Tooltip,
+  Skeleton,
+  Button,
 } from "@mui/material";
 import { Calendar, X } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
@@ -53,6 +54,7 @@ function DataTable({
   /* additional props */
   showDateFilter = false,
   filters = {},
+  clearAllFilters
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [orderBy, setOrderBy] = useState("");
@@ -335,6 +337,12 @@ function DataTable({
                         "&:last-child": {
                           borderRight: "none",
                         },
+                        ...(col.accessor === "action" && {
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 10,
+                          backgroundColor: "#f8fafc", // matches bg-slate-50
+                        }),
                       }}
                     >
                       {col.sortable !== false && sort ? (
@@ -356,16 +364,15 @@ function DataTable({
 
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    align="center"
-                    sx={{ py: 8 }}
-                  >
-                    <CircularProgress />
-                    <Box sx={{ mt: 2 }}>Loading data...</Box>
-                  </TableCell>
-                </TableRow>
+                Array.from(new Array(limit)).map((_, index) => (
+                  <TableRow key={index}>
+                    {columns.map((col, colIndex) => (
+                      <TableCell key={colIndex}>
+                        <Skeleton animation="wave" height={24} />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -408,6 +415,13 @@ function DataTable({
                               "&:last-child": {
                                 borderRight: "none",
                               },
+                              ...(col.accessor === "action" && {
+                                position: "sticky",
+                                left: 0,
+                                zIndex: 1,
+                                backgroundColor:
+                                  idx % 2 === 0 ? "#fff" : "#f1f5f9", // white or slate-100 (match action.hover)
+                              }),
                             }}
                           >
                             {col.Cell ? col.Cell({ row }) : value ?? "-"}

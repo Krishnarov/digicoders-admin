@@ -15,6 +15,7 @@ import Batchs from "../pages/Batchs";
 import Branchs from "../pages/Branchs";
 import Collages from "../pages/Collages";
 import Company from "../pages/Company";
+import Course from "../pages/Course";
 import Dashboard from "../pages/Dashboard";
 import Education from "../pages/Education";
 import Employee from "../pages/Employee";
@@ -33,6 +34,7 @@ import RejectFee from "../pages/RejectFee";
 import RejectReg from "../pages/RejectReg";
 import Teacher from "../pages/Teacher";
 import Technology from "../pages/Technology";
+import TrainingDuration from "../pages/TrainingDuration";
 import TranningType from "../pages/TranningType";
 import Unauthorized from "../pages/Unauthorized";
 import UpdateStudent from "../pages/UpdateStudent";
@@ -44,74 +46,83 @@ const Routes = [
   {
     path: "dashboard",
     component: Dashboard,
-     roles: ["Admin", "Employee", "Intern"],
+    roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "AddStudent",
     component: AddStudent,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "AddStudent/:id",
     component: AddStudent,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
+  },
+  {
+    path: "duration",
+    component: TrainingDuration,
+    roles: ["Admin", "Employee"],
   },
   {
     path: "tranning",
     component: TranningType,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "technology",
     component: Technology,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "education",
     component: Education,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "new",
     component: NewReg,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "accepted",
     component: AcceptReg,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "rejected",
     component: RejectReg,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "all-students",
     component: AllStudentReg,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "pay-fee",
     component: PayFee,
-     roles: ["Admin", "Employee",],
+    roles: ["Admin", "Employee",],
   },
   {
     path: "new-fee",
     component: NewFee,
-     roles: ["Admin", "Employee"],
+    roles: ["Admin", "Employee"],
   },
   {
     path: "accepted-fee",
-    component: AcceptFee, roles: ["Admin", "Employee", ],
+    component: AcceptFee, roles: ["Admin", "Employee",],
   },
   {
     path: "rejected-fee",
-    component: RejectFee, roles: ["Admin", "Employee", ],
+    component: RejectFee, roles: ["Admin", "Employee",],
   },
   {
     path: "reg-student/:id",
-    component: RegViwe, roles: ["Admin","Employee"],
+    component: RegViwe, roles: ["Admin", "Employee"],
+  },
+  {
+    path: "course",
+    component: Course, roles: ["Admin"],
   },
   {
     path: "collages",
@@ -151,39 +162,39 @@ const Routes = [
   },
   {
     path: "attendance-marking",
-    component: Attendance, roles: ["Admin", "Employee","Intern"],
+    component: Attendance, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "attendance-viwe",
-    component: AttendanceViwe, roles: ["Admin", "Employee","Intern"],
+    component: AttendanceViwe, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "assignments",
-    component: Assignments, roles: ["Admin", "Employee","Intern"],
+    component: Assignments, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "assignment/:id/grade",
-    component: AssignmentGrading, roles: ["Admin", "Employee","Intern"],
+    component: AssignmentGrading, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "update-student/:id",
-    component: UpdateStudent, roles: ["Admin", "Employee","Intern"],
+    component: UpdateStudent, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "create-company",
-    component: Company, roles: ["Admin", "Employee","Intern"],
+    component: Company, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "create-jobs",
-    component: Jobs, roles: ["Admin", "Employee","Intern"],
+    component: Jobs, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "student-assing-job",
-    component: AddStudentInJob, roles: ["Admin", "Employee","Intern"],
+    component: AddStudentInJob, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "job-applications",
-    component: JobApplications, roles: ["Admin", "Employee","Intern"],
+    component: JobApplications, roles: ["Admin", "Employee", "Intern"],
   },
   {
     path: "/reg-reoprts",
@@ -206,7 +217,7 @@ const Routes = [
     component: Unauthorized, roles: ["Admin", "Employee", "Intern"],
   },
 
-  
+
 ];
 
 export default Routes;

@@ -48,6 +48,8 @@ function RejectFee() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   const columns = [
     {
@@ -95,7 +97,7 @@ function RejectFee() {
       sortable: true,
       Cell: ({ row }) => (
         <Chip
-          label={row.tnxStatus}
+          label={capitalizeFirst(row.tnxStatus)}
           color={row.tnxStatus === "paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
@@ -116,7 +118,7 @@ function RejectFee() {
       label: "Student Name",
       accessor: "registrationId.studentName",
       sortable: true,
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
+      Cell: ({ row }) => capitalizeFirst(row.registrationId?.studentName || "N/A"),
     },
     {
       label: "Amount",
@@ -153,6 +155,7 @@ function RejectFee() {
       accessor: "mode",
       sortable: true,
       filter: true,
+      Cell: ({ row }) => capitalizeFirst(row.mode || "N/A"),
       filterKey: "paymentMethod",
     },
     {
@@ -160,6 +163,7 @@ function RejectFee() {
       accessor: "paymentType",
       sortable: true,
       filter: true,
+      Cell: ({ row }) => capitalizeFirst(row.paymentType)
     },
     {
       label: "QR Code",
@@ -171,9 +175,9 @@ function RejectFee() {
           onClick={() => handleQrView(row.qrcode?.image?.url)}
           title={row.qrcode?.name || "View QR"}
         >
-          {row.qrcode?.name}
+          {capitalizeFirst(row.qrcode?.name)}
         </div>
-      ),
+      )
     },
     {
       label: "Transaction ID",
@@ -220,6 +224,7 @@ function RejectFee() {
       label: "Father Name",
       accessor: "registrationId.fatherName",
       sortable: true,
+      Cell: ({ row }) => capitalizeFirst(row.registrationId?.fatherName || "N/A"),
     },
     {
       label: "Remark",
@@ -265,8 +270,8 @@ function RejectFee() {
 
   const handleQrView = (row) => {
 
-      setSelectedQrCode(row);
-      setQrModalOpen(true);
+    setSelectedQrCode(row);
+    setQrModalOpen(true);
 
   };
   const handleQrModalClose = () => {
@@ -291,7 +296,7 @@ function RejectFee() {
       console.error("Error accepting payment:", error);
     } finally {
       setLoading(false);
-      fetchFee();
+      updateFilters({})
     }
   };
 
@@ -504,8 +509,8 @@ function RejectFee() {
                       selectedPayment.status === "accepted"
                         ? "success"
                         : selectedPayment.status === "rejected"
-                        ? "error"
-                        : "warning"
+                          ? "error"
+                          : "warning"
                     }
                     variant="outlined"
                     size="small"

@@ -51,17 +51,18 @@ function Batchs() {
   const [teachers, setTeachers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // State for pagination and filters
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
   });
-  
+
   const [tableLoading, setTableLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({});
+  const [submitted, setSubmitted] = useState(false);
 
   // 🔹 Memoized fetch function for batches
   const getAllBatches = useCallback(async (search = "", newFilters = {}, sortBy = "", sortOrder = "") => {
@@ -151,9 +152,9 @@ function Batchs() {
         setTableLoading(false);
       }
     };
-    
+
     loadAllData();
-  }, [getAllBatches, getAllTeachers, getAllBranches, ]);
+  }, [getAllBatches, getAllTeachers, getAllBranches,]);
 
   // 🔹 Table Columns
   const columns = [
@@ -215,7 +216,7 @@ function Batchs() {
               title={<span className="font-bold">Delete</span>}
               placement="top"
             >
-              <button 
+              <button
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading.delete === row._id || loading.status === row._id}
               >
@@ -230,8 +231,8 @@ function Batchs() {
         </div>
       ),
     },
-    { 
-      label: "Batch Name", 
+    {
+      label: "Batch Name",
       accessor: "batchName",
       sortable: true,
       Cell: ({ row }) => <span className="font-medium">{row.batchName}</span>
@@ -257,12 +258,12 @@ function Batchs() {
     {
       label: "Teacher",
       accessor: "teacher.name",
-      filterKey:"teacher",
+      filterKey: "teacher",
       sortable: true,
       filter: true,
-      filterOptions: teachers.map((t)=>({
-        label:t.name,
-        value:t._id
+      filterOptions: teachers.map((t) => ({
+        label: t.name,
+        value: t._id
       })),
       Cell: ({ row }) => row.teacher?.name || "Unassigned",
     },
@@ -271,10 +272,10 @@ function Batchs() {
       accessor: "students",
       sortable: true,
       Cell: ({ row }) => (
-        <Chip 
-          label={row.students?.length || 0} 
-          color={row.students?.length > 0 ? "primary" : "default"} 
-          size="small" 
+        <Chip
+          label={row.students?.length || 0}
+          color={row.students?.length > 0 ? "primary" : "default"}
+          size="small"
         />
       ),
     },
@@ -291,14 +292,12 @@ function Batchs() {
           <button
             onClick={() => toggleStatus(row)}
             disabled={loading.status === row._id}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none disabled:opacity-50 ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none disabled:opacity-50 ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
+                }`}
             />
             {loading.status === row._id && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -314,7 +313,7 @@ function Batchs() {
   const exportToExcel = async (batch) => {
     try {
       setLoading(prev => ({ ...prev, export: batch._id }));
-      
+
       // Students ko format karo
       const studentData = batch.students.map((student, index) => ({
         "S.No": index + 1,
@@ -337,7 +336,7 @@ function Batchs() {
       const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
       const data = new Blob([excelBuffer], { type: "application/octet-stream" });
       saveAs(data, `${batch.batchName.replace(/\s+/g, '_')}_Students.xlsx`);
-      
+
       toast.success("Excel file downloaded successfully");
     } catch (error) {
       console.error("Error exporting to Excel:", error);
@@ -397,12 +396,13 @@ function Batchs() {
 
   // 🔹 Submit Form (Create/Update)
   const handleSubmit = async () => {
+    setSubmitted(true);
     if (isSubmitting) return;
-    
+
     try {
       setIsSubmitting(true);
       setLoading(prev => ({ ...prev, save: true }));
-      
+
       // Validate form data
       if (!formData.batchName.trim()) {
         toast.error("Please enter batch name");
@@ -428,7 +428,7 @@ function Batchs() {
       } else {
         res = await axios.post("/batches/create", submitData);
       }
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Saved successfully");
         // Refresh data immediately after save
@@ -456,6 +456,7 @@ function Batchs() {
     });
     setEditId(null);
     setIsSubmitting(false);
+    setSubmitted(false);
   };
 
   const handleOpen = () => {
@@ -468,6 +469,7 @@ function Batchs() {
       students: [],
     });
     setEditId(null);
+    setSubmitted(false);
   };
 
   const handleChange = (e) => {
@@ -590,13 +592,13 @@ function Batchs() {
             onChange={handleChange}
             variant="outlined"
             required
-            error={!formData.batchName.trim()}
-            helperText={!formData.batchName.trim() ? "Batch name is required" : ""}
+            error={submitted && !formData.batchName.trim()}
+            helperText={submitted && !formData.batchName.trim() ? "Batch name is required" : ""}
             disabled={loading.save}
           />
 
           {/* Branch Dropdown */}
-          <FormControl fullWidth required error={!formData.branch}>
+          <FormControl fullWidth required error={submitted && !formData.branch}>
             <InputLabel>Branch *</InputLabel>
             <Select
               name="branch"
@@ -611,7 +613,7 @@ function Batchs() {
                 </MenuItem>
               ))}
             </Select>
-            {!formData.branch && (
+            {!formData.branch && submitted && (
               <div className="text-red-500 text-xs mt-1 ml-4">
                 Branch is required
               </div>
@@ -628,8 +630,8 @@ function Batchs() {
             onChange={handleChange}
             InputLabelProps={{ shrink: true }}
             required
-            error={!formData.startDate}
-            helperText={!formData.startDate ? "Start date is required" : ""}
+            error={submitted && !formData.startDate}
+            helperText={submitted && !formData.startDate ? "Start date is required" : ""}
             disabled={loading.save}
             inputProps={{
               min: getTodayDate()

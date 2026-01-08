@@ -49,6 +49,7 @@ function Technology() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [durations, setDurations] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,22 +57,40 @@ function Technology() {
     price: "",
   });
 
+  const fetchDurations = async () => {
+    try {
+      const response = await axios.get("/duration"); // API endpoint
+      if (response.data.success) {
+        setDurations(response.data.data || []);
+      } else {
+        toast.error(response.data.message || "Failed to fetch durations");
+      }
+    } catch (error) {
+      console.error("Error fetching durations:", error);
+      toast.error(error.response?.data?.message || "Failed to load duration data");
+    }
+  };
+
+  useEffect(() => {
+    fetchDurations();
+  }, []);
+
   /* ================= INITIAL LOAD ================= */
   // useEffect(() => {
   //   fetchTechnology();
   // }, [fetchTechnology]);
- const didFetch = useRef(false);
-  
-    useEffect(() => {
-      if (didFetch.current) return;
-      didFetch.current = true;
-  
-      const fetchInitialData = async () => {
-        await fetchTechnology();
-      };
-  
-      fetchInitialData();
-    }, [fetchTechnology]);
+  const didFetch = useRef(false);
+
+  useEffect(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
+
+    const fetchInitialData = async () => {
+      await fetchTechnology();
+    };
+
+    fetchInitialData();
+  }, [fetchTechnology]);
   /* ================= TABLE COLUMNS ================= */
   const columns = [
     {
@@ -111,7 +130,7 @@ function Technology() {
       ),
     },
     { label: "Technology Name", accessor: "name" },
-    { label: "Duration", accessor: "duration", filter: true },
+    { label: "Duration", accessor: "duration.name", filter: false },
     {
       label: "Price",
       accessor: "price",
@@ -119,43 +138,41 @@ function Technology() {
     },
 
     {
-          label: "Status",
-          accessor: "isActive",
-          sortable: true,
-          filter: true,
-          Cell: ({ row }) => (
-            <div className="flex items-center gap-4">
-              <span className="ml-2 text-sm font-medium text-gray-700">
-                {row.isActive ? "Active" : "Inactive"}
-              </span>
-              <button
-                onClick={() => toggleStatus(row._id)}
-                disabled={loading === `status-${row._id}`}
-                className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-                  row.isActive ? "bg-green-500" : "bg-gray-300"
+      label: "Status",
+      accessor: "isActive",
+      sortable: true,
+      filter: false,
+      Cell: ({ row }) => (
+        <div className="flex items-center gap-4">
+          <span className="ml-2 text-sm font-medium text-gray-700">
+            {row.isActive ? "Active" : "Inactive"}
+          </span>
+          <button
+            onClick={() => toggleStatus(row._id)}
+            disabled={loading === `status-${row._id}`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
+          >
+            <span
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
                 }`}
-              >
-                <span
-                  className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                    row.isActive ? "translate-x-6" : "translate-x-1"
-                  }`}
-                >
-                  {loading === `status-${row._id}` && (
-                    <Loader2 className="animate-spin w-4 h-4" />
-                  )}
-                </span>
-              </button>
-            </div>
-          ),
-        },
+            >
+              {loading === `status-${row._id}` && (
+                <Loader2 className="animate-spin w-4 h-4" />
+              )}
+            </span>
+          </button>
+        </div>
+      ),
+    },
   ];
 
   /* ================= HANDLERS ================= */
   const handlePageChange = (page) => changePage(page);
   const handleRowsPerPageChange = (limit) => changeLimit(limit);
   const handleSearch = (value) => changeSearch(value);
-  const handleSort = ({ sortBy, sortOrder }) =>
-    changeSort(sortBy, sortOrder);
+  const handleSort = (column, sortOrder) =>
+    changeSort(column, sortOrder);
   const handleFilter = (newFilters) => changeFilters(newFilters);
   const clearFilters = () => changeFilters({});
 
@@ -163,7 +180,7 @@ function Technology() {
     setEditId(row._id);
     setFormData({
       name: row.name,
-      duration: row.duration,
+      duration: row.duration?._id,
       price: row.price,
     });
     setOpen(true);
@@ -229,11 +246,11 @@ function Technology() {
       }
 
       toast.success("Saved successfully");
-      refreshTechnology();
       handleClose();
     } catch {
       toast.error("Save failed");
     } finally {
+      refreshTechnology();
       setIsSubmitting(false);
       setLoading((p) => ({ ...p, save: false }));
     }
@@ -298,9 +315,9 @@ function Technology() {
                 setFormData({ ...formData, duration: e.target.value })
               }
             >
-              <MenuItem value="45 days">45 days</MenuItem>
-              <MenuItem value="28 days">28 days</MenuItem>
-              <MenuItem value="6 months">6 months</MenuItem>
+              {durations.map((d) => (
+                <MenuItem value={d._id} key={d._id}>{d.name}</MenuItem>
+              ))}
             </Select>
           </FormControl>
           <TextField

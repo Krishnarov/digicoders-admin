@@ -124,7 +124,7 @@ function PayFee() {
           window.open(`/receipt/${res.data.id}`, "_blank");
         }, 1500);
       }
-      
+
       // Reset form after successful payment
       setFormData({
         registrationId: "",
@@ -195,8 +195,8 @@ function PayFee() {
       console.log(error);
       toast.error(
         error.response.data.message ||
-          error.message ||
-          "Error searching for student"
+        error.message ||
+        "Error searching for student"
       );
     } finally {
       setSearchLoading(false);
@@ -263,11 +263,10 @@ function PayFee() {
                   type="button"
                   onClick={searchStudent}
                   disabled={searchLoading}
-                  className={`px-6 py-3 rounded-md font-medium ${
-                    searchLoading
+                  className={`px-6 py-3 rounded-md font-medium ${searchLoading
                       ? "bg-blue-400 cursor-not-allowed"
                       : "bg-blue-600 hover:bg-blue-700"
-                  } text-white transition-colors duration-200 flex items-center`}
+                    } text-white transition-colors duration-200 flex items-center`}
                 >
                   {searchLoading ? "Searching..." : "Search"}
                 </button>
@@ -365,7 +364,7 @@ function PayFee() {
                 </select>
               </div>
             )}
-            
+
             {/* Transaction ID / UTR */}
             {formData.mode === "online" && (
               <div>
@@ -422,7 +421,7 @@ function PayFee() {
                 onChange={(e) => handleInputChange("remark", e.target.value)}
               />
             </div>
-            
+
             {/* QR code display */}
             {formData.mode === "online" && (
               <div>
@@ -444,6 +443,7 @@ function PayFee() {
             <button
               type="button"
               onClick={handleRegister}
+              disabled={formData.dueAmount === 0}
               className="px-8 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 font-medium text-lg"
             >
               {isLoading ? (
@@ -512,7 +512,7 @@ function PayFee() {
           </div>
         </div>
       )}
-      
+
       {/* QR Code Modal */}
       <Dialog
         open={qrModalOpen}

@@ -37,7 +37,7 @@ import useGetTechnology from "../hooks/useGetTechnology";
 function RejectReg() {
   // Default filter for new registrations - ALWAYS applied
   const defaultFilters = { status: "rejected" };
-  
+
   const {
     fetchStudents,
     changePage,
@@ -49,31 +49,30 @@ function RejectReg() {
     currentState,
     defaultFilters: hookDefaults
   } = useGetStudents(defaultFilters);
-  const {techState,fetchTechnology,changeLimittech}=useGetTechnology()
+  const { techState, fetchTechnology } = useGetTechnology()
   const { data: students, pagination, loading, filters, searchTerm } = currentState;
   const [actionLoading, setActionLoading] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
- const [branches, setBranches] = useState([]);
+  const [branches, setBranches] = useState([]);
   const fetchCount = useGetCount();
 
-   const didFetch = useRef(false);
-  
-    useEffect(() => {
-      if (didFetch.current) return;
-      didFetch.current = true;
-  
-      const fetchInitialData = async () => {
-        await fetchStudents({ forceRefresh: true, filters: {} });
-        changeLimittech(100)
-        await fetchTechnology();
-        await getAllBranches();
-      };
-  
-      fetchInitialData();
-    }, [fetchStudents]);
+  const didFetch = useRef(false);
 
- const getAllBranches = async () => {
+  useEffect(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
+
+    const fetchInitialData = async () => {
+      await fetchStudents({ forceRefresh: true, filters: {} });
+      await fetchTechnology();
+      await getAllBranches();
+    };
+
+    fetchInitialData();
+  }, [fetchStudents]);
+
+  const getAllBranches = async () => {
     try {
       const res = await axios.get("/branches");
       if (res.data.success) {
@@ -85,7 +84,7 @@ function RejectReg() {
     }
   };
 
- 
+
   const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
   };
@@ -97,10 +96,29 @@ function RejectReg() {
     }
   };
 
+  const handleDelete = async (rowId) => {
+    try {
+      setActionLoading(`deleting-${rowId}`);
+      const res = await axios.delete(`/registration/user/${rowId}`)
+      if (res.data.success) {
+        toast.success(res.data.message)
+        fetchStudents()
+      }
+    } catch (error) {
+      console.log(error);
+
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+
   const handleQrModalClose = () => {
     setQrModalOpen(false);
     setSelectedQrCode(null);
   };
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   const columns = [
     {
@@ -109,17 +127,17 @@ function RejectReg() {
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <Link to={`/reg-student/${row._id}`}>
-          <Tooltip
-            title={<span className="font-bold ">View</span>}
-            placement="top"
-          >
-            <button
-              className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
-              // onClick={() => handleView(row)}
+            <Tooltip
+              title={<span className="font-bold ">View</span>}
+              placement="top"
             >
-              <Eye size={20} />
-            </button>
-          </Tooltip>
+              <button
+                className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
+              // onClick={() => handleView(row)}
+              >
+                <Eye size={20} />
+              </button>
+            </Tooltip>
           </Link>
           <DeleteConfirmationModal
             id={row.id}
@@ -132,7 +150,7 @@ function RejectReg() {
               placement="top"
             >
               <button className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600">
-                {loading === `deleting-${row._id}` ? (
+                {actionLoading === `deleting-${row._id}` ? (
                   <Loader2 size={20} className="animate-spin" />
                 ) : (
                   <Trash2 size={20} />
@@ -144,206 +162,218 @@ function RejectReg() {
       ),
     },
     {
-          label: "Tra Fee Status",
-          accessor: "trainingFeeStatus",
-          sortable: true,
-          filter: true,
-          filterKey: "trainingFeeStatus",
-          Cell: ({ row }) => (
-            <Chip
-              label={row.trainingFeeStatus || "pending"}
-              color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
-              variant="outlined"
-              size="small"
-            />
-          ),
-        },
-        {
-          label: "Tnx Status",
-          accessor: "tnxStatus",
-          sortable: true,
-          filter: false,
-          filterKey: "tnxStatus",
-          Cell: ({ row }) => (
-            <Chip
-              label={row.tnxStatus || "pending"}
-              color={row.tnxStatus === "paid" ? "success" : "warning"}
-              variant="outlined"
-              size="small"
-            />
-          ),
-        },
-        {
-          label: "Enroll ID",
-          accessor: "userid",
-          sortable: true,
-        },
-        {
-          label: "Student Name",
-          accessor: "studentName",
-          sortable: true,
-        },
-    
-        {
-          label: "Amount",
-          accessor: "amount",
-          sortable: true,
-        },
-        {
-          label: "Total Fee",
-          accessor: "totalFee",
-          sortable: true,
-        },
-        {
-          label: "Discount Fee",
-          accessor: "discount",
-          sortable: true,
-        },
-        {
-          label: "Final Fee",
-          accessor: "finalFee",
-          sortable: true,
-        },
-        {
-          label: "Paid Amount",
-          accessor: "paidAmount",
-          sortable: true,
-        },
-        {
-          label: "Due Amount",
-          accessor: "dueAmount",
-          sortable: true,
-        },
-    
-        {
-          label: "Payment Method",
-          accessor: "paymentMethod",
-          sortable: true,
-          filter: true,
-          filterKey: "paymentMethod",
-        },
-        {
-          label: "Payment Type",
-          accessor: "paymentType",
-          sortable: true,
-          filter: false,
-        },
-        {
-          label: "Payment qrcode",
-          accessor: "qrcode.name",
-          sortable: true,
-          Cell: ({ row }) => (
-            <div
-              className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
-              onClick={() => handleQrView(row)}
-            >
-              {row.qrcode?.name}
-            </div>
-          ),
-        },
-        {
-          label: "UTR No",
-          accessor: "tnxId",
-          sortable: true,
-        },
-        {
-          label: "Mobile",
-          accessor: "mobile",
-          sortable: true,
-        },
-        {
-          label: "Whatshapp",
-          accessor: "whatshapp",
-          sortable: true,
-        },
-        {
-          label: "Alternate Mobile",
-          accessor: "alternateMobile",
-          sortable: true,
-        },
-        {
-          label: "Email",
-          accessor: "email",
-          sortable: true,
-        },
-        {
-          label: "Father Name",
-          accessor: "fatherName",
-          sortable: true,
-        },
-    
-        {
-          label: "College Name",
-          accessor: "collegeName",
-          sortable: true,
-          filter: false,
-          filterKey: "collegeName",
-          Cell: ({ row }) => <span>{row.collegeName?.name || "-"}</span>,
-        },
-        {
-          label: "Education",
-          accessor: "education.name",
-          sortable: true,
-        },
-        {
-          label: "Edu Year",
-          accessor: "eduYear",
-          sortable: true,
-        },
-        {
-          label: "Training",
-          accessor: "training.name",
-          sortable: true,
-        },
-        
-        {
-          label: "Technology",
-          accessor: "technology.name",
-          sortable: true,
-          filter: true,
-          filterKey: "technology",
-           filterOptions: techState.data.map((t) => ({
-            label: t.name,
-            value: t._id,
-          })),
-          Cell: ({ row }) => <span>{row.technology?.name || "N/A"}</span>,
-        },
-        {
-          label: "Branch",
-          accessor: "branch.name", // 👈 display ke liye
-          filter: true,
-          filterKey: "branch", // 👈 API ko objectId bhejne ke liye
-          filterOptions: branches.map((b) => ({
-            label: b.name,
-            value: b._id,
-          })),
-          sortable: true,
-          Cell: ({ row }) => row.branch?.name || "N/A",
-        },
-         {
-          label: "Batch",
-          accessor: "batch",
-          sortable: true,
-          Cell:({row})=><div>
-            {row.batch?.map((b,i)=>(<div key={b._id}> {b.batchName}</div>))}
-          </div>
-        },
-        {
-          label: "Hr Name",
-          accessor: "hrName.name",
-          sortable: true,
-        },
-        {
-          label: "Reg Date",
-          accessor: "createdAt",
-          sortable: true,
-          Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
-        },
-        {
-          label: "Remark",
-          accessor: "remark",
-    
-        },
+      label: "Tra Fee Status",
+      accessor: "trainingFeeStatus",
+      sortable: true,
+      filter: true,
+      filterKey: "trainingFeeStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={capitalizeFirst(row.trainingFeeStatus || "pending")}
+          color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Tnx Status",
+      accessor: "tnxStatus",
+      sortable: true,
+      filter: false,
+      filterKey: "tnxStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={capitalizeFirst(row.tnxStatus || "pending")}
+          color={row.tnxStatus === "paid" ? "success" : "warning"}
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Enroll ID",
+      accessor: "userid",
+      sortable: true,
+    },
+    {
+      label: "Student Name",
+      accessor: "studentName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.studentName)}</span>),
+      sortable: true,
+    },
+
+    {
+      label: "Amount",
+      accessor: "amount",
+      sortable: true,
+    },
+    {
+      label: "Total Fee",
+      accessor: "totalFee",
+      sortable: true,
+    },
+    {
+      label: "Discount Fee",
+      accessor: "discount",
+      sortable: true,
+    },
+    {
+      label: "Final Fee",
+      accessor: "finalFee",
+      sortable: true,
+    },
+    {
+      label: "Paid Amount",
+      accessor: "paidAmount",
+      sortable: true,
+    },
+    {
+      label: "Due Amount",
+      accessor: "dueAmount",
+      sortable: true,
+    },
+
+    {
+      label: "Payment Method",
+      accessor: "paymentMethod",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.paymentMethod)}</span>),
+
+      filter: true,
+      filterKey: "paymentMethod",
+    },
+    {
+      label: "Payment Type",
+      accessor: "paymentType",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.paymentType)}</span>),
+      filter: false,
+    },
+    {
+      label: "Payment qrcode",
+      accessor: "qrcode.name",
+      sortable: true,
+      Cell: ({ row }) => (
+        <div
+          className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[150px]"
+          onClick={() => handleQrView(row)}
+        >
+          {row.qrcode?.name}
+        </div>
+      ),
+    },
+    {
+      label: "UTR No",
+      accessor: "tnxId",
+      sortable: true,
+    },
+    {
+      label: "Mobile",
+      accessor: "mobile",
+      sortable: true,
+    },
+    {
+      label: "Whatshapp",
+      accessor: "whatshapp",
+      sortable: true,
+    },
+    {
+      label: "Alternate Mobile",
+      accessor: "alternateMobile",
+      sortable: true,
+    },
+    {
+      label: "Email",
+      accessor: "email",
+      sortable: true,
+    },
+    {
+      label: "Father Name",
+      accessor: "fatherName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.fatherName)}</span>),
+      sortable: true,
+    },
+
+    {
+      label: "College Name",
+      accessor: "collegeName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName.name)}</span>),
+      sortable: true,
+      filter: false,
+      filterKey: "collegeName",
+
+    },
+    {
+      label: "Education",
+      accessor: "education.name",
+      sortable: true,
+    },
+    {
+      label: "Edu Year",
+      accessor: "eduYear",
+      sortable: true,
+    },
+    {
+      label: "Training",
+      accessor: "training.name",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.training.name)}</span>),
+    },
+
+    {
+      label: "Technology",
+      accessor: "technology.name",
+      sortable: true,
+      filter: true,
+      filterKey: "technology",
+      filterOptions: techState.data.map((t) => ({
+        label: t.name,
+        value: t._id,
+      })),
+      Cell: ({ row }) => <span>{capitalizeFirst(row.technology?.name || "N/A")}</span>,
+    },
+    {
+      label: "Branch",
+      accessor: "branch.name", // 👈 display ke liye
+      filter: true,
+      filterKey: "branch", // 👈 API ko objectId bhejne ke liye
+      filterOptions: branches.map((b) => ({
+        label: b.name,
+        value: b._id,
+      })),
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.branch?.name || "N/A")}</span>),
+    },
+    {
+      label: "Batch",
+      accessor: "batch",
+      sortable: true,
+      Cell: ({ row }) => (
+        <div>
+          {row.batch?.map((b, i) => (
+            <div key={b._id}> {capitalizeFirst(b.batchName)}</div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      label: "Hr Name",
+      accessor: "hrName.name",
+      sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.hrName?.name || "N/A")}</span>),
+    },
+    {
+      label: "Reg Date",
+      accessor: "createdAt",
+      sortable: true,
+      Cell: ({ row }) => <span>{formatDate(row.createdAt)}</span>,
+    },
+    {
+      label: "Remark",
+      accessor: "remark",
+
+    },
   ];
 
   const handleAccept = async (id) => {
@@ -401,7 +431,7 @@ function RejectReg() {
     Object.keys(defaultFilters).forEach(key => {
       delete userFilters[key];
     });
-    
+
     return Object.entries(userFilters)
       .filter(([key, value]) => value && value !== "All")
       .map(([key, value]) => ({ key, value }));
@@ -427,11 +457,11 @@ function RejectReg() {
             <span>Dashboard</span>
           </Link>
         </div>
-        
+
         {/* Applied Filters Badge */}
         <Box className="flex items-center gap-2">
-       
-          
+
+
           {appliedFiltersCount > 0 && (
             <Button
               variant="outlined"
@@ -446,7 +476,7 @@ function RejectReg() {
         </Box>
       </div>
 
-    
+
 
       {/* DataTable */}
       <DataTable

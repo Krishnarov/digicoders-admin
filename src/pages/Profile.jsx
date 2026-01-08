@@ -15,6 +15,10 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -29,6 +33,7 @@ import {
   Security as SecurityIcon,
   Person as PersonIcon,
   Save as SaveIcon,
+  Business as BusinessIcon,
 } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 import axiosInstance from "../axiosInstance";
@@ -37,9 +42,11 @@ const Profile = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingSection, setLoadingSection] = useState('');
   const [message, setMessage] = useState({ type: "", text: "" });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [branches, setBranches] = useState([]);
 
   const userId = useSelector((state) => state.auth.user.id);
   const [user, setUser] = useState({});
@@ -48,40 +55,57 @@ const Profile = () => {
     email: "",
     phone: "",
     address: "",
-    post: "",
+    branch: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
     isTwoFactor: false,
   });
 
+  const fetchBranches = async () => {
+    try {
+      const res = await axiosInstance.get("/branches");
+      if (res.data.success) {
+        setBranches(res.data.branches || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch branches:", error);
+    }
+  };
+
   const getUser = async () => {
     try {
-      const res = await axiosInstance.get(`/auth/getme/${userId}`);
-      setUser(res.data.user);
+      const res = await axiosInstance.get(`/auth/getme`);
+      console.log("User data:", res.data);
+
+      setUser(res.data.userdata || {});
       setFormData((prev) => ({
         ...prev,
-        name: res.data.user.name || "",
-        email: res.data.user.email || "",
-        phone: res.data.user.phone || "",
-        address: res.data.user.address || "",
-        post: res.data.user.post || "",
-        isTwoFactor: res.data.user.isTwoFactor || false,
+        name: res.data.userdata?.name || "",
+        email: res.data.userdata?.email || "",
+        phone: res.data.userdata?.phone || "",
+        address: res.data.userdata?.address || "",
+        branch: res.data.userdata?.branch?._id || "",
+        isTwoFactor: res.data.userdata?.isTwoFactor || false,
       }));
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching user:", error);
       showMessage("error", "Failed to load user data");
     }
   };
 
   useEffect(() => {
     getUser();
+    fetchBranches();
   }, [userId]);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setSnackbarOpen(true);
-    setTimeout(() => setSnackbarOpen(false), 3000);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
@@ -99,16 +123,22 @@ const Profile = () => {
 
   const handlePersonalInfoSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setLoadingSection('personal');
 
     try {
-      const res = await axiosInstance.put(`/auth/update/${userId}`, {
+      const updateData = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        post: formData.post,
-      });
+      };
+
+      // Add branch only if it's selected
+      if (formData.branch) {
+        updateData.branch = formData.branch;
+      }
+
+      const res = await axiosInstance.put(`/auth/update/${userId}`, updateData);
 
       if (res.data.success) {
         showMessage("success", "Personal information updated successfully");
@@ -121,8 +151,7 @@ const Profile = () => {
         error.response?.data?.message || "Failed to update personal information"
       );
     } finally {
-      setLoading(false);
-       getUser();
+      setLoadingSection('');
     }
   };
 
@@ -139,16 +168,14 @@ const Profile = () => {
       return;
     }
 
-    setLoading(true);
+    setLoadingSection('password');
     const data = {
       oldpassword: formData.currentPassword,
       newpassword: formData.newPassword,
     };
 
-    
     try {
       const res = await axiosInstance.put(`/auth/update/${userId}`, data);
-
 
       if (res.status === 200) {
         showMessage("success", "Password updated successfully");
@@ -166,13 +193,12 @@ const Profile = () => {
         error.response?.data?.message || "Failed to update password"
       );
     } finally {
-      setLoading(false);
-       getUser();
+      setLoadingSection('');
     }
   };
 
   const handleTwoFactorToggle = async () => {
-    setLoading("TwoFactor")
+    setLoadingSection('twoFactor');
     const newValue = !formData.isTwoFactor;
     try {
       const res = await axiosInstance.put(`/auth/update/${userId}`, {
@@ -190,8 +216,7 @@ const Profile = () => {
       console.error(error);
       showMessage("error", "Failed to update two-factor authentication");
     } finally {
-      getUser();
-      setLoading(false);
+      setLoadingSection('');
     }
   };
 
@@ -211,18 +236,17 @@ const Profile = () => {
 
       if (res.status === 200) {
         showMessage("success", "Profile image updated successfully");
+        getUser(); // Refresh user data
       }
     } catch (error) {
       console.error(error);
       showMessage("error", "Failed to upload image");
-    } finally {
-      getUser();
     }
   };
 
   return (
-    <div className="max-w-sm md:max-w-6xl mx-auto  px-2">
-      <div className=" mx-auto">
+    <div className="max-w-sm md:max-w-6xl mx-auto px-2">
+      <div className="mx-auto">
         {/* Profile Header */}
         <Card className="mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
@@ -262,7 +286,11 @@ const Profile = () => {
                 <h1 className="text-2xl font-bold">{user?.name}</h1>
                 <p className="flex items-center justify-center md:justify-start mt-1">
                   <WorkIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
-                  {user?.post || "No position set"}
+                  {user?.role || "No role set"}
+                </p>
+                <p className="flex items-center justify-center md:justify-start mt-1">
+                  <BusinessIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
+                  {user?.branch?.name || "No branch assigned"}
                 </p>
                 <p className="flex items-center justify-center md:justify-start mt-1">
                   <LocationIcon sx={{ fontSize: 18, marginRight: 0.5 }} />
@@ -325,13 +353,29 @@ const Profile = () => {
                     ),
                   }}
                 />
-                <TextField
-                  fullWidth
-                  label="Position"
-                  name="post"
-                  value={formData.post}
-                  onChange={handleInputChange}
-                />
+                <FormControl fullWidth>
+                  <InputLabel>Branch</InputLabel>
+                  <Select
+                    name="branch"
+                    value={formData.branch}
+                    onChange={handleInputChange}
+                    label="Branch"
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <BusinessIcon color="action" />
+                      </InputAdornment>
+                    }
+                  >
+                    <MenuItem value="">
+                      <em>Select Branch</em>
+                    </MenuItem>
+                    {branches.map((branch) => (
+                      <MenuItem key={branch._id} value={branch._id}>
+                        {branch.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
                 <TextField
                   fullWidth
                   label="Address"
@@ -348,12 +392,12 @@ const Profile = () => {
                   variant="contained"
                   color="primary"
                   type="submit"
-                  disabled={loading}
+                  disabled={loadingSection === 'personal'}
                   startIcon={
-                    loading ? <CircularProgress size={20} /> : <SaveIcon />
+                    loadingSection === 'personal' ? <CircularProgress size={20} /> : <SaveIcon />
                   }
                 >
-                  {loading ? "Saving..." : "Save Personal Information"}
+                  {loadingSection === 'personal' ? "Saving..." : "Save Personal Information"}
                 </Button>
               </div>
             </form>
@@ -439,12 +483,12 @@ const Profile = () => {
                     variant="contained"
                     color="primary"
                     type="submit"
-                    disabled={loading}
+                    disabled={loadingSection === 'password'}
                     startIcon={
-                      loading ? <CircularProgress size={20} /> : <SaveIcon />
+                      loadingSection === 'password' ? <CircularProgress size={20} /> : <SaveIcon />
                     }
                   >
-                    {loading ? "Updating..." : "Update Password"}
+                    {loadingSection === 'password' ? "Updating..." : "Update Password"}
                   </Button>
                 </div>
               </div>
@@ -470,9 +514,17 @@ const Profile = () => {
                     checked={formData.isTwoFactor}
                     onChange={handleTwoFactorToggle}
                     color="primary"
+                    disabled={loadingSection === 'twoFactor'}
                   />
                 }
-                label="Two-Factor Authentication"
+                label={
+                  <Box display="flex" alignItems="center">
+                    Two-Factor Authentication
+                    {loadingSection === 'twoFactor' && (
+                      <CircularProgress size={16} sx={{ ml: 1 }} />
+                    )}
+                  </Box>
+                }
               />
               {formData.isTwoFactor ? (
                 <Typography
@@ -491,7 +543,7 @@ const Profile = () => {
                   className="mt-2"
                 >
                   Enhance your account's security by enabling Two-Factor
-                  Authentication. You’ll need to verify your identity using an
+                  Authentication. You'll need to verify your identity using an
                   OTP sent to your email when signing in.
                 </Typography>
               )}
@@ -501,7 +553,8 @@ const Profile = () => {
                   variant="contained"
                   color="primary"
                   onClick={handleTwoFactorToggle}
-                  disabled={loading}
+                  disabled={loadingSection === 'twoFactor'}
+                  startIcon={loadingSection === 'twoFactor' && <CircularProgress size={20} />}
                 >
                   {formData.isTwoFactor ? "Disable" : "Enable"} Two-Factor
                 </Button>
@@ -514,10 +567,14 @@ const Profile = () => {
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}
-          onClose={() => setSnackbarOpen(false)}
+          onClose={handleCloseSnackbar}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          <Alert severity={message.type} onClose={() => setSnackbarOpen(false)}>
+          <Alert
+            severity={message.type}
+            onClose={handleCloseSnackbar}
+            sx={{ width: '100%' }}
+          >
             {message.text}
           </Alert>
         </Snackbar>

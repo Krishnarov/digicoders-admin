@@ -73,13 +73,13 @@ function AssignmentGrading() {
       const res = await axios.get(`/assignments/${id}`);
       if (res.data.success) {
         setAssignment(res.data.assignment);
-        
+
         // If there's only one batch, select it automatically
         if (res.data.assignment.batches?.length === 1) {
           setSelectedBatch(res.data.assignment.batches[0]._id);
           fetchStudents(res.data.assignment.batches[0]._id);
         }
-        
+
         // Load existing submissions
         loadSubmissions(res.data.assignment);
       }
@@ -103,10 +103,10 @@ function AssignmentGrading() {
     try {
       setLoading(true);
       const res = await axios.get(`/batches/${batchId}`);
-      
+
       if (res.data.success) {
         setStudents(res.data.batch.students || []);
-        
+
         // Pre-populate grades with existing submission data
         const gradesMap = {};
         res.data.batch.students.forEach(student => {
@@ -145,18 +145,18 @@ function AssignmentGrading() {
   const saveGrades = async () => {
     try {
       setSaving(true);
-      
+
       // Prepare grades data
       const gradesData = Object.entries(grades).map(([studentId, marks]) => ({
         studentId,
         marks: marks === "" ? null : Number(marks)
       }));
-      
+
       const res = await axios.post(`/assignments/${id}/grade`, {
         batchId: selectedBatch,
         grades: gradesData
       });
-      
+
       if (res.data.success) {
         toast.success("Grades saved successfully");
         // Update submissions with new data
@@ -195,7 +195,7 @@ function AssignmentGrading() {
   const saveIndividualMark = async () => {
     try {
       setSaving(true);
-      
+
       const res = await axios.post(`/assignments/${id}/grade`, {
         batchId: selectedBatch,
         grades: [{
@@ -204,7 +204,7 @@ function AssignmentGrading() {
           remarks: markData.remarks
         }]
       });
-      
+
       if (res.data.success) {
         toast.success("Mark saved successfully");
         setMarkModalOpen(false);
@@ -245,12 +245,12 @@ function AssignmentGrading() {
         </div>
       ),
     },
-    { 
-      label: "Student Name", 
-      accessor: "name",
-      Cell: ({ row }) => (
-        <div className="font-medium">{row.name}</div>
-      )
+    {
+      label: "Student Name",
+      accessor: "studentName",
+      // Cell: ({ row }) => (
+      //   <div className="font-medium">{row.studentName}</div>
+      // )
     },
     { label: "Email", accessor: "email" },
     {
@@ -259,12 +259,12 @@ function AssignmentGrading() {
       Cell: ({ row }) => {
         const submission = submissions[row._id];
         const hasSubmitted = !!submission;
-        
+
         return (
           <div>
             {hasSubmitted ? (
               <Tooltip title="Download submission">
-                <IconButton 
+                <IconButton
                   size="small"
                   onClick={() => downloadSubmission(row._id)}
                 >
@@ -272,9 +272,9 @@ function AssignmentGrading() {
                 </IconButton>
               </Tooltip>
             ) : (
-              <Chip 
-                label="Not submitted" 
-                size="small" 
+              <Chip
+                label="Not submitted"
+                size="small"
                 color="default"
                 variant="outlined"
               />
@@ -289,7 +289,7 @@ function AssignmentGrading() {
       Cell: ({ row }) => {
         const submission = submissions[row._id];
         const hasSubmitted = !!submission;
-        
+
         return (
           <TextField
             type="number"
@@ -314,31 +314,31 @@ function AssignmentGrading() {
         const submission = submissions[row._id];
         const hasSubmitted = !!submission;
         const isGraded = hasSubmitted && submission.graded;
-        
+
         return (
           <div>
             {hasSubmitted ? (
               isGraded ? (
-                <Chip 
+                <Chip
                   icon={<CheckCircle size={16} />}
-                  label="Graded" 
-                  size="small" 
+                  label="Graded"
+                  size="small"
                   color="success"
                   variant="outlined"
                 />
               ) : (
-                <Chip 
+                <Chip
                   icon={<XCircle size={16} />}
-                  label="Pending" 
-                  size="small" 
+                  label="Pending"
+                  size="small"
                   color="warning"
                   variant="outlined"
                 />
               )
             ) : (
-              <Chip 
-                label="Not submitted" 
-                size="small" 
+              <Chip
+                label="Not submitted"
+                size="small"
                 color="default"
                 variant="outlined"
               />
@@ -364,6 +364,7 @@ function AssignmentGrading() {
       </div>
     );
   }
+  console.log(students);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -406,20 +407,20 @@ function AssignmentGrading() {
       <Card className="p-6 mb-6 shadow-md">
         <h2 className="text-xl font-semibold text-gray-800 mb-2">{assignment.title}</h2>
         <p className="text-gray-600 mb-4">{assignment.description}</p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center">
             <BookOpen className="w-5 h-5 mr-2 text-gray-500" />
             <span className="text-gray-700">Max Marks: {assignment.maxMarks}</span>
           </div>
-          
+
           <div className="flex items-center">
             <Users className="w-5 h-5 mr-2 text-gray-500" />
             <span className="text-gray-700">
               Batches: {assignment.batches?.map(b => b.batchName).join(", ")}
             </span>
           </div>
-          
+
           <div className="flex items-center">
             <span className="text-gray-700">
               Due: {new Date(assignment.dueDate).toLocaleDateString()}
@@ -453,7 +454,7 @@ function AssignmentGrading() {
             <h2 className="text-xl font-semibold text-gray-800">
               Students in Selected Batch
             </h2>
-            
+
             <Button
               variant="contained"
               startIcon={<Save size={20} />}
@@ -470,9 +471,9 @@ function AssignmentGrading() {
               <p className="text-gray-500">No students in this batch</p>
             </div>
           ) : (
-            <DataTable 
-              columns={columns} 
-              data={students} 
+            <DataTable
+              columns={columns}
+              data={students}
               loading={loading}
               title="Student List"
             />
@@ -481,8 +482,8 @@ function AssignmentGrading() {
       )}
 
       {/* Add Mark Modal */}
-      <Dialog 
-        open={markModalOpen} 
+      <Dialog
+        open={markModalOpen}
         onClose={() => setMarkModalOpen(false)}
         maxWidth="sm"
         fullWidth
@@ -497,7 +498,7 @@ function AssignmentGrading() {
               type="number"
               fullWidth
               value={markData.marks}
-              onChange={(e) => setMarkData({...markData, marks: e.target.value})}
+              onChange={(e) => setMarkData({ ...markData, marks: e.target.value })}
               inputProps={{
                 min: 0,
                 max: assignment.maxMarks,
@@ -505,14 +506,14 @@ function AssignmentGrading() {
               }}
               variant="outlined"
             />
-            
+
             <TextField
               label="Remarks"
               multiline
               rows={3}
               fullWidth
               value={markData.remarks}
-              onChange={(e) => setMarkData({...markData, remarks: e.target.value})}
+              onChange={(e) => setMarkData({ ...markData, remarks: e.target.value })}
               variant="outlined"
               placeholder="Add any comments or feedback for the student..."
             />
@@ -522,8 +523,8 @@ function AssignmentGrading() {
           <Button onClick={() => setMarkModalOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={saveIndividualMark} 
+          <Button
+            onClick={saveIndividualMark}
             variant="contained"
             disabled={saving}
           >

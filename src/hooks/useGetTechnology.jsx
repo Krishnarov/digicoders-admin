@@ -43,8 +43,8 @@ const useGetTechnology = () => {
           }
         });
 
-        const cacheBuster = forceRefresh ? `&_=${Date.now()}` : "";
-        const url = `/technology/getAll?${params.toString()}${cacheBuster}`;
+        // const cacheBuster = forceRefresh ? `&_=${Date.now()}` : "";
+        const url = `/technology/getAll?${params.toString()}`;
 
         const res = await axios.get(url, { withCredentials: true });
 
@@ -79,7 +79,7 @@ const useGetTechnology = () => {
     [fetchTechnology]
   );
 
-  const changeLimittech = useCallback(
+  const changeLimit = useCallback(
     (limit) => fetchTechnology({ page: 1, limit }),
     [fetchTechnology]
   );
@@ -109,7 +109,7 @@ const useGetTechnology = () => {
     fetchTechnology,
     refreshTechnology,
     changePage,
-    changeLimittech,
+    changeLimit,
     changeSearch,
     changeSort,
     changeFilters,

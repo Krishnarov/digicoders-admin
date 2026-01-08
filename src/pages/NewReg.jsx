@@ -52,7 +52,7 @@ function NewReg() {
     currentState,
     defaultFilters: hookDefaults,
   } = useGetStudents(defaultFilters);
-  const { techState, fetchTechnology, changeLimittech } = useGetTechnology();
+  const { techState, fetchTechnology } = useGetTechnology();
 
   const {
     data: students,
@@ -75,7 +75,7 @@ function NewReg() {
 
     const fetchInitialData = async () => {
       await fetchStudents({ forceRefresh: true, filters: {} });
-      changeLimittech(100);
+
       await fetchTechnology();
       await getAllBranches();
     };
@@ -110,6 +110,8 @@ function NewReg() {
     setQrModalOpen(false);
     setSelectedQrCode(null);
   };
+  const capitalizeFirst = (text = "") =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   const columns = [
     {
@@ -172,7 +174,7 @@ function NewReg() {
       filterKey: "trainingFeeStatus",
       Cell: ({ row }) => (
         <Chip
-          label={row.trainingFeeStatus || "pending"}
+          label={capitalizeFirst(row.trainingFeeStatus || "pending")}
           color={row.trainingFeeStatus === "full paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
@@ -187,7 +189,7 @@ function NewReg() {
       filterKey: "tnxStatus",
       Cell: ({ row }) => (
         <Chip
-          label={row.tnxStatus || "pending"}
+          label={capitalizeFirst(row.tnxStatus || "pending")}
           color={row.tnxStatus === "paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
@@ -202,6 +204,7 @@ function NewReg() {
     {
       label: "Student Name",
       accessor: "studentName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.studentName)}</span>),
       sortable: true,
     },
 
@@ -240,6 +243,8 @@ function NewReg() {
       label: "Payment Method",
       accessor: "paymentMethod",
       sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.paymentMethod)}</span>),
+
       filter: true,
       filterKey: "paymentMethod",
     },
@@ -247,6 +252,7 @@ function NewReg() {
       label: "Payment Type",
       accessor: "paymentType",
       sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.paymentType)}</span>),
       filter: false,
     },
     {
@@ -290,16 +296,18 @@ function NewReg() {
     {
       label: "Father Name",
       accessor: "fatherName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.fatherName)}</span>),
       sortable: true,
     },
 
     {
       label: "College Name",
       accessor: "collegeName",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName.name)}</span>),
       sortable: true,
       filter: false,
       filterKey: "collegeName",
-      Cell: ({ row }) => <span>{row.collegeName?.name || "-"}</span>,
+
     },
     {
       label: "Education",
@@ -315,6 +323,7 @@ function NewReg() {
       label: "Training",
       accessor: "training.name",
       sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.training.name)}</span>),
     },
 
     {
@@ -327,7 +336,7 @@ function NewReg() {
         label: t.name,
         value: t._id,
       })),
-      Cell: ({ row }) => <span>{row.technology?.name || "N/A"}</span>,
+      Cell: ({ row }) => <span>{capitalizeFirst(row.technology?.name || "N/A")}</span>,
     },
     {
       label: "Branch",
@@ -339,7 +348,7 @@ function NewReg() {
         value: b._id,
       })),
       sortable: true,
-      Cell: ({ row }) => row.branch?.name || "N/A",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.branch?.name || "N/A")}</span>),
     },
     {
       label: "Batch",
@@ -348,7 +357,7 @@ function NewReg() {
       Cell: ({ row }) => (
         <div>
           {row.batch?.map((b, i) => (
-            <div key={b._id}> {b.batchName}</div>
+            <div key={b._id}> {capitalizeFirst(b.batchName)}</div>
           ))}
         </div>
       ),
@@ -357,6 +366,7 @@ function NewReg() {
       label: "Hr Name",
       accessor: "hrName.name",
       sortable: true,
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.hrName?.name || "N/A")}</span>),
     },
     {
       label: "Reg Date",
