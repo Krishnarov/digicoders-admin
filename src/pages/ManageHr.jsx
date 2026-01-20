@@ -6,7 +6,6 @@ import {
   FormControl,
   InputLabel,
   MenuItem,
-  Select,
   TextField,
   Tooltip,
 } from "@mui/material";
@@ -16,6 +15,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { toast } from "react-toastify";
+import Select from "react-select";
 
 function ManageHr() {
   const [hr, setHr] = useState([]);
@@ -191,14 +191,12 @@ function ManageHr() {
           <button
             onClick={() => toggleStatus(row)}
             disabled={loading === `status-${row._id}`}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
+                }`}
             >
               {loading === `status-${row._id}` && (
                 <Loader2 className="animate-spin w-4 h-4" />
@@ -294,6 +292,30 @@ function ManageHr() {
     setFormData({ name: "", branch: "", personalNo: "", officeNo: "" });
     setEditId(null);
   };
+
+  const branchOptions = React.useMemo(
+    () => branches.map((b) => ({ value: b._id, label: b.name })),
+    [branches]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -409,21 +431,17 @@ function ManageHr() {
           />
 
           {/* Branch Dropdown */}
-          <FormControl fullWidth required>
-            <InputLabel>Branch *</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Branch *</label>
             <Select
-              name="branch"
-              value={formData.branch}
-              onChange={handleChange}
-              label="Branch *"
-            >
-              {branches.map((b) => (
-                <MenuItem key={b._id} value={b._id}>
-                  {b.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              options={branchOptions}
+              placeholder="Select Branch"
+              value={branchOptions.find((opt) => opt.value === formData.branch) || null}
+              onChange={(opt) => setFormData((prev) => ({ ...prev, branch: opt?.value || "" }))}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
 
           <TextField
             label="Personal Number *"

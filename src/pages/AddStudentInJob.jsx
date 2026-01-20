@@ -3,7 +3,6 @@ import {
   Button,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
   Checkbox,
   Typography,
@@ -24,6 +23,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DataTable from "../components/DataTable";
 import { toast } from "react-toastify";
+import Select from "react-select";
 
 function AddStudentInJob() {
   const [batches, setBatches] = useState([]);
@@ -68,7 +68,7 @@ function AddStudentInJob() {
       setLoading(true);
       const res = await axios.get("/jobs");
 
-      
+
       if (res.data.success) {
         setJobs(res.data.data || []);
       }
@@ -105,9 +105,46 @@ function AddStudentInJob() {
     }
   };
 
-  const handleJobChange = (e) => {
-    setSelectedJob(e.target.value);
+  const handleJobChange = (opt) => {
+    setSelectedJob(opt?.value || "");
   };
+
+  const jobOptions = useMemo(
+    () =>
+      jobs.map((job) => ({
+        value: job.id || job._id,
+        label: `${job?.title} - ${job.company?.name || "N/A"}`,
+      })),
+    [jobs]
+  );
+
+  const batchOptions = useMemo(
+    () =>
+      batches.map((batch) => ({
+        value: batch._id,
+        label: `${batch.batchName} (${batch.branch?.name || "N/A"})`,
+      })),
+    [batches]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   const handleTempStudentSelect = (studentId) => {
     if (tempSelectedStudents.includes(studentId)) {
@@ -235,41 +272,38 @@ function AddStudentInJob() {
       {/* Job and Batch Selection */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormControl fullWidth>
-            <InputLabel>Select Job</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Select Job</label>
             <Select
-              value={selectedJob}
+              options={jobOptions}
+              placeholder="- Select Job -"
+              value={jobOptions.find((opt) => opt.value === selectedJob) || null}
               onChange={handleJobChange}
-              label="Select Job"
-            >
-              <MenuItem value="">
-                <em>- Select Job -</em>
-              </MenuItem>
-              {jobs.map((job) => (
-                <MenuItem key={job.id} value={job.id}>
-                  {job?.title} - {job.company?.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
 
-          <FormControl fullWidth>
-            <InputLabel>Select Batch</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Select Batch</label>
             <Select
-              value={selectedBatch}
-              onChange={handleBatchChange}
-              label="Select Batch"
-            >
-              <MenuItem value="">
-                <em>- Select Batch -</em>
-              </MenuItem>
-              {batches.map((batch) => (
-                <MenuItem key={batch._id} value={batch._id}>
-                  {batch.batchName} ({batch.branch?.name})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              options={batchOptions}
+              placeholder="- Select Batch -"
+              value={batchOptions.find((opt) => opt.value === selectedBatch) || null}
+              onChange={(opt) => {
+                const batchId = opt?.value || "";
+                setSelectedBatch(batchId);
+                if (batchId) {
+                  fetchStudents(batchId);
+                } else {
+                  setStudents([]);
+                  setTempSelectedStudents([]);
+                }
+              }}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
         </div>
 
         {selectedJob && (
@@ -285,23 +319,23 @@ function AddStudentInJob() {
             </Typography>
             {jobs.find((j) => j.id === selectedJob)?.assignedStudents?.length !==
               0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                {/* <Typography variant="h6" gutterBottom>
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  {/* <Typography variant="h6" gutterBottom>
                   Recently Added Students
                 </Typography> */}
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {jobs.find((j) => j.id === selectedJob)?.assignedStudents?.map((student) => (
-                    <Chip
-                      key={student._id}
-                      avatar={<Avatar>{student.studentName?.charAt(0)}</Avatar>}
-                      label={student.studentName}
-                    //   onDelete={() => removeStudent(student._id)}
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
-              </div>
-            )}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {jobs.find((j) => j.id === selectedJob)?.assignedStudents?.map((student) => (
+                      <Chip
+                        key={student._id}
+                        avatar={<Avatar>{student.studentName?.charAt(0)}</Avatar>}
+                        label={student.studentName}
+                        //   onDelete={() => removeStudent(student._id)}
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
+                </div>
+              )}
           </Box>
         )}
       </div>

@@ -204,7 +204,7 @@ function RejectReg() {
     },
 
     {
-      label: "Amount",
+      label: "Registration Amount",
       accessor: "amount",
       sortable: true,
     },

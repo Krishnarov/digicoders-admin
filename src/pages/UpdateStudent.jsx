@@ -20,11 +20,14 @@ import {
   Award,
   Shirt,
   Briefcase,
+  X,
+  File as FileIcon,
+  Eye,
 } from "lucide-react";
 import {
   FormControl,
   InputLabel,
-  Select,
+
   MenuItem,
 } from "@mui/material";
 import axios from "../axiosInstance";
@@ -33,6 +36,8 @@ import useGetTranning from "../hooks/useGetTranning";
 import useGetTechnology from "../hooks/useGetTechnology";
 import useGetEducations from "../hooks/useGetEducations";
 import { toast } from "react-toastify";
+import Select from "react-select";
+import CustomModal from "../components/CustomModal";
 
 function UpdateStudent() {
   const { id } = useParams();
@@ -53,7 +58,13 @@ function UpdateStudent() {
   const [updatedData, setUpdatedData] = useState({});
   const fetchTranningData = useGetTranning();
   const fetchEducation = useGetEducations();
-  const [preview, setPreview] = useState(null);
+  const [previews, setPreviews] = useState({
+    profilePhoto: null,
+    aadharCard: null,
+    cv: null
+  });
+  const [viewFile, setViewFile] = useState({ url: null, type: null });
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     mobile: "",
@@ -197,7 +208,6 @@ function UpdateStudent() {
       try {
         setLoading(true);
         const response = await axios.get(`/registration/user?id=${id}`);
-        console.log(response.data);
 
         if (response.data.success) {
           const studentData = response.data.data;
@@ -262,9 +272,12 @@ function UpdateStudent() {
             tnxId: studentData.tnxId || "",
             remark: studentData.remark || "",
             pincode: studentData.pincode || "",
-
           };
-          setPreview(studentData?.profilePhoto?.url)
+          setPreviews({
+            profilePhoto: studentData?.profilePhoto?.url || null,
+            aadharCard: studentData?.aadharCard?.url || null,
+            cv: studentData?.cv?.url || null,
+          });
           setFormData(initialFormData);
 
           // If training is set, fetch technologies for that training
@@ -313,6 +326,151 @@ function UpdateStudent() {
     fetchEducation,
   ]);
 
+  // Memoized options for react-select
+  const trainingOptions = React.useMemo(
+    () => Trainings?.map((item) => ({ value: item._id, label: item.name })),
+    [Trainings]
+  );
+
+  const technologyOptions = React.useMemo(
+    () => technologiesData?.map((tech) => ({ value: tech._id, label: tech.name })),
+    [technologiesData]
+  );
+
+  const educationOptions = React.useMemo(
+    () => Educations?.map((edu) => ({ value: edu._id, label: edu.name })),
+    [Educations]
+  );
+
+  const higherEducationOptions = [
+    { value: "Diploma", label: "Diploma" },
+    { value: "Graduation", label: "Graduation" },
+    { value: "Diploma+Graduation", label: "Diploma+Graduation" },
+    { value: "Post Graduation", label: "Post Graduation" },
+    { value: "12th", label: "12th" },
+    { value: "10th", label: "10th" },
+    { value: "Other", label: "Other" },
+  ];
+
+  const collegeOptions = React.useMemo(
+    () =>
+      collegeNames.map((college) => ({
+        value: college?._id,
+        label: college?.name,
+      })),
+    [collegeNames]
+  );
+
+  const hrOptions = React.useMemo(
+    () => HRs.map((hr) => ({ value: hr._id, label: hr.name })),
+    [HRs]
+  );
+
+  const branchOptions = React.useMemo(
+    () => branchs.map((branch) => ({ value: branch._id, label: branch.name })),
+    [branchs]
+  );
+
+  const qrOptions = React.useMemo(
+    () => qrcodes.map((qr) => ({ value: qr._id, label: qr.name })),
+    [qrcodes]
+  );
+
+  const genderOptions = [
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+    { value: "other", label: "Other" },
+  ];
+
+  const guardianRelationOptions = [
+    { value: "Father", label: "Father" },
+    { value: "Mother", label: "Mother" },
+    { value: "Brother", label: "Brother" },
+    { value: "Sister", label: "Sister" },
+    { value: "Uncle", label: "Uncle" },
+    { value: "Aunt", label: "Aunt" },
+    { value: "Grandfather", label: "Grandfather" },
+    { value: "Grandmother", label: "Grandmother" },
+    { value: "Other", label: "Other" },
+  ];
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      padding: "2px",
+      borderRadius: "0.375rem",
+    }),
+  });
+
+  const handleSelectChange = (name, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setUpdatedData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (name === "training") {
+      fetchtechnologybytrainingid(value);
+      setFormData((prev) => ({ ...prev, technology: "" }));
+    }
+
+    if (name === "technology") {
+      fetchtechnologybyId(value);
+    }
+  };
+
+  const handleRemoveFile = (name) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: null,
+    }));
+    setUpdatedData((prev) => ({
+      ...prev,
+      [name]: null,
+    }));
+    setPreviews((prev) => {
+      if (prev[name] && typeof prev[name] === "string" && prev[name].startsWith("blob:")) {
+        URL.revokeObjectURL(prev[name]);
+      }
+      return {
+        ...prev,
+        [name]: null,
+      };
+    });
+  };
+
+  const handleViewFile = (name) => {
+    const previewUrl = previews[name];
+    if (!previewUrl) return;
+
+    let fullUrl = previewUrl;
+    if (typeof previewUrl === "string" && !previewUrl.startsWith("blob:")) {
+      fullUrl = `${import.meta.env.VITE_BASE_URI}${previewUrl}`;
+    }
+
+    let type = "image";
+    // Check if it's a PDF based on the URL or the file type
+    const isPDF = (typeof fullUrl === "string" && fullUrl.toLowerCase().includes(".pdf")) ||
+      (formData[name] instanceof File && formData[name].type === "application/pdf");
+
+    if (isPDF) {
+      type = "pdf";
+    }
+
+    setViewFile({ url: fullUrl, type });
+    setIsViewModalOpen(true);
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
 
@@ -334,9 +492,17 @@ function UpdateStudent() {
         ...prev,
         [name]: files[0],
       }));
-      const file = e.target.files[0];
+      const file = files[0];
       if (file) {
-        setPreview(URL.createObjectURL(file)); // image preview ke liye URL
+        setPreviews((prev) => {
+          if (prev[name] && typeof prev[name] === "string" && prev[name].startsWith("blob:")) {
+            URL.revokeObjectURL(prev[name]);
+          }
+          return {
+            ...prev,
+            [name]: URL.createObjectURL(file),
+          };
+        });
       }
     } else {
       setFormData((prev) => ({
@@ -665,17 +831,14 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Gender
                 </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                <Select
+                  options={genderOptions}
+                  placeholder="Select Gender"
+                  value={genderOptions.find((opt) => opt.value === formData.gender) || null}
+                  onChange={(opt) => handleSelectChange("gender", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
 
               <div>
@@ -749,30 +912,41 @@ function UpdateStudent() {
                   Profile Photo
                 </label>
                 <div className="flex items-center">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 relative overflow-hidden">
-                    {preview ? (
-                      <img
-                        src={preview}
-                        alt="Profile Preview"
-                        className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                  <div className="relative w-full h-32">
+                    <label className={`flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 overflow-hidden ${previews.profilePhoto ? 'border-none' : ''}`}>
+                      {previews.profilePhoto ? (
+                        <img
+                          src={previews.profilePhoto?.startsWith("blob:") ? previews.profilePhoto : `${import.meta.env.VITE_BASE_URI}${previews.profilePhoto}`}
+                          alt="Profile Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Camera className="w-8 h-8 mb-3 text-gray-400" />
+                          <p className="mb-2 text-sm text-gray-500">
+                            <span className="font-semibold">Click to upload</span>{" "}
+                            or drag and drop
+                          </p>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        name="profilePhoto"
+                        onChange={handleChange}
+                        className="hidden"
+                        accept="image/*"
                       />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Camera className="w-8 h-8 mb-3 text-gray-400" />
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          or drag and drop
-                        </p>
-                      </div>
+                    </label>
+                    {previews.profilePhoto && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile("profilePhoto")}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 focus:outline-none"
+                      >
+                        <X size={16} />
+                      </button>
                     )}
-                    <input
-                      type="file"
-                      name="profilePhoto"
-                      onChange={handleChange}
-                      className="hidden"
-                      accept="image/*"
-                    />
-                  </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -789,19 +963,14 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Education
                 </label>
-                <select
-                  name="education"
-                  value={formData.education}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Education</option>
-                  {Educations.map((edu) => (
-                    <option key={edu._id} value={edu._id}>
-                      {edu.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={educationOptions}
+                  placeholder="Select Education"
+                  value={educationOptions.find((opt) => opt.value === formData.education) || null}
+                  onChange={(opt) => handleSelectChange("education", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -821,21 +990,14 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Highest Education
                 </label>
-                <select
-                  name="higherEducation"
-                  value={formData.higherEducation}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Higher Education</option>
-                  <option value="Diploma">Diploma</option>
-                  <option value="Graduation">Graduation</option>
-                  <option value="Diploma+Graduation">Diploma+Graduation</option>
-                  <option value="Post Graduation">Post Graduation</option>
-                  <option value="12th">12th</option>
-                  <option value="10th">10th</option>
-                  <option value="Other">Other</option>
-                </select>
+                <Select
+                  options={higherEducationOptions}
+                  placeholder="Select Higher Education"
+                  value={higherEducationOptions.find((opt) => opt.value === formData.higherEducation) || null}
+                  onChange={(opt) => handleSelectChange("higherEducation", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
 
               <div>
@@ -854,19 +1016,14 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   College Name
                 </label>
-                <select
-                  name="collegeName"
-                  value={formData.collegeName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select College</option>
-                  {collegeNames.map((college) => (
-                    <option key={college?._id} value={college?._id}>
-                      {college?.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={collegeOptions}
+                  placeholder="Select College"
+                  value={collegeOptions.find((opt) => opt.value === formData.collegeName) || null}
+                  onChange={(opt) => handleSelectChange("collegeName", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
             </div>
           </div>
@@ -882,39 +1039,28 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Training
                 </label>
-                <select
-                  name="training"
-                  value={formData.training}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Training</option>
-                  {Trainings.map((training) => (
-                    <option key={training._id} value={training._id}>
-                      {training.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={trainingOptions}
+                  placeholder="Select Training"
+                  value={trainingOptions.find((opt) => opt.value === formData.training) || null}
+                  onChange={(opt) => handleSelectChange("training", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Technology
                 </label>
-                <select
-                  name="technology"
-                  value={formData.technology}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                // disabled={!formData.training}
-                >
-                  <option value="">Select Technology</option>
-                  {technologiesData.map((tech) => (
-                    <option key={tech._id} value={tech._id}>
-                      {tech.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={technologyOptions}
+                  placeholder="Select Technology"
+                  value={technologyOptions.find((opt) => opt.value === formData.technology) || null}
+                  onChange={(opt) => handleSelectChange("technology", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
 
               <div>
@@ -974,23 +1120,14 @@ function UpdateStudent() {
                   Guardian Relation
                 </label>
 
-                <select
-                  name="guardianRelation"
-                  value={formData.guardianRelation}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Relation</option>
-                  <option value="Father">Father</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Brother">Brother</option>
-                  <option value="Sister">Sister</option>
-                  <option value="Uncle">Uncle</option>
-                  <option value="Aunt">Aunt</option>
-                  <option value="Grandfather">Grandfather</option>
-                  <option value="Grandmother">Grandmother</option>
-                  <option value="Other">Other</option>
-                </select>
+                <Select
+                  options={guardianRelationOptions}
+                  placeholder="Select Relation"
+                  value={guardianRelationOptions.find((opt) => opt.value === formData.guardianRelation) || null}
+                  onChange={(opt) => handleSelectChange("guardianRelation", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
 
 
@@ -1051,7 +1188,7 @@ function UpdateStudent() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label className="ml-2 block text-sm text-gray-900 flex items-center">
-                  <FileText size={16} className="mr-1" /> Hard Form
+                  <FileText size={16} className="mr-1" /> Offline Form
                 </label>
               </div>
 
@@ -1107,32 +1244,112 @@ function UpdateStudent() {
                 </label>
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Upload Aadhar Card
                 </label>
-                <input
-                  type="file"
-                  name="aadharCard"
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  accept="image/*,.pdf"
-                />
-                <p className="text-xs text-green-500 ">{formData.aadharCard?.public_id}</p>
+                <div className="relative">
+                  {!previews.aadharCard ? (
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <div className="flex flex-col items-center justify-center pt-2 pb-3">
+                        <Upload className="w-6 h-6 mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-500">Click to upload Aadhar pdf</p>
+                      </div>
+                      <input
+                        type="file"
+                        name="aadharCard"
+                        onChange={handleChange}
+                        className="hidden"
+                        accept="image/*,.pdf"
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center p-3 border border-gray-200 rounded-lg bg-gray-50">
+                      <div className="w-12 h-12 flex-shrink-0 mr-4 overflow-hidden rounded bg-gray-200 flex items-center justify-center">
+
+                        <FileIcon size={24} className="text-gray-500" />
+
+                      </div>
+                      <div className="flex-grow overflow-hidden">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {formData.aadharCard?.name || "Aadhar Card"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formData.aadharCard instanceof File ? `${(formData.aadharCard.size / 1024).toFixed(1)} KB` : 'Uploaded'}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleViewFile("aadharCard")}
+                          className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                        >
+                          <Eye size={20} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile("aadharCard")}
+                          className="text-gray-400 hover:text-red-500 focus:outline-none"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Upload CV
                 </label>
-                <input
-                  type="file"
-                  name="cv"
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  accept=".pdf,.doc,.docx"
-                />
-                <p className="text-xs text-green-500 ">{formData.cv?.public_id}</p>
+                <div className="relative">
+                  {!previews.cv ? (
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <div className="flex flex-col items-center justify-center pt-2 pb-3">
+                        <Upload className="w-6 h-6 mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-500">Click to upload CV</p>
+                      </div>
+                      <input
+                        type="file"
+                        name="cv"
+                        onChange={handleChange}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx"
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center p-3 border border-gray-200 rounded-lg bg-gray-50">
+                      <div className="w-12 h-12 flex-shrink-0 mr-4 bg-gray-200 rounded flex items-center justify-center">
+                        <FileText size={24} className="text-gray-500" />
+                      </div>
+                      <div className="flex-grow overflow-hidden">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {formData.cv?.name || "Resume / CV"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formData.cv instanceof File ? `${(formData.cv.size / 1024).toFixed(1)} KB` : 'Uploaded'}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleViewFile("cv")}
+                          className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                        >
+                          <Eye size={20} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile("cv")}
+                          className="text-gray-400 hover:text-red-500 focus:outline-none"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1166,7 +1383,7 @@ function UpdateStudent() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label className="ml-2 block text-sm text-gray-900">
-                  Placement Status
+                  Placement Status : <span className="font-bold">{formData.placementStatus ? "Placed" : "Not Placed"}</span>
                 </label>
               </div>
 
@@ -1231,9 +1448,10 @@ function UpdateStudent() {
                 <input
                   type="number"
                   name="discount"
+                  readOnly
                   value={formData.discount}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md outline-0 bg-gray-100"
                 />
               </div>
 
@@ -1284,8 +1502,8 @@ function UpdateStudent() {
                 <select
                   name="paymentType"
                   value={formData.paymentType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  // onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 outline-0"
                   readOnly
                 >
                   <option value="registration">Registration</option>
@@ -1301,9 +1519,9 @@ function UpdateStudent() {
                 <select
                   name="paymentMethod"
                   value={formData.paymentMethod}
-                  onChange={handleChange}
+                  // onChange={handleChange}
                   readOnly
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 outline-0"
                 >
                   <option value="cash">Cash</option>
                   <option value="online">Online</option>
@@ -1315,19 +1533,15 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   QR Code
                 </label>
-                <select
-                  name="qrcode"
-                  value={formData.qrcode || ""}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select QR Code</option>
-                  {qrcodes.map((qr) => (
-                    <option key={qr._id} value={qr._id}>
-                      {qr.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={qrOptions}
+                  placeholder="Select QR Code"
+                  value={qrOptions.find((opt) => opt.value === (formData.qrcode?._id || formData.qrcode)) || null}
+                  // onChange={(opt) => handleSelectChange("qrcode", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                  isDisabled
+                />
               </div>
 
               <div>
@@ -1338,23 +1552,24 @@ function UpdateStudent() {
                   type="text"
                   name="tnxId"
                   value={formData.tnxId}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  // onChange={handleChange}
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 outline-0"
                   placeholder="Transaction ID"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount (₹)
+                  Registration Amount (₹)
                 </label>
                 <input
                   type="number"
                   name="amount"
                   value={formData.amount}
-                  onChange={handleChange}
+                  // onChange={handleChange}
                   readOnly
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 outline-0"
                 />
               </div>
             </div>
@@ -1371,38 +1586,29 @@ function UpdateStudent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   HR Name
                 </label>
-                <select
-                  name="hrName"
-                  value={formData.hrName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select HR</option>
-                  {HRs.map((hr) => (
-                    <option key={hr._id} value={hr._id}>
-                      {hr.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={hrOptions}
+                  placeholder="Select HR"
+                  value={hrOptions.find((opt) => opt.value === formData.hrName) || null}
+                  // onChange={(opt) => handleSelectChange("hrName", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  isDisabled
+                  classNamePrefix="react-select"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Branch
                 </label>
-                <select
-                  name="branch"
-                  value={formData.branch}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Branch</option>
-                  {branchs.map((branch) => (
-                    <option key={branch._id} value={branch._id}>
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={branchOptions}
+                  placeholder="Select Branch"
+                  value={branchOptions.find((opt) => opt.value === formData.branch) || null}
+                  onChange={(opt) => handleSelectChange("branch", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
 
               <div className="md:col-span-2">
@@ -1450,6 +1656,34 @@ function UpdateStudent() {
           </div>
         </form>
       </div>
+
+      <CustomModal
+        open={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="View Document"
+        isBtnHide={true}
+        boxWidth="md"
+      >
+        <div className="w-full h-[60vh] flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden">
+          {viewFile.type === "image" ? (
+            <img
+              src={viewFile.url}
+              alt="Document Preview"
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : viewFile.type === "pdf" ? (
+            <iframe
+              src={`${viewFile.url}#toolbar=0`}
+              className="w-full h-full border-none"
+              title="PDF View"
+            />
+          ) : (
+            <p className="text-gray-500 text-center">
+              Preview not available for this file type.
+            </p>
+          )}
+        </div>
+      </CustomModal>
     </div>
   );
 }

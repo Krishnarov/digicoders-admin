@@ -10,12 +10,12 @@ import DataTable from "../components/DataTable";
 import {
   Button,
   MenuItem,
-  Select,
   TextField,
   Tooltip,
   FormControl,
   InputLabel,
 } from "@mui/material";
+import Select from "react-select";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
@@ -74,6 +74,30 @@ function Technology() {
   useEffect(() => {
     fetchDurations();
   }, []);
+
+  const durationOptions = React.useMemo(
+    () => durations.map((d) => ({ value: d._id, label: d.name })),
+    [durations]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   /* ================= INITIAL LOAD ================= */
   // useEffect(() => {
@@ -262,6 +286,7 @@ function Technology() {
     setFormData({ name: "", duration: "", price: "" });
   };
 
+
   /* ================= UI ================= */
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -307,19 +332,17 @@ function Technology() {
             }
             fullWidth
           />
-          <FormControl fullWidth>
-            <InputLabel>Duration</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Duration</label>
             <Select
-              value={formData.duration}
-              onChange={(e) =>
-                setFormData({ ...formData, duration: e.target.value })
-              }
-            >
-              {durations.map((d) => (
-                <MenuItem value={d._id} key={d._id}>{d.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              options={durationOptions}
+              placeholder="Select Duration"
+              value={durationOptions.find((opt) => opt.value === formData.duration) || null}
+              onChange={(opt) => setFormData({ ...formData, duration: opt?.value || "" })}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
           <TextField
             label="Price"
             type="number"

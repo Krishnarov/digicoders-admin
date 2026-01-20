@@ -11,7 +11,7 @@ import {
   Paper,
   TableSortLabel,
   MenuItem,
-  Select,
+
   InputLabel,
   FormControl,
   Grid,
@@ -26,6 +26,7 @@ import { Calendar, X } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
+import ReactSelect from "react-select";
 
 function DataTable({
   columns,
@@ -189,6 +190,36 @@ function DataTable({
     return Array.from(set).sort();
   };
 
+  const reactSelectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: "40px",
+      borderRadius: "4px",
+      borderColor: "#ccc",
+      "&:hover": {
+        borderColor: "#888",
+      },
+      boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 100,
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected
+        ? "#3b82f6"
+        : state.isFocused
+          ? "#eff6ff"
+          : "transparent",
+      color: state.isSelected ? "white" : "black",
+      "&:active": {
+        backgroundColor: "#3b82f6",
+        color: "white",
+      },
+    }),
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Paper elevation={3} className="p-4">
@@ -220,40 +251,46 @@ function DataTable({
                     (col) =>
                       col.filter && (
                         <Grid item xs={12} sm={6} md={4} key={col.accessor}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>{col.label}</InputLabel>
-                            <Select
+                          <div className="flex flex-col gap-1">
+                            {/* <label className="text-sm text-gray-600 font-medium">
+                              {col.label}
+                            </label> */}
+                            <ReactSelect
+                              className="min-w-[200px]"
+                              placeholder={`Select ${col.label}`}
+                              options={[
+                                { value: "", label: `Select ${col.label}` },
+                                ...getFilterOptions(col).map((opt) =>
+                                  typeof opt === "object"
+                                    ? { value: opt.value, label: opt.label }
+                                    : { value: opt, label: opt }
+                                ),
+                              ]}
                               value={
-                                localFilters[col.filterKey || col.accessor] ||
-                                ""
+                                [
+                                  { value: "", label: `Select ${col.label}` },
+                                  ...getFilterOptions(col).map((opt) =>
+                                    typeof opt === "object"
+                                      ? { value: opt.value, label: opt.label }
+                                      : { value: opt, label: opt }
+                                  ),
+                                ].find(
+                                  (o) =>
+                                    o.value ===
+                                    (localFilters[col.filterKey || col.accessor] || "")
+                                ) || null
                               }
-                              label={col.label}
-                              className="min-w-40"
-                              onChange={(e) =>
+                              onChange={(opt) =>
                                 handleFilterChange(
                                   col.filterKey || col.accessor,
-                                  e.target.value
+                                  opt?.value || ""
                                 )
                               }
-                              disabled={loading}
-                            >
-                              <MenuItem value="">All</MenuItem>
-                              {getFilterOptions(col).map((option) =>
-                                typeof option === "object" ? (
-                                  <MenuItem
-                                    key={option.value}
-                                    value={option.value}
-                                  >
-                                    {option.label}
-                                  </MenuItem>
-                                ) : (
-                                  <MenuItem key={option} value={option}>
-                                    {option}
-                                  </MenuItem>
-                                )
-                              )}
-                            </Select>
-                          </FormControl>
+                              styles={reactSelectStyles}
+                              classNamePrefix="react-select"
+                              isDisabled={loading}
+                            />
+                          </div>
                         </Grid>
                       )
                   )}

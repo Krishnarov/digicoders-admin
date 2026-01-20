@@ -22,6 +22,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { toast } from "react-toastify";
 import DataTable from "../components/DataTable";
+import Select from "react-select";
 import {
   Button,
   Dialog,
@@ -36,7 +37,7 @@ import {
   Menu,
   FormControl,
   InputLabel,
-  Select,
+
   Box,
   Typography,
 } from "@mui/material";
@@ -58,6 +59,39 @@ function JobApplications() {
     location: "",
   });
   const [newStatus, setNewStatus] = useState("");
+
+  const statusOptions = [
+    { value: "", label: "All" },
+    { value: "Applied", label: "Applied" },
+    { value: "verified", label: "Verified" },
+    { value: "interview_scheduled", label: "Interview Scheduled" },
+    { value: "completed", label: "Completed" },
+    { value: "rejected", label: "Rejected" },
+  ];
+
+  const modeOptions = [
+    { value: "online", label: "Online" },
+    { value: "offline", label: "Offline" },
+  ];
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   useEffect(() => {
     fetchApplications();
@@ -211,7 +245,7 @@ function JobApplications() {
   const handleSelectedStatus = async (row) => {
     try {
 
-      
+
       const res = await axios.patch(`/applications/${row._id}/status`, {
         status: "selected",
       });
@@ -222,7 +256,7 @@ function JobApplications() {
       }
     } catch (error) {
       console.log(error);
-      
+
       toast.error(error.response?.data?.message || "Failed to update status");
     }
   };
@@ -402,23 +436,16 @@ function JobApplications() {
             />
           </div>
 
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Status</InputLabel>
+          <div className="flex flex-col gap-1 min-w-[150px]">
             <Select
-              value={filterStatus}
-              label="Status"
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="Applied">Applied</MenuItem>
-              <MenuItem value="verified">Verified</MenuItem>
-              <MenuItem value="interview_scheduled">
-                Interview Scheduled
-              </MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
-            </Select>
-          </FormControl>
+              options={statusOptions}
+              placeholder="Status"
+              value={statusOptions.find((opt) => opt.value === filterStatus) || null}
+              onChange={(opt) => setFilterStatus(opt?.value || "")}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
         </div>
       </div>
 
@@ -607,19 +634,17 @@ function JobApplications() {
               InputLabelProps={{ shrink: true }}
               required
             />
-            <FormControl fullWidth>
-              <InputLabel>Interview Mode</InputLabel>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Interview Mode</label>
               <Select
-                value={interviewData.mode}
-                label="Interview Mode"
-                onChange={(e) =>
-                  setInterviewData({ ...interviewData, mode: e.target.value })
-                }
-              >
-                <MenuItem value="online">Online</MenuItem>
-                <MenuItem value="offline">Offline</MenuItem>
-              </Select>
-            </FormControl>
+                options={modeOptions}
+                placeholder="Interview Mode"
+                value={modeOptions.find((opt) => opt.value === interviewData.mode) || null}
+                onChange={(opt) => setInterviewData({ ...interviewData, mode: opt?.value || "online" })}
+                styles={getSelectStyles()}
+                classNamePrefix="react-select"
+              />
+            </div>
             {interviewData.mode === "offline" && (
               <TextField
                 label="Location"

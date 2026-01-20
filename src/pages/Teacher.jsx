@@ -6,11 +6,10 @@ import {
   TextField,
   Tooltip,
   Chip,
-  Select,
-  MenuItem,
-  InputLabel,
   FormControl,
+  InputLabel,
 } from "@mui/material";
+import Select from "react-select";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
@@ -29,14 +28,14 @@ function Teacher() {
   const [editId, setEditId] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [branches, setBranches] = useState([]);
-  
+
   // State for pagination and filters
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
   });
-  
+
   const [tableLoading, setTableLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({});
@@ -137,7 +136,7 @@ function Teacher() {
               title={<span className="font-bold ">Delete</span>}
               placement="top"
             >
-              <button 
+              <button
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
                 disabled={loading === `deleting-${row._id}`}
               >
@@ -152,15 +151,15 @@ function Teacher() {
         </div>
       ),
     },
-    { 
-      label: "Teacher Name", 
+    {
+      label: "Teacher Name",
       accessor: "name",
-      sortable: true 
+      sortable: true
     },
-    { 
-      label: "Phone", 
+    {
+      label: "Phone",
       accessor: "phone",
-      sortable: true 
+      sortable: true
     },
     {
       label: "Branch",
@@ -187,14 +186,12 @@ function Teacher() {
           <button
             onClick={() => toggleStatus(row)}
             disabled={loading === `status-${row._id}`}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
+                }`}
             >
               {loading === `status-${row._id}` && (
                 <Loader2 className="animate-spin w-4 h-4" />
@@ -212,7 +209,7 @@ function Teacher() {
       const res = await axios.patch(`/teachers/${data._id}`, {
         isActive: !data.isActive,
       });
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Status updated successfully");
         getAllTeachers();
@@ -270,7 +267,7 @@ function Teacher() {
       } else {
         res = await axios.post("/teachers/create", formData);
       }
-      
+
       if (res.data.success) {
         toast.success(res.data.message || "Operation successful");
         getAllTeachers();
@@ -292,6 +289,33 @@ function Teacher() {
   };
 
   // 🔹 Handle Change
+  const branchOptions = React.useMemo(
+    () => [
+      { value: "", label: "Select Branch" },
+      ...branches.map((b) => ({ value: b._id, label: b.name })),
+    ],
+    [branches]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -415,24 +439,17 @@ function Teacher() {
             required
           />
           {/* Branch Dropdown */}
-          <FormControl fullWidth>
-            <InputLabel>Branch</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Branch</label>
             <Select
-              name="branch"
-              value={formData.branch}
-              onChange={handleChange}
-              label="Branch"
-            >
-              <MenuItem value="">
-                <em>Select Branch</em>
-              </MenuItem>
-              {branches.map((b) => (
-                <MenuItem key={b._id} value={b._id}>
-                  {b.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              options={branchOptions}
+              placeholder="Select Branch"
+              value={branchOptions.find((opt) => opt.value === formData.branch) || null}
+              onChange={(opt) => setFormData((prev) => ({ ...prev, branch: opt?.value || "" }))}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
         </Stack>
       </CustomModal>
     </div>

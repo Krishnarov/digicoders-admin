@@ -22,6 +22,7 @@ import {
   Camera,
   FileCheck,
   MapPin,
+  Download,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -39,6 +40,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
 import { toast } from "react-toastify";
+import CustomModal from "../components/CustomModal";
 
 function RegView() {
   const param = useParams();
@@ -53,11 +55,14 @@ function RegView() {
   });
   const [sendingReminder, setSendingReminder] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewFile, setViewFile] = useState({ url: null, name: null, type: null });
 
   const fetchStudentData = async () => {
     try {
       const res = await axiosInstance.get(`/registration/user?id=${param.id}`);
-      console.log(res);
+
 
       setStudentData(res.data.data);
     } catch (error) {
@@ -139,20 +144,17 @@ function RegView() {
     } else if (type === "sms") {
       defaultMessage = `Fee Reminder: ${studentData.studentName}, your pending fee is ₹${studentData.dueAmount} for ${studentData.training?.name}. Kindly make the payment soon.`;
     } else if (type === "email") {
+      setEmailSubject(`Fee Payment Reminder - DigiCoders Technologies`);
       defaultMessage = `Dear ${studentData.studentName},
 
-We hope you are doing well. This is a gentle reminder from DigiCoders technologies pvt ltd. Training & Placement Cell regarding your pending fee of ₹${studentData.dueAmount
-        } for the **${studentData.training?.name}** training program.
+We hope you are doing well. This is a gentle reminder from DigiCoders Technologies regarding your pending fee of ₹${studentData.dueAmount} for the ${studentData.training?.name} training program.
 
 📌 Training Details:
 - Training Program: ${studentData.training?.name}
-- Duration: ${studentData.training?.duration || "N/A"}
-- Start Date: ${studentData.training?.startDate || "N/A"}
-- Mode: ${studentData.training?.mode || "Online/Offline"}
+- Duration: ${studentData.training?.duration?.name || "N/A"}
+- Start Date: ${formatSimpleDate(studentData?.joiningData)}
 
-Your timely payment will help us ensure uninterrupted access to training sessions, study materials, and mentorship support.
-
-👉 Please complete your payment at the earliest to continue availing all the benefits of the program.
+👉 Please complete your payment at the earliest to ensure uninterrupted access to training sessions and mentorship support.
 
 If you have already completed the payment, kindly ignore this message.
 
@@ -172,6 +174,7 @@ support@digicoders.in | www.digicoders.in`;
         studentId: studentData._id,
         type: reminderDialog.type,
         message: customMessage,
+        ...(reminderDialog.type === "email" && { subject: emailSubject }),
       };
 
       const response = await axiosInstance.post("/reminders/send", payload);
@@ -264,13 +267,23 @@ support@digicoders.in | www.digicoders.in`;
 
   // Document download functions
   const downloadDocument = (url, filename) => {
+    if (!url) return;
+    const fullUrl = url.startsWith("http") ? url : `${import.meta.env.VITE_BASE_URI}${url}`;
     const link = document.createElement("a");
-    link.href = url;
+    link.href = fullUrl;
     link.target = "_blank";
-    link.download = filename;
+    link.download = filename || "document";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleViewFile = (name, url, filename) => {
+    if (!url) return;
+    const fullUrl = url.startsWith("http") ? url : `${import.meta.env.VITE_BASE_URI}${url}`;
+    const type = fullUrl.toLowerCase().endsWith(".pdf") ? "pdf" : "image";
+    setViewFile({ url: fullUrl, name: filename || name, type });
+    setIsViewModalOpen(true);
   };
 
   return (
@@ -719,26 +732,28 @@ support@digicoders.in | www.digicoders.in`;
                 <div className={`w-2 h-2 rounded-full ${studentData?.aadharCardUploded ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <span className="text-gray-900">Aadhar Card</span>
                 {studentData?.aadharCard?.url && (
-                  <Button
-                    size="small"
-                    onClick={() => downloadDocument(studentData.aadharCard.url, 'AadharCard')}
-                    className="text-xs"
-                  >
-                    View
-                  </Button>
+                  <Tooltip title="View Aadhar Card">
+                    <button
+                      onClick={() => handleViewFile('Aadhar Card', studentData.aadharCard.url, 'AadharCard')}
+                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${studentData?.cvUploded ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <span className="text-gray-900">CV</span>
                 {studentData?.cv?.url && (
-                  <Button
-                    size="small"
-                    onClick={() => downloadDocument(studentData.cv.url, 'CV')}
-                    className="text-xs"
-                  >
-                    View
-                  </Button>
+                  <Tooltip title="View CV">
+                    <button
+                      onClick={() => handleViewFile('CV', studentData.cv.url, 'CV')}
+                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                    >
+                      <Eye size={18} />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -750,7 +765,7 @@ support@digicoders.in | www.digicoders.in`;
               </div>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${studentData?.hardForm ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-gray-900">Hard Form</span>
+                <span className="text-gray-900">Offline Form</span>
               </div>
             </div>
 
@@ -1025,11 +1040,22 @@ support@digicoders.in | www.digicoders.in`;
       >
         <DialogTitle>
           Send{" "}
-          {reminderDialog.type.charAt(0).toUpperCase() +
-            reminderDialog.type.slice(1)}{" "}
+          {reminderDialog.type?.toUpperCase()}{" "}
           Reminder
         </DialogTitle>
         <DialogContent>
+          {reminderDialog.type === "email" && (
+            <TextField
+              margin="dense"
+              label="Subject"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+              className="mb-4"
+            />
+          )}
           <TextField
             autoFocus
             margin="dense"
@@ -1038,7 +1064,7 @@ support@digicoders.in | www.digicoders.in`;
             fullWidth
             variant="outlined"
             multiline
-            rows={7}
+            rows={reminderDialog.type === "email" ? 10 : 5}
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
           />
@@ -1064,6 +1090,47 @@ support@digicoders.in | www.digicoders.in`;
           </Button>
         </DialogActions>
       </Dialog>
+
+      <CustomModal
+        open={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title={`View ${viewFile.name}`}
+        isBtnHide={true}
+        boxWidth="md"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="w-full h-[60vh] flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden border">
+            {viewFile.type === "image" ? (
+              <img
+                src={viewFile.url}
+                alt="Document Preview"
+                className="max-w-full max-h-full object-contain shadow-sm"
+              />
+            ) : viewFile.type === "pdf" ? (
+              <iframe
+                src={`${viewFile.url}#toolbar=0`}
+                className="w-full h-full border-none shadow-sm"
+                title="PDF View"
+              />
+            ) : (
+              <p className="text-gray-500 text-center">
+                Preview not available for this file type.
+              </p>
+            )}
+          </div>
+          <div className="flex justify-end pt-2 border-t">
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              onClick={() => downloadDocument(viewFile.url, viewFile.name)}
+              color="primary"
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Download
+            </Button>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   XCircle,
   X,
   ArrowLeft,
+  Fullscreen,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import axios from "../axiosInstance";
@@ -67,6 +68,7 @@ const AddStudent = () => {
     collegeName: "",
     totalFee: 0,
     discount: 0,
+    discountRemark: "",
     finalFee: 0,
     amount: 0,
     dueFee: 0,
@@ -108,7 +110,54 @@ const AddStudent = () => {
     }));
   }, [formData.totalFee, formData.discount, formData.amount]);
 
-  // Memoized college options
+  // Memoized options for react-select
+  const trainingOptions = React.useMemo(
+    () => Trainings?.map((item) => ({ value: item._id, label: item.name })),
+    [Trainings]
+  );
+
+  const technologyOptions = React.useMemo(
+    () => TechnologiesData?.map((tech) => ({ value: tech._id, label: tech.name })),
+    [TechnologiesData]
+  );
+
+  const educationOptions = React.useMemo(
+    () => Edication?.map((edu) => ({ value: edu._id, label: edu.name })),
+    [Edication]
+  );
+
+  const yearOptions = [
+    { value: "1st Year", label: "1st Year" },
+    { value: "2nd Year", label: "2nd Year" },
+    { value: "3rd Year", label: "3rd Year" },
+    { value: "4th Year", label: "4th Year" },
+    { value: "Passout", label: "Passout" },
+  ];
+
+  const hrOptions = React.useMemo(
+    () =>
+      hr
+        .filter((data) => data.isActive)
+        .map((data) => ({ value: data._id, label: data.name })),
+    [hr]
+  );
+
+  const branchOptions = React.useMemo(
+    () =>
+      branchs
+        .filter((data) => data.isActive)
+        .map((data) => ({ value: data._id, label: data.name })),
+    [branchs]
+  );
+
+  const qrOptions = React.useMemo(
+    () =>
+      qrcodes
+        .filter((data) => data.isActive)
+        .map((data) => ({ value: data._id, label: data.name })),
+    [qrcodes]
+  );
+
   const collegeOptions = React.useMemo(
     () =>
       collegeNames
@@ -119,6 +168,21 @@ const AddStudent = () => {
         })),
     [collegeNames]
   );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      padding: "2px",
+      borderRadius: "0.375rem",
+    }),
+  });
   const handleQrView = () => {
     if (formData.qrcode) {
       // QR code ID से actual QR code data find करें
@@ -190,13 +254,9 @@ const AddStudent = () => {
         setTechnologiesData(res.data.data);
 
         const selectedTraining = Trainings.find((t) => t._id === trainingid);
+
         if (selectedTraining) {
-          let amount = 500;
-          if (selectedTraining?.duration === "45 days") {
-            amount = 1000;
-          } else if (selectedTraining?.duration === "6 months") {
-            amount = 2000;
-          }
+          let amount = selectedTraining?.registrationAmount;
 
           setFormData((prev) => ({
             ...prev,
@@ -569,6 +629,7 @@ const AddStudent = () => {
       hrName: formData.hrName,
       branch: formData.branch,
       collegeName: formData.collegeName,
+      discountRemark: formData.discountRemark,
       discount: Number(formData.discount),
       amount: Number(formData.amount),
       tnxStatus: formData.paymentType === "full" ? "full paid" : "paid",
@@ -801,20 +862,15 @@ const AddStudent = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Choose Training *
             </label>
-            <select
-              className={`w-full px-4 py-3 border ${errors.training ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.training}
-              onChange={(e) => handleInputChange("training", e.target.value)}
+            <Select
+              options={trainingOptions}
+              placeholder="-Choose Training-"
+              value={trainingOptions.find((opt) => opt.value === formData.training) || null}
+              onChange={(selectedOption) => handleInputChange("training", selectedOption?.value || "")}
               disabled={isLoading || isEditMode}
-            >
-              <option value="">-Choose Training-</option>
-              {Trainings?.map((item) => (
-                <option value={item._id} key={item._id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
+              styles={getSelectStyles(errors.training)}
+              classNamePrefix="react-select"
+            />
             {errors.training && (
               <p className="mt-1 text-sm text-red-600">{errors.training}</p>
             )}
@@ -825,19 +881,14 @@ const AddStudent = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Choose Technology *
             </label>
-            <select
-              className={`w-full px-4 py-3 border ${errors.technology ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.technology}
-              onChange={(e) => handleInputChange("technology", e.target.value)}
-            >
-              <option value="">-Choose Technology-</option>
-              {TechnologiesData?.map((tech) => (
-                <option key={tech._id} value={tech._id}>
-                  {tech.name}
-                </option>
-              ))}
-            </select>
+            <Select
+              options={technologyOptions}
+              placeholder="-Choose Technology-"
+              value={technologyOptions.find((opt) => opt.value === formData.technology) || null}
+              onChange={(selectedOption) => handleInputChange("technology", selectedOption?.value || "")}
+              styles={getSelectStyles(errors.technology)}
+              classNamePrefix="react-select"
+            />
             {errors.technology && (
               <p className="mt-1 text-sm text-red-600">{errors.technology}</p>
             )}
@@ -848,20 +899,15 @@ const AddStudent = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Your Education *
             </label>
-            <select
-              className={`w-full px-4 py-3 border ${errors.education ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.education}
-              onChange={(e) => handleInputChange("education", e.target.value)}
+            <Select
+              options={educationOptions}
+              placeholder="-Select Your Education-"
+              value={educationOptions.find((opt) => opt.value === formData.education) || null}
+              onChange={(selectedOption) => handleInputChange("education", selectedOption?.value || "")}
               disabled={isLoading || isEditMode}
-            >
-              <option value="">-Select Your Education-</option>
-              {Edication?.map((edu) => (
-                <option key={edu._id} value={edu._id}>
-                  {edu.name}
-                </option>
-              ))}
-            </select>
+              styles={getSelectStyles(errors.education)}
+              classNamePrefix="react-select"
+            />
             {errors.education && (
               <p className="mt-1 text-sm text-red-600">{errors.education}</p>
             )}
@@ -872,20 +918,15 @@ const AddStudent = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Year *
             </label>
-            <select
-              className={`w-full px-4 py-3 border ${errors.eduYear ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.eduYear}
-              onChange={(e) => handleInputChange("eduYear", e.target.value)}
+            <Select
+              options={yearOptions}
+              placeholder="-Select Year-"
+              value={yearOptions.find((opt) => opt.value === formData.eduYear) || null}
+              onChange={(selectedOption) => handleInputChange("eduYear", selectedOption?.value || "")}
               disabled={isLoading}
-            >
-              <option value="">-Select Year-</option>
-              <option value="1st Year">1st Year</option>
-              <option value="2nd Year">2nd Year</option>
-              <option value="3rd Year">3rd Year</option>
-              <option value="4th Year">4th Year</option>
-              <option value="Passout">Passout</option>
-            </select>
+              styles={getSelectStyles(errors.eduYear)}
+              classNamePrefix="react-select"
+            />
             {errors.eduYear && (
               <p className="mt-1 text-sm text-red-600">{errors.eduYear}</p>
             )}
@@ -939,22 +980,15 @@ const AddStudent = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Admission By *
             </label>
-            <select
-              className={`w-full px-4 py-3 border ${errors.hrName ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.hrName}
-              onChange={(e) => handleInputChange("hrName", e.target.value)}
+            <Select
+              options={hrOptions}
+              placeholder="-Select HR Name-"
+              value={hrOptions.find((opt) => opt.value === formData.hrName) || null}
+              onChange={(selectedOption) => handleInputChange("hrName", selectedOption?.value || "")}
               disabled={isLoading || isEditMode}
-            >
-              <option value="">-Select HR Name-</option>
-              {hr
-                .filter((data) => data.isActive)
-                .map((data) => (
-                  <option key={data._id} value={data._id}>
-                    {data.name}
-                  </option>
-                ))}
-            </select>
+              styles={getSelectStyles(errors.hrName)}
+              classNamePrefix="react-select"
+            />
             {errors.hrName && (
               <p className="mt-1 text-sm text-red-600">{errors.hrName}</p>
             )}
@@ -965,22 +999,15 @@ const AddStudent = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Branch / Mode *
             </label>
-            <select
-              className={`w-full px-4 py-3 border ${errors.branch ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.branch}
-              onChange={(e) => handleInputChange("branch", e.target.value)}
+            <Select
+              options={branchOptions}
+              placeholder="-Select Branch-"
+              value={branchOptions.find((opt) => opt.value === formData.branch) || null}
+              onChange={(selectedOption) => handleInputChange("branch", selectedOption?.value || "")}
               disabled={isLoading}
-            >
-              <option value="">-Select Branch-</option>
-              {branchs
-                .filter((data) => data.isActive)
-                .map((data) => (
-                  <option key={data._id} value={data._id}>
-                    {data.name}
-                  </option>
-                ))}
-            </select>
+              styles={getSelectStyles(errors.branch)}
+              classNamePrefix="react-select"
+            />
             {errors.branch && (
               <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
             )}
@@ -994,17 +1021,6 @@ const AddStudent = () => {
             <Select
               options={collegeOptions}
               placeholder="Search & select college name"
-              // value={
-              //   formData.collegeName
-              //     ? {
-              //         label: formData.collegeName,
-              //         value: formData.collegeName,
-              //       }
-              //     : null
-              // }
-              // onChange={(selectedOption) =>
-              //   handleInputChange("collegeName", selectedOption?.value || "")
-              // }
               value={
                 collegeOptions.find(
                   (opt) => opt.value === formData.collegeName
@@ -1014,18 +1030,7 @@ const AddStudent = () => {
                 handleInputChange("collegeName", selectedOption?.value || "")
               }
               classNamePrefix="react-select"
-              styles={{
-                control: (base, state) => ({
-                  ...base,
-                  borderColor: errors.collegeName ? "red" : base.borderColor,
-                  boxShadow: state.isFocused
-                    ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
-                    : base.boxShadow,
-                  "&:hover": {
-                    borderColor: errors.collegeName ? "red" : "#a0aec0",
-                  },
-                }),
-              }}
+              styles={getSelectStyles(errors.collegeName)}
             />
             {errors.collegeName && (
               <p className="mt-1 text-sm text-red-600">{errors.collegeName}</p>
@@ -1072,7 +1077,27 @@ const AddStudent = () => {
               <p className="mt-1 text-sm text-red-600">{errors.discount}</p>
             )}
           </div>
-
+          {/* discountRemark Amount */}
+          {formData.discount > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Discount Remark
+              </label>
+              <div className="relative"> <span className="absolute left-3 top-3 text-gray-500">{formData.discountRemark ? "" : "Discount Remark"}</span>
+                <input
+                  type="text"
+                  className={`w-full pl-3 px-4 py-3 border ${errors.discountRemark ? "border-red-500" : "border-gray-300"
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  value={formData.discountRemark}
+                  onChange={(e) => handleInputChange("discountRemark", e.target.value)}
+                  disabled={isLoading || isEditMode}
+                />
+              </div>
+              {errors.discountRemark && (
+                <p className="mt-1 text-sm text-red-600">{errors.discountRemark}</p>
+              )}
+            </div>
+          )}
           {/* Final Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1092,7 +1117,7 @@ const AddStudent = () => {
           {/* Amount To Pay Now */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amount To Pay Now *
+              Registration Amount *
             </label>
             <div className="relative">
               <span className="absolute left-3 top-3 text-gray-500">₹</span>
@@ -1208,22 +1233,15 @@ const AddStudent = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select QR Code *
               </label>
-              <select
-                className={`w-full px-4 py-3 border ${errors.qrcode ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                value={formData.qrcode}
-                onChange={(e) => handleInputChange("qrcode", e.target.value)}
+              <Select
+                options={qrOptions}
+                placeholder="- Select QR Code -"
+                value={qrOptions.find((opt) => opt.value === formData.qrcode) || null}
+                onChange={(selectedOption) => handleInputChange("qrcode", selectedOption?.value || "")}
                 disabled={isLoading || isEditMode}
-              >
-                <option value="">- Select QR Code -</option>
-                {qrcodes
-                  .filter((data) => data.isActive)
-                  .map((data) => (
-                    <option key={data._id} value={data._id}>
-                      {data.name}
-                    </option>
-                  ))}
-              </select>
+                styles={getSelectStyles(errors.qrcode)}
+                classNamePrefix="react-select"
+              />
               {errors.qrcode && (
                 <p className="mt-1 text-sm text-red-600">{errors.qrcode}</p>
               )}
@@ -1376,9 +1394,15 @@ const AddStudent = () => {
       >
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold">QR Code</h2>
-          <IconButton onClick={handleQrModalClose}>
-            <Close />
-          </IconButton>
+          <div className="flex gap-2 items-center">
+
+            <a href={`${import.meta.env.VITE_BASE_URI}${selectedQrCode}`} target="_blank">
+              <Fullscreen />
+            </a>
+            <IconButton onClick={handleQrModalClose}>
+              <Close />
+            </IconButton>
+          </div>
         </div>
         <DialogContent className="flex flex-col items-center justify-center p-6">
           {selectedQrCode ? (

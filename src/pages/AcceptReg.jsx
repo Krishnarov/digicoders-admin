@@ -190,7 +190,7 @@ function AcceptReg() {
     },
 
     {
-      label: "Amount",
+      label: "Registration Amount",
       accessor: "amount",
       sortable: true,
     },

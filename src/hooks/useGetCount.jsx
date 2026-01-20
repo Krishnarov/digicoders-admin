@@ -6,13 +6,13 @@ import { useDispatch } from "react-redux";
 
 const useGetCount = () => {
 
- const dispatch = useDispatch()
+    const dispatch = useDispatch()
 
     const fetchCounts = useCallback(async () => {
         try {
-            const res = await axios.get("/counts",{withCredentials:true})
+            const res = await axios.get("/counts", { withCredentials: true })
 
-            
+
             if (res.data) {
                 dispatch(setCounts(res.data))
             }

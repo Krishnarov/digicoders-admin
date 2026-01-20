@@ -209,7 +209,7 @@ function NewReg() {
     },
 
     {
-      label: "Amount",
+      label: "Registration Amount",
       accessor: "amount",
       sortable: true,
     },

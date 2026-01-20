@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Home,
   ChevronRight,
@@ -13,7 +13,7 @@ import {
   Button,
   TextField,
   Tooltip,
-  Select,
+
   MenuItem,
   InputLabel,
   FormControl,
@@ -29,6 +29,7 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import Select from "react-select";
 
 function Batchs() {
   const [loading, setLoading] = useState({
@@ -44,6 +45,9 @@ function Batchs() {
     branch: "",
     startDate: "",
     teacher: "",
+    room: "",
+    classTime: "",
+    subject: "",
     students: [],
   });
   const [editId, setEditId] = useState(null);
@@ -110,17 +114,18 @@ function Batchs() {
   }, [pagination.page, pagination.limit]);
 
   // 🔹 Fetch teachers
-  const getAllTeachers = useCallback(async () => {
+  const getTeachers = useCallback(async () => {
     try {
-      const res = await axios.get("/teachers");
+      const res = await axios.get(`/teachers/branch/${formData.branch}`);
+
       if (res.data.success) {
-        setTeachers(res.data.teachers.filter((item) => item.isActive) || []);
+        setTeachers(res.data.teacher || []);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || "Failed to load teachers");
       console.error(error);
     }
-  }, []);
+  }, [formData.branch]);
 
   // 🔹 Fetch branches
   const getAllBranches = useCallback(async () => {
@@ -135,6 +140,14 @@ function Batchs() {
     }
   }, []);
 
+  useEffect(() => {
+    if (formData.branch) {
+      getTeachers();
+    } else {
+      setTeachers([]); // branch remove ho to teachers bhi clear
+    }
+  }, [formData.branch, getTeachers]);
+
   // Initial fetch
   useEffect(() => {
     const loadAllData = async () => {
@@ -142,7 +155,7 @@ function Batchs() {
         setTableLoading(true);
         await Promise.all([
           getAllBatches(),
-          getAllTeachers(),
+          // getAllTeachers(),
           getAllBranches(),
 
         ]);
@@ -154,7 +167,8 @@ function Batchs() {
     };
 
     loadAllData();
-  }, [getAllBatches, getAllTeachers, getAllBranches,]);
+  }, [getAllBatches, getAllBranches,]);
+
 
   // 🔹 Table Columns
   const columns = [
@@ -236,6 +250,21 @@ function Batchs() {
       accessor: "batchName",
       sortable: true,
       Cell: ({ row }) => <span className="font-medium">{row.batchName}</span>
+    },
+    {
+      label: "Subject",
+      accessor: "subject",
+      sortable: false,
+    },
+    {
+      label: "Room",
+      accessor: "room",
+      sortable: true,
+    },
+    {
+      label: "Class Time",
+      accessor: "classTime",
+      sortable: true,
     },
     {
       label: "Branch",
@@ -370,6 +399,9 @@ function Batchs() {
       branch: row.branch?._id || "",
       startDate: row.startDate?.split("T")[0] || "",
       teacher: row.teacher?._id || "",
+      room: row.room || "",
+      classTime: row.classTime || "",
+      subject: row.subject || "",
       students: row.students || [],
     });
     setEditId(row._id);
@@ -416,6 +448,18 @@ function Batchs() {
         toast.error("Please select start date");
         return;
       }
+      if (!formData.room.trim()) {
+        toast.error("Please enter room number");
+        return;
+      }
+      if (!formData.classTime.trim()) {
+        toast.error("Please enter class time");
+        return;
+      }
+      if (!formData.subject.trim()) {
+        toast.error("Please enter subject");
+        return;
+      }
 
       let res;
       const submitData = {
@@ -452,6 +496,9 @@ function Batchs() {
       branch: "",
       startDate: "",
       teacher: "",
+      room: "",
+      classTime: "",
+      subject: "",
       students: [],
     });
     setEditId(null);
@@ -466,11 +513,46 @@ function Batchs() {
       branch: "",
       startDate: "",
       teacher: "",
+      room: "",
+      classTime: "",
+      subject: "",
       students: [],
     });
     setEditId(null);
     setSubmitted(false);
   };
+
+  const branchOptions = useMemo(
+    () => branches.map((b) => ({ value: b._id, label: b.name })),
+    [branches]
+  );
+
+  const teacherOptions = useMemo(
+    () => [
+      { value: "", label: "None" },
+      ...teachers.map((t) => ({ value: t._id, label: t.name })),
+    ],
+    [teachers]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -597,28 +679,65 @@ function Batchs() {
             disabled={loading.save}
           />
 
-          {/* Branch Dropdown */}
-          <FormControl fullWidth required error={submitted && !formData.branch}>
-            <InputLabel>Branch *</InputLabel>
-            <Select
-              name="branch"
-              value={formData.branch}
+          <TextField
+            label="Subject *"
+            name="subject"
+            fullWidth
+            value={formData.subject}
+            onChange={handleChange}
+            variant="outlined"
+            required
+            error={submitted && !formData.subject.trim()}
+            helperText={submitted && !formData.subject.trim() ? "Subject is required" : ""}
+            disabled={loading.save}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TextField
+              label="Room *"
+              name="room"
+              fullWidth
+              value={formData.room}
               onChange={handleChange}
-              label="Branch *"
+              variant="outlined"
+              required
+              error={submitted && !formData.room.trim()}
+              helperText={submitted && !formData.room.trim() ? "Room is required" : ""}
               disabled={loading.save}
-            >
-              {branches.map((b) => (
-                <MenuItem key={b._id} value={b._id}>
-                  {b.name}
-                </MenuItem>
-              ))}
-            </Select>
+            />
+            <TextField
+              label="Class Time *"
+              name="classTime"
+              placeholder="e.g. 10:00 AM - 12:00 PM"
+              fullWidth
+              value={formData.classTime}
+              onChange={handleChange}
+              variant="outlined"
+              required
+              error={submitted && !formData.classTime.trim()}
+              helperText={submitted && !formData.classTime.trim() ? "Class time is required" : ""}
+              disabled={loading.save}
+            />
+          </div>
+
+          {/* Branch Dropdown */}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Branch *</label>
+            <Select
+              options={branchOptions}
+              placeholder="Select Branch"
+              value={branchOptions.find((opt) => opt.value === formData.branch) || null}
+              onChange={(opt) => setFormData((prev) => ({ ...prev, branch: opt?.value || "" }))}
+              styles={getSelectStyles(submitted && !formData.branch)}
+              classNamePrefix="react-select"
+              isDisabled={loading.save}
+            />
             {!formData.branch && submitted && (
-              <div className="text-red-500 text-xs mt-1 ml-4">
+              <div className="text-red-500 text-xs mt-1">
                 Branch is required
               </div>
             )}
-          </FormControl>
+          </div>
 
           {/* Start Date */}
           <TextField
@@ -639,25 +758,18 @@ function Batchs() {
           />
 
           {/* Teacher Dropdown */}
-          <FormControl fullWidth>
-            <InputLabel>Assign Teacher</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Assign Teacher</label>
             <Select
-              name="teacher"
-              value={formData.teacher}
-              onChange={handleChange}
-              label="Assign Teacher"
-              disabled={loading.save}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              {teachers.map((t) => (
-                <MenuItem key={t._id} value={t._id}>
-                  {t.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              options={teacherOptions}
+              placeholder="Assign Teacher"
+              value={teacherOptions.find((opt) => opt.value === formData.teacher) || null}
+              onChange={(opt) => setFormData((prev) => ({ ...prev, teacher: opt?.value || "" }))}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+              isDisabled={loading.save}
+            />
+          </div>
         </Stack>
       </CustomModal>
     </div>

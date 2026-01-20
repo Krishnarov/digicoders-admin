@@ -15,11 +15,10 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
 } from "@mui/material";
+import Select from "react-select";
 import {
   Edit as EditIcon,
   Visibility,
@@ -46,7 +45,7 @@ const Profile = () => {
   const [loadingSection, setLoadingSection] = useState('');
   const [message, setMessage] = useState({ type: "", text: "" });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [branches, setBranches] = useState([]);
+  // const [branches, setBranches] = useState([]);
 
   const userId = useSelector((state) => state.auth.user.id);
   const [user, setUser] = useState({});
@@ -62,31 +61,32 @@ const Profile = () => {
     isTwoFactor: false,
   });
 
-  const fetchBranches = async () => {
-    try {
-      const res = await axiosInstance.get("/branches");
-      if (res.data.success) {
-        setBranches(res.data.branches || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch branches:", error);
-    }
-  };
+  // const fetchBranches = async () => {
+  //   try {
+  //     const res = await axiosInstance.get("/branches");
+  //     if (res.data.success) {
+  //       setBranches(res.data.branches || []);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch branches:", error);
+  //   }
+  // };
 
   const getUser = async () => {
     try {
       const res = await axiosInstance.get(`/auth/getme`);
       console.log("User data:", res.data);
 
-      setUser(res.data.userdata || {});
+      const userData = res.data.data || {};
+      setUser(userData);
       setFormData((prev) => ({
         ...prev,
-        name: res.data.userdata?.name || "",
-        email: res.data.userdata?.email || "",
-        phone: res.data.userdata?.phone || "",
-        address: res.data.userdata?.address || "",
-        branch: res.data.userdata?.branch?._id || "",
-        isTwoFactor: res.data.userdata?.isTwoFactor || false,
+        name: userData.name || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        address: userData.address || "",
+        branch: userData.branch?.name || userData.branch || "",
+        isTwoFactor: userData.isTwoFactor || false,
       }));
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -96,7 +96,7 @@ const Profile = () => {
 
   useEffect(() => {
     getUser();
-    fetchBranches();
+    // fetchBranches();
   }, [userId]);
 
   const showMessage = (type, text) => {
@@ -112,6 +112,37 @@ const Profile = () => {
   const handleClickShowNewPassword = () => setShowNewPassword(!showNewPassword);
   const handleClickShowConfirmPassword = () =>
     setShowConfirmPassword(!showConfirmPassword);
+
+  // const branchOptions = React.useMemo(
+  //   () => [
+  //     { value: "", label: "Select Branch" },
+  //     ...branches.map((branch) => ({ value: branch._id, label: branch.name })),
+  //   ],
+  //   [branches]
+  // );
+
+  const getSelectStyles = () => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      paddingLeft: "35px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -254,7 +285,7 @@ const Profile = () => {
               <div className="relative">
                 <Avatar
                   sx={{ width: 100, height: 100, border: "3px solid white" }}
-                  src={user?.image?.url}
+                  src={`${import.meta.env.VITE_BASE_URI}${user?.image?.url}`}
                   alt="Profile"
                 >
                   {user?.name?.charAt(0)}
@@ -353,29 +384,16 @@ const Profile = () => {
                     ),
                   }}
                 />
-                <FormControl fullWidth>
-                  <InputLabel>Branch</InputLabel>
-                  <Select
-                    name="branch"
-                    value={formData.branch}
-                    onChange={handleInputChange}
-                    label="Branch"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <BusinessIcon color="action" />
-                      </InputAdornment>
-                    }
-                  >
-                    <MenuItem value="">
-                      <em>Select Branch</em>
-                    </MenuItem>
-                    {branches.map((branch) => (
-                      <MenuItem key={branch._id} value={branch._id}>
-                        {branch.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+
+                <TextField
+                  fullWidth
+                  label="Branch"
+                  name="branch"
+                  value={formData.branch}
+                  disabled
+
+                />
+
                 <TextField
                   fullWidth
                   label="Address"

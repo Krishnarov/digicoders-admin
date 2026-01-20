@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Home,
   ChevronRight,
@@ -7,6 +7,7 @@ import {
   Loader2,
   Eye,
   X,
+  Building2,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -20,7 +21,7 @@ import {
   Chip,
   OutlinedInput,
   Box,
-  Select,
+
   MenuItem,
   InputLabel,
   FormControl,
@@ -31,6 +32,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { toast } from "react-toastify";
+import Select from "react-select";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -54,6 +56,7 @@ function Collages() {
     limit: 10,
     total: 0,
   });
+
 
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState("");
@@ -135,7 +138,7 @@ function Collages() {
     fetchCollegeNames();
     fetchCourses()
   }, [fetchCollegeNames]);
-  console.log(courses);
+
 
   const columns = [
     {
@@ -363,6 +366,30 @@ function Collages() {
     setEditId(null);
   };
 
+  const courseOptions = useMemo(
+    () => courses.map((course) => ({ value: course.name, label: course.name })),
+    [courses]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
+
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -439,45 +466,89 @@ function Collages() {
       />
 
       {/* View Modal */}
-      <Dialog open={viewOpen} onClose={() => setViewOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle className="flex justify-between items-center">
-          <span>College Details</span>
+      {/* View Modal */}
+      <Dialog
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle className="flex justify-between items-center border-b">
+          <div className="flex items-center gap-2">
+            <Building2 className="text-blue-600" size={22} />
+            <span className="text-lg font-semibold">College Details</span>
+          </div>
           <IconButton onClick={() => setViewOpen(false)} size="small">
             <X size={20} />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
+
+        <DialogContent className="bg-gray-50">
           {viewData && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DetailItem label="College Name" value={viewData.name} />
-                <DetailItem label="District" value={viewData.district} />
-                <DetailItem label="State" value={viewData.state} />
-                <DetailItem label="Course" value={
-                  Array.isArray(viewData.course)
-                    ? viewData.course.join(", ")
-                    : viewData.course
-                } />
-                <DetailItem label="TPO Contact 1" value={viewData.tpoNo1} />
-                <DetailItem label="TPO Contact 2" value={viewData.tpoNo2} />
-                <DetailItem label="HOD Contact" value={viewData.hodNo} />
-                <DetailItem
-                  label="Status"
-                  value={
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${viewData.isActive
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                      }`}>
-                      {viewData.isActive ? "Active" : "Inactive"}
-                    </span>
-                  }
-                />
+            <div className="space-y-6 py-4">
+
+              {/* Basic Info */}
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                  Basic Information
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <DetailItem label="College Name" value={viewData.name} />
+                  <DetailItem label="District" value={viewData.district} />
+                  <DetailItem label="State" value={viewData.state} />
+                  <DetailItem
+                    label="Course"
+                    value={
+                      Array.isArray(viewData.course)
+                        ? viewData.course.join(", ")
+                        : viewData.course
+                    }
+                  />
+                </div>
               </div>
-              <DetailItem label="Address" value={viewData.address} fullWidth />
+
+              {/* Contacts */}
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                  Contact Details
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <DetailItem label="TPO Contact 1" value={viewData.tpoNo1 || "N/A"} />
+                  <DetailItem label="TPO Contact 2" value={viewData.tpoNo2 || "N/A"} />
+                  <DetailItem label="HOD Contact" value={viewData.hodNo || "N/A"} />
+                  <DetailItem
+                    label="Status"
+                    value={
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                  ${viewData.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                          }`}
+                      >
+                        {viewData.isActive ? "Active" : "Inactive"}
+                      </span>
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="bg-white rounded-lg shadow-sm p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Address
+                </h3>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  {viewData.address || "No address provided"}
+                </p>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
 
       {/* Edit/Create Modal */}
       <CustomModal
@@ -526,32 +597,23 @@ function Collages() {
             onChange={handleChange}
             variant="outlined"
           />
-          <FormControl fullWidth>
-            <InputLabel id="course-select-label">Course</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Course</label>
             <Select
-              labelId="course-select-label"
-              id="course-select"
-              multiple
-              name="course"
-              value={formData.course}
-              onChange={handleChange}
-              input={<OutlinedInput label="Course" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
-                </Box>
-              )}
-              MenuProps={MenuProps}
-            >
-              {courses.map((course) => (
-                <MenuItem key={course._id} value={course.name}>
-                  {course.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              isMulti
+              options={courseOptions}
+              placeholder="Select Course"
+              value={courseOptions.filter((opt) => formData.course.includes(opt.value))}
+              onChange={(selectedOptions) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  course: selectedOptions ? selectedOptions.map((opt) => opt.value) : [],
+                }))
+              }
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <TextField
               label="TPO Contact 1"

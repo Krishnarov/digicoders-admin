@@ -21,12 +21,12 @@ const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
-     technology: technologyReducer,
-     tranning: tranningReducer,
-     student: studentReducer,
-     education: educationReducer,
-     fee: feeReducer,
-     count: countReducer,
+    technology: technologyReducer,
+    tranning: tranningReducer,
+    student: studentReducer,
+    education: educationReducer,
+    fee: feeReducer,
+    count: countReducer,
 
   },
   middleware: (getDefaultMiddleware) =>

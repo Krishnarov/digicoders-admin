@@ -160,7 +160,7 @@ function AllStudentReg() {
       Cell: ({ row }) => (
         <Chip
           label={capitalizeFirst(row.tnxStatus || "pending")}
-          color={row.tnxStatus === "paid" ? "success" : "warning"}
+          color={row.tnxStatus === "paid" ? row.tnxStatus === "full paid" ? "success" : "success" : "warning"}
           variant="outlined"
           size="small"
         />
@@ -179,7 +179,7 @@ function AllStudentReg() {
     },
 
     {
-      label: "Amount",
+      label: "Registration Amount",
       accessor: "amount",
       sortable: true,
     },

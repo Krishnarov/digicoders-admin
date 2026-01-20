@@ -5,11 +5,13 @@ import {
   Search,
   X,
   Loader2,
+  Fullscreen,
 } from "lucide-react";
 import axios from "../axiosInstance";
 import { toast } from "react-toastify";
 import { Dialog, DialogContent, IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
+import Select from "react-select";
 
 function PayFee() {
   const [formData, setFormData] = useState({
@@ -22,6 +24,7 @@ function PayFee() {
     studentName: "",
     tnxStatus: "paid",
     dueAmount: 0,
+    newDueAmount: 0,
     searchTerm: "",
     qrcode: null,
     tnxId: "",
@@ -34,13 +37,58 @@ function PayFee() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [amountError, setAmountError] = useState("");
 
   const handleInputChange = (field, value) => {
+    if (field === "amount") {
+      const numValue = Number(value);
+
+      if (numValue > formData.dueAmount) {
+        setAmountError(`Amount cannot exceed Due Amount ₹${formData.dueAmount}`);
+        return;
+      }
+      // ❌ negative bhi nahi
+      if (numValue < 0) return;
+      setAmountError("");
+      const newDueAmount = formData.dueAmount - numValue;
+      setFormData((prev) => ({
+        ...prev,
+        newDueAmount,
+      }));
+    }
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
+
+  const modeOptions = [
+    { value: "cash", label: "Cash" },
+    { value: "online", label: "Online" },
+  ];
+
+  const qrOptions = React.useMemo(
+    () =>
+      qrcodes
+        .filter((data) => data.isActive)
+        .map((data) => ({ value: data._id, label: data.name })),
+    [qrcodes]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      padding: "2px",
+      borderRadius: "0.375rem",
+    }),
+  });
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -172,6 +220,7 @@ function PayFee() {
               studentName: enrollment.studentName,
               amount: enrollment.dueAmount || 0,
               dueAmount: enrollment.dueAmount || 0,
+              newDueAmount: enrollment.dueAmount || 0,
             }));
             toast.success("Student found!");
           } else {
@@ -264,8 +313,8 @@ function PayFee() {
                   onClick={searchStudent}
                   disabled={searchLoading}
                   className={`px-6 py-3 rounded-md font-medium ${searchLoading
-                      ? "bg-blue-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                    ? "bg-blue-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
                     } text-white transition-colors duration-200 flex items-center`}
                 >
                   {searchLoading ? "Searching..." : "Search"}
@@ -292,6 +341,18 @@ function PayFee() {
             {/* Amount To Pay Now */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Due Amount
+              </label>
+              <input
+                type="number"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.newDueAmount}
+                disabled
+              />
+            </div>
+            {/* Amount To Pay Now */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Amount To Pay Now
               </label>
               <input
@@ -300,6 +361,9 @@ function PayFee() {
                 value={formData.amount}
                 onChange={(e) => handleInputChange("amount", e.target.value)}
               />
+              {amountError && (
+                <p className="text-sm text-red-500 mt-1">{amountError}</p>
+              )}
             </div>
             {/* Payment Type */}
             <div>
@@ -330,15 +394,14 @@ function PayFee() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment Mode
               </label>
-              <select
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.mode}
-                onChange={(e) => handleInputChange("mode", e.target.value)}
-              >
-                <option value="">--- select payment mode ---</option>
-                <option value="cash">Cash</option>
-                <option value="online">Online</option>
-              </select>
+              <Select
+                options={modeOptions}
+                placeholder="-- select payment mode --"
+                value={modeOptions.find((opt) => opt.value === formData.mode) || null}
+                onChange={(opt) => handleInputChange("mode", opt?.value || "")}
+                styles={getSelectStyles()}
+                classNamePrefix="react-select"
+              />
             </div>
 
             {/* QR code selection */}
@@ -347,21 +410,15 @@ function PayFee() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Payment Account *
                 </label>
-                <select
-                  className={`w-full px-4 py-3 border  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  value={formData.qrcode}
-                  onChange={(e) => handleInputChange("qrcode", e.target.value)}
+                <Select
+                  options={qrOptions}
+                  placeholder="-- Select Payment Account --"
+                  value={qrOptions.find((opt) => opt.value === formData.qrcode) || null}
+                  onChange={(opt) => handleInputChange("qrcode", opt?.value || "")}
                   disabled={isLoading}
-                >
-                  <option value="">-- Select Payment Account --</option>
-                  {qrcodes
-                    .filter((data) => data.isActive)
-                    .map((data) => (
-                      <option key={data._id} value={data._id}>
-                        {data.name}
-                      </option>
-                    ))}
-                </select>
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                />
               </div>
             )}
 
@@ -522,9 +579,15 @@ function PayFee() {
       >
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold">QR Code</h2>
-          <IconButton onClick={handleQrModalClose}>
-            <Close />
-          </IconButton>
+          <div className="flex gap-2 items-center">
+
+            <a href={`${import.meta.env.VITE_BASE_URI}${selectedQrCode}`} target="_blank">
+              <Fullscreen />
+            </a>
+            <IconButton onClick={handleQrModalClose}>
+              <Close />
+            </IconButton>
+          </div>
         </div>
         <DialogContent className="flex flex-col items-center justify-center p-6">
           {selectedQrCode ? (

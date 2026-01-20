@@ -3,13 +3,10 @@ import { Edit2, Trash2, Home, ChevronRight, Loader2 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
   Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   TextField,
   Tooltip,
 } from "@mui/material";
+import Select from "react-select";
 import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
@@ -32,7 +29,7 @@ function TrainingType() {
     status: null
   });
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", duration: "" });
+  const [formData, setFormData] = useState({ name: "", duration: "", registrationAmount: "" });
   const [editId, setEditId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [durations, setDurations] = useState([]);
@@ -119,6 +116,30 @@ function TrainingType() {
     fetchDurations();
   }, []);
 
+  const durationOptions = React.useMemo(
+    () => durations.map((d) => ({ value: d._id, label: d.name })),
+    [durations]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
+
   const handleImmediateChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -129,6 +150,7 @@ function TrainingType() {
     setFormData({
       name: row.name,
       duration: row.duration?._id,
+      registrationAmount: row.registrationAmount,
     });
     setEditId(row._id);
     setOpen(true);
@@ -195,6 +217,10 @@ function TrainingType() {
       }
       if (!formData.duration) {
         toast.error("Please select duration");
+        return;
+      }
+      if (!formData.registrationAmount) {
+        toast.error("Please enter registration amount");
         return;
       }
 
@@ -264,7 +290,7 @@ function TrainingType() {
     setSearch(searchTerm);
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
   };
-  console.log(durations);
+
 
   const columns = [
     {
@@ -315,6 +341,11 @@ function TrainingType() {
     {
       label: "Duration",
       accessor: "duration.name",
+      filter: false,
+    },
+    {
+      label: "Registration Amount",
+      accessor: "registrationAmount",
       filter: false,
     },
     {
@@ -428,29 +459,32 @@ function TrainingType() {
             disabled={loading.save}
           />
 
-          <FormControl fullWidth>
-            <InputLabel id="duration-label">Duration *</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Duration *</label>
             <Select
-              labelId="duration-label"
-              label="Duration"
-              name="duration"
-              value={formData?.duration}
-              onChange={handleImmediateChange}
-              variant="outlined"
-
-              disabled={loading.save}
-            >
-              {durations.map((d) => (
-                <MenuItem value={d._id} key={d._id}>{d.name}</MenuItem>
-              ))}
-
-            </Select>
-            {!formData.duration && (
-              <div className="text-red-500 text-xs mt-1 ml-4">
+              options={durationOptions}
+              placeholder="Select Duration"
+              value={durationOptions.find((opt) => opt.value === formData.duration) || null}
+              onChange={(opt) => setFormData((prev) => ({ ...prev, duration: opt?.value || "" }))}
+              styles={getSelectStyles(!formData.duration && isSubmitting)}
+              classNamePrefix="react-select"
+              isDisabled={loading.save}
+            />
+            {!formData.duration && isSubmitting && (
+              <div className="text-red-500 text-xs mt-1">
                 Duration is required
               </div>
             )}
-          </FormControl>
+          </div>
+          <TextField
+            label="Registration Amount"
+            type="number"
+            value={formData.registrationAmount}
+            onChange={(e) =>
+              setFormData({ ...formData, registrationAmount: e.target.value })
+            }
+            fullWidth
+          />
         </Stack>
       </CustomModal>
     </div>

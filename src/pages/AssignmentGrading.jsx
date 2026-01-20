@@ -21,7 +21,7 @@ import {
   Chip,
   FormControl,
   InputLabel,
-  Select,
+
   MenuItem,
   Table,
   TableBody,
@@ -45,6 +45,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "../axiosInstance";
 import { toast } from "react-toastify";
 import DataTable from "../components/DataTable";
+import Select from "react-select";
 
 function AssignmentGrading() {
   const { id } = useParams();
@@ -126,11 +127,41 @@ function AssignmentGrading() {
     }
   };
 
-  const handleBatchChange = (e) => {
-    const batchId = e.target.value;
+  const handleBatchChange = (opt) => {
+    const batchId = opt?.value || "";
     setSelectedBatch(batchId);
-    fetchStudents(batchId);
+    if (batchId) {
+      fetchStudents(batchId);
+    }
   };
+
+  const batchOptions = React.useMemo(
+    () =>
+      assignment?.batches?.map((batch) => ({
+        value: batch._id,
+        label: batch.batchName,
+      })),
+    [assignment]
+  );
+
+  const getSelectStyles = (hasError) => ({
+    control: (base, state) => ({
+      ...base,
+      borderColor: hasError ? "red" : base.borderColor,
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(59, 130, 246, 0.5)"
+        : base.boxShadow,
+      "&:hover": {
+        borderColor: hasError ? "red" : "#a0aec0",
+      },
+      borderRadius: "0.375rem",
+      padding: "2px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  });
 
   const handleGradeChange = (studentId, value) => {
     // Validate that the grade is a number between 0 and maxMarks
@@ -364,7 +395,7 @@ function AssignmentGrading() {
       </div>
     );
   }
-  console.log(students);
+
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -431,20 +462,17 @@ function AssignmentGrading() {
 
       {/* Batch Selection */}
       <Card className="p-6 mb-6 shadow-md">
-        <FormControl fullWidth>
-          <InputLabel>Select Batch</InputLabel>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">Select Batch</label>
           <Select
-            value={selectedBatch}
+            options={batchOptions}
+            placeholder="Select Batch"
+            value={batchOptions?.find((opt) => opt.value === selectedBatch) || null}
             onChange={handleBatchChange}
-            label="Select Batch"
-          >
-            {assignment.batches?.map((batch) => (
-              <MenuItem key={batch._id} value={batch._id}>
-                {batch.batchName}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            styles={getSelectStyles()}
+            classNamePrefix="react-select"
+          />
+        </div>
       </Card>
 
       {/* Students List for Grading */}

@@ -26,7 +26,7 @@ import {
   Button,
   TextField,
   Tooltip,
-  Select,
+
   MenuItem,
   InputLabel,
   FormControl,
@@ -43,6 +43,7 @@ import {
   DialogContent,
   DialogActions,
   Box,
+  InputAdornment,
 } from "@mui/material";
 import CustomModal from "../components/CustomModal";
 import * as XLSX from "xlsx";
@@ -54,6 +55,7 @@ import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import Select from "react-select";
 
 function Assignments() {
   const [loading, setLoading] = useState("");
@@ -441,6 +443,39 @@ function Assignments() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const batchOptions = React.useMemo(
+    () => batches.map((batch) => ({ value: batch._id, label: batch.batchName })),
+    [batches]
+  );
+
+  const filterBatchOptions = [
+    { value: "all", label: "All Batches" },
+    ...batches.map((batch) => ({ value: batch._id, label: batch.batchName })),
+  ];
+
+  const filterStatusOptions = [
+    { value: "all", label: "All Status" },
+    { value: "active", label: "Active" },
+    { value: "expired", label: "Expired" },
+  ];
+
+  const reactSelectStyles = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: "40px",
+      borderRadius: "4px",
+      borderColor: "#ccc",
+      "&:hover": {
+        borderColor: "#888",
+      },
+      boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 100,
+    }),
+  };
+
   const handleBatchChange = (event) => {
     const { value } = event.target;
     setFormData((prev) => ({ ...prev, batches: value }));
@@ -512,50 +547,44 @@ function Assignments() {
 
       {/* Filters and Search */}
       <Card className="p-4 mb-6 shadow-md">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <TextField
-              placeholder="Search assignments..."
-              fullWidth
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-              size="small"
+        <div className="flex flex-col md:flex-row gap-2 items-center">
+
+          <TextField
+            placeholder="Search assignments..."
+            fullWidth
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={18} className="text-gray-400" />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <div className="w-full min-w-[150px]">
+            <Select
+              options={filterBatchOptions}
+              value={filterBatchOptions.find((opt) => opt.value === filterBatch) || null}
+              onChange={(opt) => setFilterBatch(opt?.value || "all")}
+              placeholder="Batch"
+              styles={reactSelectStyles}
+              classNamePrefix="react-select"
             />
           </div>
 
-          <FormControl size="small" className="min-w-[120px]">
-            <InputLabel>Batch</InputLabel>
+          <div className="w-full min-w-[150px]">
             <Select
-              value={filterBatch}
-              onChange={(e) => setFilterBatch(e.target.value)}
-              label="Batch"
-            >
-              <MenuItem value="all">All Batches</MenuItem>
-              {batches.map((batch) => (
-                <MenuItem key={batch._id} value={batch._id}>
-                  {batch.batchName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" className="min-w-[120px]">
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              label="Status"
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="expired">Expired</MenuItem>
-            </Select>
-          </FormControl>
+              options={filterStatusOptions}
+              value={filterStatusOptions.find((opt) => opt.value === filterStatus) || null}
+              onChange={(opt) => setFilterStatus(opt?.value || "all")}
+              placeholder="Status"
+              styles={reactSelectStyles}
+              classNamePrefix="react-select"
+            />
+          </div>
 
           <IconButton>
             <Filter size={20} />
@@ -669,35 +698,24 @@ function Assignments() {
           />
 
           {/* Multiple Batches Selection */}
-          <FormControl fullWidth>
-            <InputLabel>Select Batches</InputLabel>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Select Batches *</label>
             <Select
+              isMulti
               name="batches"
-              multiple
-              value={formData.batches}
-              onChange={handleBatchChange}
-              label="Select Batches"
-              renderValue={(selected) => (
-                <div className="flex flex-wrap gap-1">
-                  {selected.map((value) => {
-                    const batch = batches.find((b) => b._id === value);
-                    return batch ? (
-                      <Chip key={value} label={batch.batchName} size="small" />
-                    ) : null;
-                  })}
-                </div>
-              )}
-            >
-              {batches.map((batch) => (
-                <MenuItem key={batch._id} value={batch._id}>
-                  <Checkbox
-                    checked={formData.batches.indexOf(batch._id) > -1}
-                  />
-                  {batch.batchName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              options={batchOptions}
+              value={batchOptions.filter((opt) => formData.batches.includes(opt.value))}
+              onChange={(selectedOptions) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  batches: selectedOptions ? selectedOptions.map((opt) => opt.value) : [],
+                }))
+              }
+              placeholder="Select Batches"
+              styles={reactSelectStyles}
+              classNamePrefix="react-select"
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Due Date */}
