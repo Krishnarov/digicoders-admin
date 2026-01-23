@@ -49,6 +49,7 @@ function UpdateStudent() {
   const [collegeNames, setCollegeNames] = useState([]);
   const [qrcodes, setQrcodes] = useState([]);
   const [branchs, setBranchs] = useState([]);
+  const [tags, setTags] = useState([]);
 
   const Educations = useSelector((state) => state.education.data);
   const Trainings = useSelector((state) => state.tranning.data);
@@ -116,6 +117,7 @@ function UpdateStudent() {
     qrcode: null,
     tnxId: "",
     remark: "",
+    tag: "",
     pincode: "", // Added missing field
   });
 
@@ -154,6 +156,15 @@ function UpdateStudent() {
       if (response.data.success) setBranchs(response.data.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
+    }
+  }, []);
+
+  const fetchTags = useCallback(async () => {
+    try {
+      const response = await axios.get("/tags", { params: { isActive: "true" } });
+      if (response.data.success) setTags(response.data.data);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
     }
   }, []);
 
@@ -271,6 +282,7 @@ function UpdateStudent() {
             qrcode: studentData.qrcode?._id || null,
             tnxId: studentData.tnxId || "",
             remark: studentData.remark || "",
+            tag: studentData.tag?._id || "",
             pincode: studentData.pincode || "",
           };
           setPreviews({
@@ -307,6 +319,7 @@ function UpdateStudent() {
           fetchBranch(),
           fetchTranningData(),
           fetchEducation(),
+          fetchTags(),
         ]);
       } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -374,6 +387,11 @@ function UpdateStudent() {
   const qrOptions = React.useMemo(
     () => qrcodes.map((qr) => ({ value: qr._id, label: qr.name })),
     [qrcodes]
+  );
+
+  const tagOptions = React.useMemo(
+    () => tags.map((tag) => ({ value: tag._id, label: tag.name })),
+    [tags]
   );
 
   const genderOptions = [
@@ -1060,6 +1078,21 @@ function UpdateStudent() {
                   onChange={(opt) => handleSelectChange("technology", opt?.value || "")}
                   styles={getSelectStyles()}
                   classNamePrefix="react-select"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tag
+                </label>
+                <Select
+                  options={tagOptions}
+                  placeholder="Select Tag"
+                  value={tagOptions.find((opt) => opt.value === formData.tag) || null}
+                  onChange={(opt) => handleSelectChange("tag", opt?.value || "")}
+                  styles={getSelectStyles()}
+                  classNamePrefix="react-select"
+                  isClearable
                 />
               </div>
 

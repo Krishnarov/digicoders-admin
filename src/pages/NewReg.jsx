@@ -299,6 +299,12 @@ function NewReg() {
       Cell: ({ row }) => (<span>{capitalizeFirst(row.fatherName)}</span>),
       sortable: true,
     },
+    {
+      label: "Tag",
+      accessor: "tag",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.tag?.name)}</span>),
+      sortable: true,
+    },
 
     {
       label: "College Name",

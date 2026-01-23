@@ -21,7 +21,7 @@ const Login = () => {
 
     if (isTwoFactor) {
       // Verify OTP
-      const result = await verifyOtp(credentials.otp);
+      const result = await verifyOtp(credentials);
       if (result.success) {
         toast.success("OTP verified successfully!");
       } else {
@@ -37,6 +37,7 @@ const Login = () => {
       } else if (result.success) {
         toast.success("Login successful!");
       } else {
+        setCredentials({ ...credentials, otp: "" });
         toast.error(result.message || "Login failed");
       }
     }
@@ -77,77 +78,109 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
 
             {/* Only show email/password if not in 2FA mode */}
-            {!isTwoFactor && (
-              <>
-                {/* Email Field */}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={credentials.email}
-                      onChange={(e) =>
-                        setCredentials({ ...credentials, email: e.target.value })
-                      }
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
-                      required
-                      autoComplete="email"
-                    />
+            {/* {!isTwoFactor && ( */}
+            <>
+              {/* Email Field */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
                   </div>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={credentials.email}
+                    onChange={(e) =>
+                      setCredentials({ ...credentials, email: e.target.value })
+                    }
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                    required
+                    autoComplete="email"
+                  />
                 </div>
+              </div>
 
-                {/* Password Field */}
+              {/* Password Field */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={credentials.password}
+                    onChange={(e) =>
+                      setCredentials({ ...credentials, password: e.target.value })
+                    }
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              {isTwoFactor && (
                 <div>
                   <label
-                    htmlFor="password"
+                    htmlFor="otp"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Password
+                    Enter OTP
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
+                      <OctagonPause className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={credentials.password}
+                      id="otp"
+                      type="text"
+                      placeholder="Enter 6-digit OTP"
+                      value={credentials.otp}
                       onChange={(e) =>
-                        setCredentials({ ...credentials, password: e.target.value })
+                        setCredentials({ ...credentials, otp: e.target.value })
                       }
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
                       required
-                      autoComplete="current-password"
+                      maxLength={6}
+                      minLength={6}
+                      pattern="[0-9]{6}"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-600 transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400" />
-                      )}
-                    </button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Check your email for the OTP
+                  </p>
                 </div>
-              </>
-            )}
+              )}
+            </>
+
 
             {/* OTP Field (only show if 2FA is enabled) */}
-            {isTwoFactor && (
+            {/* {isTwoFactor && (
               <div>
                 <label
                   htmlFor="otp"
@@ -162,22 +195,23 @@ const Login = () => {
                   <input
                     id="otp"
                     type="text"
-                    placeholder="Enter 4-digit OTP"
+                    placeholder="Enter 6-digit OTP"
                     value={credentials.otp}
                     onChange={(e) =>
                       setCredentials({ ...credentials, otp: e.target.value })
                     }
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
                     required
-                    maxLength={4}
-                    pattern="[0-9]{4}"
+                    maxLength={6}
+                    minLength={6}
+                    pattern="[0-9]{6}"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   Check your email for the OTP
                 </p>
               </div>
-            )}
+            )} */}
 
             {/* Remember Me & Forgot Password (only in login mode) */}
             {!isTwoFactor && (

@@ -91,6 +91,10 @@ function JobApplications() {
       ...base,
       zIndex: 9999,
     }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
   });
 
   useEffect(() => {
@@ -444,6 +448,7 @@ function JobApplications() {
               onChange={(opt) => setFilterStatus(opt?.value || "")}
               styles={getSelectStyles()}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
           </div>
         </div>
@@ -643,6 +648,7 @@ function JobApplications() {
                 onChange={(opt) => setInterviewData({ ...interviewData, mode: opt?.value || "online" })}
                 styles={getSelectStyles()}
                 classNamePrefix="react-select"
+                menuPortalTarget={document.body}
               />
             </div>
             {interviewData.mode === "offline" && (

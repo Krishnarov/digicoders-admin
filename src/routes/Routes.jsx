@@ -279,6 +279,7 @@ import TrainingDuration from "../pages/TrainingDuration";
 import TranningType from "../pages/TranningType";
 import Unauthorized from "../pages/Unauthorized";
 import UpdateStudent from "../pages/UpdateStudent";
+import ManageTags from "../pages/ManageTags";
 
 const Routes = [
   {
@@ -429,6 +430,12 @@ const Routes = [
     component: Branchs,
     roles: ["Super Admin"],
     requiredPermission: "manage_branch"
+  },
+  {
+    path: "tags",
+    component: ManageTags,
+    roles: ["Super Admin", "Admin", "Employee"],
+    requiredPermission: "manage_tags"
   },
   {
     path: "addstuinbatch/:batchId",

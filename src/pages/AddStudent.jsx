@@ -41,6 +41,7 @@ const AddStudent = () => {
   const [qrcodes, setQrcodes] = useState([]);
   const [hr, setHr] = useState([]);
   const [branchs, setBranchs] = useState([]);
+  const [tags, setTags] = useState([]);
   const [TechnologiesData, setTechnologiesData] = useState([]);
   const [sameNum, setSame] = useState(false);
   const [EditId, setEditId] = useState("");
@@ -78,6 +79,7 @@ const AddStudent = () => {
     qrcode: null,
     tnxId: "",
     remark: "",
+    tag: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -169,6 +171,14 @@ const AddStudent = () => {
     [collegeNames]
   );
 
+  const tagOptions = React.useMemo(
+    () =>
+      tags
+        .filter((data) => data.isActive)
+        .map((data) => ({ value: data._id, label: data.name })),
+    [tags]
+  );
+
   const getSelectStyles = (hasError) => ({
     control: (base, state) => ({
       ...base,
@@ -181,6 +191,14 @@ const AddStudent = () => {
       },
       padding: "2px",
       borderRadius: "0.375rem",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
     }),
   });
   const handleQrView = () => {
@@ -237,6 +255,15 @@ const AddStudent = () => {
       if (response.data.success) setBranchs(response.data.data);
     } catch (error) {
       console.error("Error fetching branches:", error);
+    }
+  }, []);
+
+  const fetchTags = useCallback(async () => {
+    try {
+      const response = await axios.get("/tags", { params: { isActive: "true", limit: 1000 } });
+      if (response.data.success) setTags(response.data.data);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
     }
   }, []);
 
@@ -335,6 +362,7 @@ const AddStudent = () => {
         qrcode: student.qrcode?._id || student.qrcode || null,
         tnxId: student.tnxId || "",
         remark: student.remark || "",
+        tag: student.tag?._id || student.tag || "",
       };
 
       setFormData(newFormData);
@@ -367,6 +395,7 @@ const AddStudent = () => {
           fetchHr(),
           getAllQrCodes(),
           fetchBranch(),
+          fetchTags(),
         ]);
       } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -494,6 +523,7 @@ const AddStudent = () => {
       paymentMethod: "cash",
       qrcode: null,
       remark: "",
+      tag: "",
     });
     setErrors({});
   }, []);
@@ -639,6 +669,7 @@ const AddStudent = () => {
       tnxId: formData.tnxId,
       registeredBy: admin.id,
       remark: formData.remark || undefined,
+      tag: formData.tag || undefined,
       password: formData.mobile,
     };
 
@@ -870,6 +901,7 @@ const AddStudent = () => {
               disabled={isLoading || isEditMode}
               styles={getSelectStyles(errors.training)}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
             {errors.training && (
               <p className="mt-1 text-sm text-red-600">{errors.training}</p>
@@ -888,6 +920,7 @@ const AddStudent = () => {
               onChange={(selectedOption) => handleInputChange("technology", selectedOption?.value || "")}
               styles={getSelectStyles(errors.technology)}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
             {errors.technology && (
               <p className="mt-1 text-sm text-red-600">{errors.technology}</p>
@@ -907,6 +940,7 @@ const AddStudent = () => {
               disabled={isLoading || isEditMode}
               styles={getSelectStyles(errors.education)}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
             {errors.education && (
               <p className="mt-1 text-sm text-red-600">{errors.education}</p>
@@ -926,10 +960,28 @@ const AddStudent = () => {
               disabled={isLoading}
               styles={getSelectStyles(errors.eduYear)}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
             {errors.eduYear && (
               <p className="mt-1 text-sm text-red-600">{errors.eduYear}</p>
             )}
+          </div>
+
+          {/* Select Tag */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Tag
+            </label>
+            <Select
+              options={tagOptions}
+              placeholder="-Select Tag-"
+              value={tagOptions.find((opt) => opt.value === formData.tag) || null}
+              onChange={(selectedOption) => handleInputChange("tag", selectedOption?.value || "")}
+              styles={getSelectStyles()}
+              classNamePrefix="react-select"
+              menuPortalTarget={document.body}
+              isClearable
+            />
           </div>
 
           {/* Student Father's Name */}
@@ -988,6 +1040,7 @@ const AddStudent = () => {
               disabled={isLoading || isEditMode}
               styles={getSelectStyles(errors.hrName)}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
             {errors.hrName && (
               <p className="mt-1 text-sm text-red-600">{errors.hrName}</p>
@@ -1007,6 +1060,7 @@ const AddStudent = () => {
               disabled={isLoading}
               styles={getSelectStyles(errors.branch)}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
             {errors.branch && (
               <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
@@ -1031,6 +1085,7 @@ const AddStudent = () => {
               }
               classNamePrefix="react-select"
               styles={getSelectStyles(errors.collegeName)}
+              menuPortalTarget={document.body}
             />
             {errors.collegeName && (
               <p className="mt-1 text-sm text-red-600">{errors.collegeName}</p>
@@ -1241,6 +1296,7 @@ const AddStudent = () => {
                 disabled={isLoading || isEditMode}
                 styles={getSelectStyles(errors.qrcode)}
                 classNamePrefix="react-select"
+                menuPortalTarget={document.body}
               />
               {errors.qrcode && (
                 <p className="mt-1 text-sm text-red-600">{errors.qrcode}</p>

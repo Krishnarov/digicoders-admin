@@ -388,6 +388,10 @@ function Collages() {
       ...base,
       zIndex: 9999,
     }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
   });
 
   const handleChange = (e) => {
@@ -612,6 +616,7 @@ function Collages() {
               }
               styles={getSelectStyles()}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

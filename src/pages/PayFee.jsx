@@ -88,6 +88,14 @@ function PayFee() {
       padding: "2px",
       borderRadius: "0.375rem",
     }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
   });
 
   const handleImageChange = (e) => {
@@ -401,6 +409,7 @@ function PayFee() {
                 onChange={(opt) => handleInputChange("mode", opt?.value || "")}
                 styles={getSelectStyles()}
                 classNamePrefix="react-select"
+                menuPortalTarget={document.body}
               />
             </div>
 
@@ -418,6 +427,7 @@ function PayFee() {
                   disabled={isLoading}
                   styles={getSelectStyles()}
                   classNamePrefix="react-select"
+                  menuPortalTarget={document.body}
                 />
               </div>
             )}

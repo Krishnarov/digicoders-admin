@@ -203,7 +203,11 @@ function DataTable({
     }),
     menu: (base) => ({
       ...base,
-      zIndex: 100,
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
     }),
     option: (base, state) => ({
       ...base,
@@ -289,6 +293,7 @@ function DataTable({
                               styles={reactSelectStyles}
                               classNamePrefix="react-select"
                               isDisabled={loading}
+                              menuPortalTarget={document.body}
                             />
                           </div>
                         </Grid>

@@ -661,6 +661,13 @@ export const menuItems = [
         requiredPermission: "manage_branch"
       },
       {
+        path: "/tags",
+        icon: Settings2,
+        label: "Tags",
+        roles: ["Super Admin", "Admin", "Employee"],
+        requiredPermission: "manage_tags"
+      },
+      {
         path: "/teacher",
         icon: User,
         label: "Teachers",

@@ -138,6 +138,10 @@ function TrainingType() {
       ...base,
       zIndex: 9999,
     }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
   });
 
   const handleImmediateChange = (e) => {
@@ -468,7 +472,9 @@ function TrainingType() {
               onChange={(opt) => setFormData((prev) => ({ ...prev, duration: opt?.value || "" }))}
               styles={getSelectStyles(!formData.duration && isSubmitting)}
               classNamePrefix="react-select"
+
               isDisabled={loading.save}
+              menuPortalTarget={document.body}
             />
             {!formData.duration && isSubmitting && (
               <div className="text-red-500 text-xs mt-1">

@@ -38,7 +38,6 @@ export const useAuth = () => {
       );
 
 
-
       if (res.data.success) {
         // Check if 2FA is required
         if (res.data.isTwoFactor) {
@@ -104,19 +103,21 @@ export const useAuth = () => {
     }
   };
 
-  const verifyOtp = async (otp) => {
+  const verifyOtp = async (credentials) => {
     try {
       dispatch(setAuthLoading(true));
+      console.log(credentials);
 
       const res = await axios.post(
         `${import.meta.env.VITE_BASE_API}/auth/verify-otp`,
-        { otp },
+        credentials,
         {
           headers: {
             'Content-Type': 'application/json'
           }
         }
       );
+      console.log(res);
 
       if (res.data.success) {
         dispatch(verifyOtpSuccess({

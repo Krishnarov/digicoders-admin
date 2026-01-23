@@ -255,6 +255,7 @@ function ManageHr() {
   };
 
   const handleSubmit = async () => {
+    setLoading("Save");
     // Validation
     if (
       !formData.name.trim() ||
@@ -267,7 +268,7 @@ function ManageHr() {
     }
 
     try {
-      setLoading("Save");
+
       let res;
       if (editId) {
         res = await axios.put(`/hr/${editId}`, formData);
@@ -312,6 +313,10 @@ function ManageHr() {
       padding: "2px",
     }),
     menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({
       ...base,
       zIndex: 9999,
     }),
@@ -440,11 +445,17 @@ function ManageHr() {
               onChange={(opt) => setFormData((prev) => ({ ...prev, branch: opt?.value || "" }))}
               styles={getSelectStyles()}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
+            {!formData.branch && loading === "Save" && (
+              <div className="text-red-500 text-xs mt-0">
+                Branch is required
+              </div>
+            )}
           </div>
 
           <TextField
-            label="Personal Number *"
+            label="Personal Number "
             name="personalNo"
             fullWidth
             value={formData.personalNo}
@@ -452,9 +463,14 @@ function ManageHr() {
             variant="outlined"
             required
           />
+          {!formData.personalNo && loading === "Save" && (
+            <div className="text-red-500 text-xs mt-0">
+              Personal Number is required
+            </div>
+          )}
 
           <TextField
-            label="Office Number *"
+            label="Office Number"
             name="officeNo"
             fullWidth
             value={formData.officeNo}
@@ -462,6 +478,11 @@ function ManageHr() {
             variant="outlined"
             required
           />
+          {!formData.officeNo && loading === "Save" && (
+            <div className="text-red-500 text-xs mt-0">
+              Office Number is required
+            </div>
+          )}
         </Stack>
       </CustomModal>
     </div>

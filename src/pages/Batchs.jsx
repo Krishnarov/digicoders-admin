@@ -30,6 +30,7 @@ import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Select from "react-select";
+import moment from "moment";
 
 function Batchs() {
   const [loading, setLoading] = useState({
@@ -117,7 +118,7 @@ function Batchs() {
   const getTeachers = useCallback(async () => {
     try {
       const res = await axios.get(`/teachers/branch/${formData.branch}`);
-
+      console.log(res.data);
       if (res.data.success) {
         setTeachers(res.data.teacher || []);
       }
@@ -448,10 +449,6 @@ function Batchs() {
         toast.error("Please select start date");
         return;
       }
-      if (!formData.room.trim()) {
-        toast.error("Please enter room number");
-        return;
-      }
       if (!formData.classTime.trim()) {
         toast.error("Please enter class time");
         return;
@@ -547,8 +544,14 @@ function Batchs() {
       },
       borderRadius: "0.375rem",
       padding: "2px",
+      paddingTop: "6px",
+      paddingBottom: "6px",
     }),
     menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({
       ...base,
       zIndex: 9999,
     }),
@@ -692,32 +695,20 @@ function Batchs() {
             disabled={loading.save}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             <TextField
-              label="Room *"
+              label="Room "
               name="room"
               fullWidth
               value={formData.room}
               onChange={handleChange}
               variant="outlined"
-              required
+
               error={submitted && !formData.room.trim()}
               helperText={submitted && !formData.room.trim() ? "Room is required" : ""}
               disabled={loading.save}
             />
-            <TextField
-              label="Class Time *"
-              name="classTime"
-              placeholder="e.g. 10:00 AM - 12:00 PM"
-              fullWidth
-              value={formData.classTime}
-              onChange={handleChange}
-              variant="outlined"
-              required
-              error={submitted && !formData.classTime.trim()}
-              helperText={submitted && !formData.classTime.trim() ? "Class time is required" : ""}
-              disabled={loading.save}
-            />
+
           </div>
 
           {/* Branch Dropdown */}
@@ -731,6 +722,7 @@ function Batchs() {
               styles={getSelectStyles(submitted && !formData.branch)}
               classNamePrefix="react-select"
               isDisabled={loading.save}
+              menuPortalTarget={document.body}
             />
             {!formData.branch && submitted && (
               <div className="text-red-500 text-xs mt-1">
@@ -756,7 +748,44 @@ function Batchs() {
               min: getTodayDate()
             }}
           />
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TextField
+              label="Class Start Time *"
+              type="time"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={formData.classTime && formData.classTime.includes(" - ") ? moment(formData.classTime.split(" - ")[0], "h:mm A").format("HH:mm") : moment(formData.classTime, "h:mm A").isValid() ? moment(formData.classTime, "h:mm A").format("HH:mm") : ""}
+              onChange={(e) => {
+                const startTime = moment(e.target.value, "HH:mm").format("h:mm A");
+                const endTime = formData.classTime.includes(" - ") ? formData.classTime.split(" - ")[1] : "";
+                setFormData(prev => ({ ...prev, classTime: `${startTime}${endTime ? ` - ${endTime}` : ""}` }));
+              }}
+              required
+              disabled={loading.save}
+            />
+            <TextField
+              label="Class End Time *"
+              type="time"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              value={formData.classTime && formData.classTime.includes(" - ") ? moment(formData.classTime.split(" - ")[1], "h:mm A").format("HH:mm") : ""}
+              onChange={(e) => {
+                const startTime = formData.classTime.includes(" - ") ? formData.classTime.split(" - ")[0] : formData.classTime || "";
+                const endTime = moment(e.target.value, "HH:mm").format("h:mm A");
+                setFormData(prev => ({ ...prev, classTime: `${startTime}${endTime ? ` - ${endTime}` : ""}` }));
+              }}
+              required
+              disabled={loading.save}
+            />
+          </div>
+          {submitted && !formData.classTime.trim() && (
+            <p className="text-red-500 text-xs mt-1">Class time is required</p>
+          )}
+          {formData.classTime && (
+            <p className="text-gray-500 text-xs mt-1">
+              Selected Time: {formData.classTime}
+            </p>
+          )}
           {/* Teacher Dropdown */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">Assign Teacher</label>
@@ -768,6 +797,7 @@ function Batchs() {
               styles={getSelectStyles()}
               classNamePrefix="react-select"
               isDisabled={loading.save}
+              menuPortalTarget={document.body}
             />
           </div>
         </Stack>

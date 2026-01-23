@@ -472,7 +472,11 @@ function Assignments() {
     }),
     menu: (base) => ({
       ...base,
-      zIndex: 100,
+      zIndex: 9999,
+    }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
     }),
   };
 
@@ -572,6 +576,7 @@ function Assignments() {
               placeholder="Batch"
               styles={reactSelectStyles}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
           </div>
 
@@ -583,6 +588,7 @@ function Assignments() {
               placeholder="Status"
               styles={reactSelectStyles}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
           </div>
 
@@ -714,6 +720,7 @@ function Assignments() {
               placeholder="Select Batches"
               styles={reactSelectStyles}
               classNamePrefix="react-select"
+              menuPortalTarget={document.body}
             />
           </div>
 
