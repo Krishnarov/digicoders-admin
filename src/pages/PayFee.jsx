@@ -64,7 +64,9 @@ function PayFee() {
 
   const modeOptions = [
     { value: "cash", label: "Cash" },
-    { value: "online", label: "Online" },
+    { value: "upi_qr", label: "UPI QR" },
+    { value: "pos", label: "P.O.S" },
+    { value: "payment_link", label: "Payment Link" },
   ];
 
   const qrOptions = React.useMemo(
@@ -414,7 +416,7 @@ function PayFee() {
             </div>
 
             {/* QR code selection */}
-            {formData.mode === "online" && (
+            {["upi_qr"].includes(formData.mode) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Payment Account *
@@ -433,7 +435,7 @@ function PayFee() {
             )}
 
             {/* Transaction ID / UTR */}
-            {formData.mode === "online" && (
+            {["upi_qr","pos"].includes(formData.mode) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Transaction ID / UTR No.
@@ -454,7 +456,7 @@ function PayFee() {
             )}
 
             {/* Image Upload */}
-            {formData.mode === "online" && (
+            {formData.mode === "upi_qr" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Upload Payment Screenshot
@@ -490,7 +492,7 @@ function PayFee() {
             </div>
 
             {/* QR code display */}
-            {formData.mode === "online" && (
+            {["upi_qr"].includes(formData.mode) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Scan & Pay

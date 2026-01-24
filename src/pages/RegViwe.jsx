@@ -23,6 +23,7 @@ import {
   FileCheck,
   MapPin,
   Download,
+  Bell,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -57,12 +58,15 @@ function RegView() {
   const [customMessage, setCustomMessage] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [viewFile, setViewFile] = useState({ url: null, name: null, type: null });
+  const [viewFile, setViewFile] = useState({
+    url: null,
+    name: null,
+    type: null,
+  });
 
   const fetchStudentData = async () => {
     try {
       const res = await axiosInstance.get(`/registration/user?id=${param.id}`);
-
 
       setStudentData(res.data.data);
     } catch (error) {
@@ -111,8 +115,9 @@ function RegView() {
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
-          }`}
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${
+          statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
+        }`}
       >
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
@@ -128,8 +133,9 @@ function RegView() {
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
-          }`}
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${
+          statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
+        }`}
       >
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
@@ -192,6 +198,24 @@ support@digicoders.in | www.digicoders.in`;
       setReminderDialog({ open: false, type: "", message: "" });
     }
   };
+  const handleSendReminderPendingFee = async (row) => {
+    try {
+      const res = await axiosInstance.post(`/fee/reminder`, {
+        mobile: studentData.mobile,
+        email: studentData.email,
+        paymentLink: row.paymentLink,
+        studentName: studentData.studentName,
+        amount: row.amount,
+      });
+      if (res.data.success) {
+        toast.success("Reminder Send Successfully");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  console.log(feeData);
 
   const columns = [
     {
@@ -210,7 +234,58 @@ support@digicoders.in | www.digicoders.in`;
               <Printer size={20} />
             </button>
           </Tooltip>
+          {row.paymentLink && row.paymentStatus === "pending" && (
+            <Tooltip
+              title={<span className="font-bold">Reminder</span>}
+              placement="top"
+            >
+              <button
+                className="px-2 py-1 rounded-md hover:bg-indigo-100 transition-colors border text-indigo-800"
+                onClick={() => handleSendReminderPendingFee(row)}
+              >
+                <Bell size={20} />
+              </button>
+            </Tooltip>
+          )}
         </div>
+      ),
+    },
+    {
+      label: "Payment Status",
+      accessor: "paymentStatus",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.paymentStatus}
+          color={
+            row.paymentStatus === "paid"
+              ? "success"
+              : row.paymentStatus === "full paid"
+                ? "success"
+                : row.paymentStatus === "failed"
+                  ? "error"
+                  : "warning"
+          }
+          variant="outlined"
+          size="small"
+        />
+      ),
+    },
+    {
+      label: "Status",
+      accessor: "status",
+      Cell: ({ row }) => (
+        <Chip
+          label={row.status}
+          color={
+            row.status === "accepted"
+              ? "success"
+              : row.status === "rejected"
+                ? "error"
+                : "warning"
+          }
+          variant="outlined"
+          size="small"
+        />
       ),
     },
     { label: "Receipt No", accessor: "receiptNo" },
@@ -235,24 +310,6 @@ support@digicoders.in | www.digicoders.in`;
         <Chip label={row.mode} variant="outlined" size="small" />
       ),
     },
-    {
-      label: "Status",
-      accessor: "status",
-      Cell: ({ row }) => (
-        <Chip
-          label={row.status}
-          color={
-            row.status === "accepted"
-              ? "success"
-              : row.status === "rejected"
-                ? "error"
-                : "warning"
-          }
-          variant="outlined"
-          size="small"
-        />
-      ),
-    },
   ];
 
   const handlePrint = (payment) => {
@@ -268,7 +325,9 @@ support@digicoders.in | www.digicoders.in`;
   // Document download functions
   const downloadDocument = (url, filename) => {
     if (!url) return;
-    const fullUrl = url.startsWith("http") ? url : `${import.meta.env.VITE_BASE_URI}${url}`;
+    const fullUrl = url.startsWith("http")
+      ? url
+      : `${import.meta.env.VITE_BASE_URI}${url}`;
     const link = document.createElement("a");
     link.href = fullUrl;
     link.target = "_blank";
@@ -280,7 +339,9 @@ support@digicoders.in | www.digicoders.in`;
 
   const handleViewFile = (name, url, filename) => {
     if (!url) return;
-    const fullUrl = url.startsWith("http") ? url : `${import.meta.env.VITE_BASE_URI}${url}`;
+    const fullUrl = url.startsWith("http")
+      ? url
+      : `${import.meta.env.VITE_BASE_URI}${url}`;
     const type = fullUrl.toLowerCase().endsWith(".pdf") ? "pdf" : "image";
     setViewFile({ url: fullUrl, name: filename || name, type });
     setIsViewModalOpen(true);
@@ -318,7 +379,9 @@ support@digicoders.in | www.digicoders.in`;
               <p className="text-gray-600">Student ID: {studentData?.userid}</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-sm text-gray-500">
-                  {studentData.gender === "female" ? "👩" : "👨"} {studentData.gender?.charAt(0).toUpperCase() + studentData.gender?.slice(1)}
+                  {studentData.gender === "female" ? "👩" : "👨"}{" "}
+                  {studentData.gender?.charAt(0).toUpperCase() +
+                    studentData.gender?.slice(1)}
                 </span>
                 <span className="text-sm text-gray-500">•</span>
                 <span className="text-sm text-gray-500">
@@ -412,7 +475,9 @@ support@digicoders.in | www.digicoders.in`;
                 <label className="text-sm font-medium text-gray-500">
                   WhatsApp
                 </label>
-                <p className="text-gray-900">{studentData?.whatshapp || "N/A"}</p>
+                <p className="text-gray-900">
+                  {studentData?.whatshapp || "N/A"}
+                </p>
               </div>
             </div>
 
@@ -429,7 +494,9 @@ support@digicoders.in | www.digicoders.in`;
                 <label className="text-sm font-medium text-gray-500">
                   Gender
                 </label>
-                <p className="text-gray-900 capitalize">{studentData?.gender}</p>
+                <p className="text-gray-900 capitalize">
+                  {studentData?.gender}
+                </p>
               </div>
             </div>
 
@@ -508,9 +575,13 @@ support@digicoders.in | www.digicoders.in`;
                 Mobile Verification
               </label>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.guardianMobileVerification ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.guardianMobileVerification ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">
-                  {studentData?.guardianMobileVerification ? "Verified" : "Not Verified"}
+                  {studentData?.guardianMobileVerification
+                    ? "Verified"
+                    : "Not Verified"}
                 </span>
               </div>
             </div>
@@ -578,7 +649,9 @@ support@digicoders.in | www.digicoders.in`;
               <label className="text-sm font-medium text-gray-500">
                 Duration
               </label>
-              <p className="text-gray-900">{studentData?.training?.duration?.name}</p>
+              <p className="text-gray-900">
+                {studentData?.training?.duration?.name}
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
@@ -712,7 +785,9 @@ support@digicoders.in | www.digicoders.in`;
                 <label className="text-sm font-medium text-gray-500">
                   Transaction Status
                 </label>
-                <p className="text-gray-900">{studentData?.tnxStatus || "N/A"}</p>
+                <p className="text-gray-900">
+                  {studentData?.tnxStatus || "N/A"}
+                </p>
               </div>
             </div>
           </div>
@@ -729,12 +804,20 @@ support@digicoders.in | www.digicoders.in`;
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.aadharCardUploded ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.aadharCardUploded ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">Aadhar Card</span>
                 {studentData?.aadharCard?.url && (
                   <Tooltip title="View Aadhar Card">
                     <button
-                      onClick={() => handleViewFile('Aadhar Card', studentData.aadharCard.url, 'AadharCard')}
+                      onClick={() =>
+                        handleViewFile(
+                          "Aadhar Card",
+                          studentData.aadharCard.url,
+                          "AadharCard",
+                        )
+                      }
                       className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                     >
                       <Eye size={18} />
@@ -743,12 +826,16 @@ support@digicoders.in | www.digicoders.in`;
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.cvUploded ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.cvUploded ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">CV</span>
                 {studentData?.cv?.url && (
                   <Tooltip title="View CV">
                     <button
-                      onClick={() => handleViewFile('CV', studentData.cv.url, 'CV')}
+                      onClick={() =>
+                        handleViewFile("CV", studentData.cv.url, "CV")
+                      }
                       className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                     >
                       <Eye size={18} />
@@ -760,33 +847,45 @@ support@digicoders.in | www.digicoders.in`;
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.photoSummited ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.photoSummited ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">Photo Submitted</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.hardForm ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.hardForm ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">Offline Form</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.certificateIssued ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.certificateIssued ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">Certificate Issued</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.idCardIssued ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.idCardIssued ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">ID Card Issued</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.tSartIssued ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.tSartIssued ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">T-Shirt Issued</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${studentData?.placementStatus ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${studentData?.placementStatus ? "bg-green-500" : "bg-red-500"}`}
+                ></div>
                 <span className="text-gray-900">Placement Status</span>
               </div>
             </div>
@@ -808,7 +907,9 @@ support@digicoders.in | www.digicoders.in`;
                   Job Need
                 </label>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${studentData?.isJobNeed ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <div
+                    className={`w-2 h-2 rounded-full ${studentData?.isJobNeed ? "bg-green-500" : "bg-red-500"}`}
+                  ></div>
                   <span className="text-gray-900">
                     {studentData?.isJobNeed ? "Yes" : "No"}
                   </span>
@@ -819,7 +920,9 @@ support@digicoders.in | www.digicoders.in`;
                   Joined
                 </label>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${studentData?.isJoin ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <div
+                    className={`w-2 h-2 rounded-full ${studentData?.isJoin ? "bg-green-500" : "bg-red-500"}`}
+                  ></div>
                   <span className="text-gray-900">
                     {studentData?.isJoin ? "Yes" : "No"}
                   </span>
@@ -831,7 +934,9 @@ support@digicoders.in | www.digicoders.in`;
               <label className="text-sm font-medium text-gray-500">
                 Place in Company
               </label>
-              <p className="text-gray-900">{studentData?.placeInCompany || "N/A"}</p>
+              <p className="text-gray-900">
+                {studentData?.placeInCompany || "N/A"}
+              </p>
             </div>
 
             <div>
@@ -840,7 +945,10 @@ support@digicoders.in | www.digicoders.in`;
               </label>
               <div className="flex flex-wrap gap-1 mt-1">
                 {studentData?.interviewInCompanines?.map((company, index) => (
-                  <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 rounded-md text-sm">
+                  <span
+                    key={index}
+                    className="px-2 py-1 bg-gray-100 text-gray-800 rounded-md text-sm"
+                  >
                     {company}
                   </span>
                 )) || "N/A"}
@@ -939,8 +1047,9 @@ support@digicoders.in | www.digicoders.in`;
                 </label>
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                    className={`w-2 h-2 rounded-full ${
+                      studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
+                    }`}
                   ></div>
                   <span className="text-gray-900">
                     {studentData?.isLogin ? "Online" : "Offline"}
@@ -953,8 +1062,9 @@ support@digicoders.in | www.digicoders.in`;
                 </label>
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${studentData?.isStatus ? "bg-green-500" : "bg-red-500"
-                      }`}
+                    className={`w-2 h-2 rounded-full ${
+                      studentData?.isStatus ? "bg-green-500" : "bg-red-500"
+                    }`}
                   ></div>
                   <span className="text-gray-900">
                     {studentData?.isStatus ? "Active" : "Inactive"}
@@ -1014,7 +1124,24 @@ support@digicoders.in | www.digicoders.in`;
               <label className="text-sm font-medium text-gray-500">
                 QR Code Name
               </label>
-              <p className="text-gray-900">{studentData?.qrcode?.name || "N/A"}</p>
+              <p className="text-gray-900">
+                {studentData?.qrcode?.name || "N/A"}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-500">
+                reg payment link
+              </label>
+              <div>
+                <a
+                  href={studentData?.paymentLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-900"
+                >
+                  {studentData?.paymentLink || "N/A"}
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -1039,9 +1166,7 @@ support@digicoders.in | www.digicoders.in`;
         fullWidth
       >
         <DialogTitle>
-          Send{" "}
-          {reminderDialog.type?.toUpperCase()}{" "}
-          Reminder
+          Send {reminderDialog.type?.toUpperCase()} Reminder
         </DialogTitle>
         <DialogContent>
           {reminderDialog.type === "email" && (

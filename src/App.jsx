@@ -6,6 +6,7 @@ import MainLayout from "./layout/MainLayout";
 import routes from "./routes/Routes.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Receipt from "./components/Receipt.jsx";
+import PaymentSuccess from "./components/PaymentSuccess.jsx";
 import Unauthorized from "./pages/Unauthorized";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/receipt/:id" element={<Receipt />} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route
         path="/*"

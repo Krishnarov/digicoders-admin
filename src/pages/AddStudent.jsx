@@ -537,6 +537,8 @@ const AddStudent = () => {
           if (res.data.data.length === 1) {
             // Only one enrollment, auto-select it
             const stu = res.data.data[0];
+          
+            
             setFormData((prev) => ({
               ...prev,
               studentName: stu.studentName || "",
@@ -546,7 +548,7 @@ const AddStudent = () => {
               collegeName: stu.collegeName || "",
               education: stu.education,
               eduYear: stu.eduYear || "",
-              training: stu.training,
+              training: stu.training?._id || stu.training,
               technology: stu.technology,
               totalFee: stu.totalFee || "",
               paymentType: stu.paymentType || "registration",
@@ -580,6 +582,7 @@ const AddStudent = () => {
         } else {
           // Single enrollment response
           const stu = res.data.data;
+
           setFormData((prev) => ({
             ...prev,
             studentName: stu.studentName || "",
@@ -589,7 +592,7 @@ const AddStudent = () => {
             collegeName: stu.collegeName || "",
             education: stu.education,
             eduYear: stu.eduYear || "",
-            training: stu.training,
+            training: stu.training?._id,
             technology: stu.technology,
             totalFee: stu.totalFee || "",
             paymentType: stu.paymentType || "registration",
@@ -608,20 +611,22 @@ const AddStudent = () => {
   }, [formData.mobile, resetForm]);
 
   const selectEnrollment = (enrollment) => {
+    fetchtechnologybytrainingid(enrollment.training?._id)
     setFormData((prev) => ({
       ...prev,
       mobile: enrollment.mobile,
       whatshapp: enrollment.whatshapp,
       studentName: enrollment.studentName,
-      training: enrollment.training,
-      technology: enrollment.technology,
-      education: enrollment.education,
+      training: enrollment.training?._id,
+      technology: enrollment.technology?._id,
+      education: enrollment.education?._id,
       eduYear: enrollment.eduYear,
       fatherName: enrollment.fatherName,
+      tag:enrollment.tag._id,
       email: enrollment.email,
       alternateMobile: enrollment.alternateMobile,
-      hrName: enrollment.hrName,
-      branch: enrollment.branch,
+      hrName: enrollment.hrName?._id,
+      branch: enrollment.branch?._id,
       collegeName: enrollment.collegeName,
       totalFee: enrollment.totalFee,
       discount: enrollment.discount,
@@ -1265,7 +1270,7 @@ const AddStudent = () => {
                 />
                 <span className="ml-2 text-sm text-gray-700">Cash</span>
               </label>
-              <label className="flex items-center">
+              {/* <label className="flex items-center">
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -1278,12 +1283,69 @@ const AddStudent = () => {
                   disabled={isLoading || isEditMode}
                 />
                 <span className="ml-2 text-sm text-gray-700">Online</span>
+              </label> */}
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="upi_qr"
+                  checked={formData.paymentMethod === "upi_qr"}
+                  onChange={(e) =>
+                    handleInputChange("paymentMethod", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  disabled={isLoading || isEditMode}
+                />
+                <span className="ml-2 text-sm text-gray-700">UPI QR</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="pos"
+                  checked={formData.paymentMethod === "pos"}
+                  onChange={(e) =>
+                    handleInputChange("paymentMethod", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  disabled={isLoading || isEditMode}
+                />
+                <span className="ml-2 text-sm text-gray-700">P.O.S</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="payment_link"
+                  checked={formData.paymentMethod === "payment_link"}
+                  onChange={(e) =>
+                    handleInputChange("paymentMethod", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  disabled={isLoading || isEditMode}
+                />
+                <span className="ml-2 text-sm text-gray-700">Payment Link</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="emi"
+                  disabled
+                  checked={formData.paymentMethod === "emi"}
+                  onChange={(e) =>
+                    handleInputChange("paymentMethod", e.target.value)
+                  }
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+
+                />
+                <span className="ml-2 text-sm text-gray-700">EMI</span>
               </label>
             </div>
           </div>
 
           {/* QR code selection */}
-          {formData.paymentMethod === "online" && (
+          {formData.paymentMethod === "upi_qr" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select QR Code *
@@ -1305,7 +1367,7 @@ const AddStudent = () => {
           )}
 
           {/* QR code display */}
-          {formData.paymentMethod === "online" && (
+          {formData.paymentMethod === "upi_qr" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Scan & Pay
@@ -1320,7 +1382,7 @@ const AddStudent = () => {
             </div>
           )}
           {/* Transaction ID / UTR */}
-          {formData.paymentMethod === "online" && (
+          {["pos", "upi_qr"].includes(formData.paymentMethod) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Transaction ID / UTR No.

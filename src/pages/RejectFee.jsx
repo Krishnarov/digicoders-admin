@@ -111,14 +111,14 @@ function RejectFee() {
     },
     {
       label: "Enroll ID",
-      accessor: "registrationId.userid",
+      accessor: "registration.userid",
       sortable: true,
     },
     {
       label: "Student Name",
-      accessor: "registrationId.studentName",
+      accessor: "registration.studentName",
       sortable: true,
-      Cell: ({ row }) => capitalizeFirst(row.registrationId?.studentName || "N/A"),
+      Cell: ({ row }) => capitalizeFirst(row.registration?.studentName || "N/A"),
     },
     {
       label: "Amount",
@@ -201,30 +201,30 @@ function RejectFee() {
     },
     {
       label: "Mobile",
-      accessor: "registrationId.mobile",
+      accessor: "registration.mobile",
       sortable: true,
-      Cell: ({ row }) => row.registrationId?.mobile || "N/A",
+      Cell: ({ row }) => row.registration?.mobile || "N/A",
     },
     {
       label: "Whatshapp",
-      accessor: "registrationId.whatshapp",
+      accessor: "registration.whatshapp",
       sortable: true,
     },
     {
       label: "Alternate Mobile",
-      accessor: "registrationId.alternateMobile",
+      accessor: "registration.alternateMobile",
       sortable: true,
     },
     {
       label: "Email",
-      accessor: "registrationId.email",
+      accessor: "registration.email",
       sortable: true,
     },
     {
       label: "Father Name",
-      accessor: "registrationId.fatherName",
+      accessor: "registration.fatherName",
       sortable: true,
-      Cell: ({ row }) => capitalizeFirst(row.registrationId?.fatherName || "N/A"),
+      Cell: ({ row }) => capitalizeFirst(row.registration?.fatherName || "N/A"),
     },
     {
       label: "Remark",

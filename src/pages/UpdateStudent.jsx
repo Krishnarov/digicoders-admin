@@ -1194,7 +1194,7 @@ function UpdateStudent() {
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900 flex items-center">
+                <label className="ml-2  text-sm text-gray-900 flex items-center">
                   <IdCard size={16} className="mr-1" /> ID Card Issued
                 </label>
               </div>
@@ -1207,7 +1207,7 @@ function UpdateStudent() {
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900 flex items-center">
+                <label className="ml-2 text-sm text-gray-900 flex items-center">
                   <Award size={16} className="mr-1" /> Certificate Issued
                 </label>
               </div>
@@ -1220,7 +1220,7 @@ function UpdateStudent() {
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900 flex items-center">
+                <label className="ml-2 text-sm text-gray-900 flex items-center">
                   <FileText size={16} className="mr-1" /> Offline Form
                 </label>
               </div>
@@ -1246,7 +1246,7 @@ function UpdateStudent() {
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900 flex items-center">
+                <label className="ml-2 text-sm text-gray-900 flex items-center">
                   <Shirt size={16} className="mr-1" /> T-Shirt Issued
                 </label>
               </div>
