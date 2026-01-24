@@ -234,7 +234,7 @@ support@digicoders.in | www.digicoders.in`;
               <Printer size={20} />
             </button>
           </Tooltip>
-          {row.paymentLink && row.paymentStatus === "pending" && (
+          {row.paymentLink && row.tnxStatus === "pending" && (
             <Tooltip
               title={<span className="font-bold">Reminder</span>}
               placement="top"
@@ -251,17 +251,17 @@ support@digicoders.in | www.digicoders.in`;
       ),
     },
     {
-      label: "Payment Status",
-      accessor: "paymentStatus",
+      label: "Tnx Status",
+      accessor: "tnxStatus",
       Cell: ({ row }) => (
         <Chip
-          label={row.paymentStatus}
+          label={row.tnxStatus}
           color={
-            row.paymentStatus === "paid"
+            row.tnxStatus === "paid"
               ? "success"
-              : row.paymentStatus === "full paid"
+              : row.tnxStatus === "full paid"
                 ? "success"
-                : row.paymentStatus === "failed"
+                : row.tnxStatus === "failed"
                   ? "error"
                   : "warning"
           }

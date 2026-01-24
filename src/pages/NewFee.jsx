@@ -156,7 +156,6 @@ function NewFee() {
   };
   const capitalizeFirst = (text = "") =>
     text.charAt(0).toUpperCase() + text.slice(1);
-  console.log(feeData);
 
   // Define columns for DataTable
   const columns = [

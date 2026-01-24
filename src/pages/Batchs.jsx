@@ -118,7 +118,7 @@ function Batchs() {
   const getTeachers = useCallback(async () => {
     try {
       const res = await axios.get(`/teachers/branch/${formData.branch}`);
-      console.log(res.data);
+
       if (res.data.success) {
         setTeachers(res.data.teacher || []);
       }
