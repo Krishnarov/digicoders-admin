@@ -17,7 +17,7 @@ import CustomModal from "../components/CustomModal";
 import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 function Company() {
@@ -25,6 +25,7 @@ function Company() {
   const [loading, setLoading] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [industries, setIndustries] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -46,7 +47,7 @@ function Company() {
     limit: 10,
     total: 0,
   });
-  
+
   const [tableLoading, setTableLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({});
@@ -90,16 +91,28 @@ function Company() {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Failed to fetch companies");
+      showError(error.response?.data?.message || "Failed to fetch companies");
     } finally {
       setTableLoading(false);
     }
   }, [pagination.page, pagination.limit]);
 
+  const fetchIndustries = useCallback(async () => {
+    try {
+      const res = await axios.get("/industries?limit=100&isActive=true");
+      if (res.data.success) {
+        setIndustries(res.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching industries:", error);
+    }
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     fetchCompanies();
-  }, [fetchCompanies]);
+    fetchIndustries();
+  }, [fetchCompanies, fetchIndustries]);
 
   const columns = [
     {
@@ -113,24 +126,24 @@ function Company() {
             <button
               className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
-              disabled={loading === `status-${row._id}`}
+              disabled={loading === `status-${row.id || row._id}`}
             >
               <Edit2 size={20} />
             </button>
           </Tooltip>
 
           <DeleteConfirmationModal
-            id={row._id}
+            id={row.id || row._id}
             itemName={row.name}
-            onConfirm={() => handleDelete(row._id)}
-            loading={loading === `deleting-${row._id}`}
+            onConfirm={() => handleDelete(row.id || row._id)}
+            loading={loading === `deleting-${row.id || row._id}`}
           >
             <Tooltip title={<span className="font-bold">Delete</span>} placement="top">
               <button
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
-                disabled={loading === `deleting-${row._id}` || loading === `status-${row._id}`}
+                disabled={loading === `deleting-${row.id || row._id}` || loading === `status-${row.id || row._id}`}
               >
-                {loading === `deleting-${row._id}` ? (
+                {loading === `deleting-${row.id || row._id}` ? (
                   <Loader2 className="animate-spin" />
                 ) : (
                   <Trash2 size={20} />
@@ -141,26 +154,26 @@ function Company() {
         </div>
       ),
     },
-    { 
-      label: "Company Name", 
+    {
+      label: "Company Name",
       accessor: "name",
-      sortable: true 
+      sortable: true
     },
-    { 
-      label: "Email", 
+    {
+      label: "Email",
       accessor: "email",
       sortable: true,
       filter: true,
     },
-    { 
-      label: "Contact Person", 
-      accessor: "contactPersonName", 
+    {
+      label: "Contact Person",
+      accessor: "contactPersonName",
       sortable: true,
       filter: true,
       Cell: ({ row }) => row.contactPersonName || "N/A"
     },
-    { 
-      label: "Industry", 
+    {
+      label: "Industry",
       accessor: "industry",
       sortable: true,
       filter: true,
@@ -189,17 +202,15 @@ function Company() {
           </span>
           <button
             onClick={() => toggleStatus(row)}
-            disabled={loading === `status-${row._id}`}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-              row.isActive ? "bg-green-500" : "bg-gray-300"
-            }`}
+            disabled={loading === `status-${row.id || row._id}`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${row.isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.isActive ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.isActive ? "translate-x-6" : "translate-x-1"
+                }`}
             >
-              {loading === `status-${row._id}` && (
+              {loading === `status-${row.id || row._id}` && (
                 <Loader2 className="animate-spin w-4 h-4" />
               )}
             </span>
@@ -210,7 +221,7 @@ function Company() {
   ];
 
   const handleEdit = (row) => {
-    setEditId(row._id);
+    setEditId(row.id || row._id);
     setFormData({
       name: row.name || "",
       email: row.email || "",
@@ -233,11 +244,11 @@ function Company() {
     try {
       const res = await axios.delete(`/companies/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "Company deleted successfully");
+        showSuccess(res.data.message || "Company deleted successfully");
         fetchCompanies();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error deleting company:", error);
     } finally {
       setLoading("");
@@ -246,16 +257,17 @@ function Company() {
 
   const toggleStatus = async (company) => {
     try {
-      setLoading(`status-${company._id}`);
-      const res = await axios.patch(`/companies/${company._id}`, {
+      const companyId = company.id || company._id;
+      setLoading(`status-${companyId}`);
+      const res = await axios.patch(`/companies/${companyId}/status`, {
         isActive: !company.isActive,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         fetchCompanies();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading("");
@@ -265,7 +277,7 @@ function Company() {
   const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      toast.error("Please fill all required fields (Name, Email, Phone)");
+      showError("Please fill all required fields (Name, Email, Phone)");
       return;
     }
 
@@ -278,12 +290,12 @@ function Company() {
         res = await axios.post("/companies", formData);
       }
       if (res.data.success) {
-        toast.success(res.data.message || "Operation completed successfully");
+        showSuccess(res.data.message || "Operation completed successfully");
         fetchCompanies();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading("");
@@ -360,16 +372,19 @@ function Company() {
     [fetchCompanies, filters, sortConfig]
   );
 
-  const industryOptions = [
-    "Technology",
-    "Healthcare",
-    "Finance",
-    "Education",
-    "Manufacturing",
-    "Retail",
-    "Hospitality",
-    "Other",
-  ];
+  const industryOptions = industries.map(ind => ind.name);
+  if (industryOptions.length === 0) {
+    industryOptions.push(
+      "Technology",
+      "Healthcare",
+      "Finance",
+      "Education",
+      "Manufacturing",
+      "Retail",
+      "Hospitality",
+      "Other"
+    );
+  }
 
   return (
     <div className="max-w-sm md:max-w-6xl mx-auto px-2">

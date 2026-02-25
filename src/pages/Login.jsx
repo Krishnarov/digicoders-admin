@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, OctagonPause } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.jsx";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { showSuccess, showError } from "../utils/toast";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -23,9 +23,9 @@ const Login = () => {
       // Verify OTP
       const result = await verifyOtp(credentials);
       if (result.success) {
-        toast.success("OTP verified successfully!");
+        showSuccess("OTP verified successfully!");
       } else {
-        toast.error(result.message || "OTP verification failed");
+        showError(result.message || "OTP verification failed");
       }
     } else {
       // Regular login
@@ -35,28 +35,16 @@ const Login = () => {
       if (result.isTwoFactor) {
         toast.info("OTP sent to your email. Please check and enter OTP.");
       } else if (result.success) {
-        toast.success("Login successful!");
+        showSuccess("Login successful!");
       } else {
         setCredentials({ ...credentials, otp: "" });
-        toast.error(result.message || "Login failed");
+        showError(result.message || "Login failed");
       }
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">

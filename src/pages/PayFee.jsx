@@ -8,7 +8,7 @@ import {
   Fullscreen,
 } from "lucide-react";
 import axios from "../axiosInstance";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import { Dialog, DialogContent, IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Select from "react-select";
@@ -113,7 +113,7 @@ function PayFee() {
       const res = await axios.get("/qrcode");
       setQrcodes(res.data.data);
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      showError(error.response.data.message || error.message);
       console.error("Error fetching QR codes:", error);
     }
   }, []);
@@ -140,10 +140,10 @@ function PayFee() {
         setSelectedQrCode(selectedQr.image.url);
         setQrModalOpen(true);
       } else {
-        toast.error("QR code not found or image not available");
+        showError("QR code not found or image not available");
       }
     } else {
-      toast.error("Please select a QR code first");
+      showError("Please select a QR code first");
     }
   };
 
@@ -155,7 +155,7 @@ function PayFee() {
   const handleRegister = async () => {
     setIsLoading(true);
     if (!formData.registrationId) {
-      toast.error("Please select a student first");
+      showError("Please select a student first");
       return setIsLoading(false);
     }
 
@@ -177,7 +177,7 @@ function PayFee() {
 
 
       if (res.data.success) {
-        toast.success(res.data.message || "Payment successful");
+        showSuccess(res.data.message || "Payment successful");
         setTimeout(() => {
           window.open(`/receipt/${res.data.id}`, "_blank");
         }, 1500);
@@ -200,7 +200,7 @@ function PayFee() {
       setSelectedImage(null);
     } catch (error) {
       console.log(error);
-      toast.error(
+      showError(
         error.response.data.message || error.message || "Payment failed"
       );
     } finally {
@@ -210,7 +210,7 @@ function PayFee() {
 
   const searchStudent = async () => {
     if (!formData.searchTerm.trim()) {
-      toast.error("Please enter student userId, mobile, or email");
+      showError("Please enter student userId, mobile, or email");
       return;
     }
 
@@ -232,7 +232,7 @@ function PayFee() {
               dueAmount: enrollment.dueAmount || 0,
               newDueAmount: enrollment.dueAmount || 0,
             }));
-            toast.success("Student found!");
+            showSuccess("Student found!");
           } else {
             setStudentEnrollments(res.data.data);
             setShowEnrollmentsModal(true);
@@ -245,14 +245,14 @@ function PayFee() {
             amount: res.data.data.dueAmount || 0,
             dueAmount: res.data.data.dueAmount || 0,
           }));
-          toast.success("Student found!");
+          showSuccess("Student found!");
         }
       } else {
-        toast.error("Student not found");
+        showError("Student not found");
       }
     } catch (error) {
       console.log(error);
-      toast.error(
+      showError(
         error.response.data.message ||
         error.message ||
         "Error searching for student"
@@ -271,7 +271,7 @@ function PayFee() {
       dueAmount: enrollment.dueAmount || 0,
     }));
     setShowEnrollmentsModal(false);
-    toast.success("Enrollment selected!");
+    showSuccess("Enrollment selected!");
   };
 
   return (

@@ -34,7 +34,7 @@ import {
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import { format } from "date-fns";
 import useGetFee from "../hooks/useGetFee";
 
@@ -56,11 +56,21 @@ function FeeReports() {
 
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
+  const [overallStats, setOverallStats] = useState({
+    totalRecords: 0,
+    totalAmount: 0,
+    totalPaid: 0,
+    totalDue: 0,
+  });
   
   // Local state for filter inputs
   const [localFilters, setLocalFilters] = useState({
     branch: "",
     batch: "",
+    paymentType: "",
+    mode: "",
+    tnxStatus: "",
+    qrcode: "",
     search: "",
     startDate: "",
     endDate: "",
@@ -74,11 +84,35 @@ function FeeReports() {
       paymentType: filters.paymentType || "",
       mode: filters.mode || "",
       tnxStatus: filters.tnxStatus || "",
+      qrcode: filters.qrcode || "",
       search: filters.search || "",
       startDate: filters.startDate || "",
       endDate: filters.endDate || "",
     });
   }, [filters]);
+
+  // Fetch overall stats on mount
+  useEffect(() => {
+    const fetchOverallStats = async () => {
+      try {
+        const res = await axios.get("/fee", {
+          params: { limit: 100000, page: 1 },
+        });
+        if (res.data.success) {
+          const allData = res.data.data;
+          setOverallStats({
+            totalRecords: res.data.pagination.total,
+            totalAmount: allData.reduce((sum, item) => sum + (item.amount || 0), 0),
+            totalPaid: allData.reduce((sum, item) => sum + (item.paidAmount || 0), 0),
+            totalDue: allData.reduce((sum, item) => sum + (item.dueAmount || 0), 0),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching overall stats:", error);
+      }
+    };
+    fetchOverallStats();
+  }, []);
 
   // Handle filter changes
   const handleFilterChange = (field, value) => {
@@ -139,38 +173,86 @@ function FeeReports() {
       paymentType: "",
       mode: "",
       tnxStatus: "",
+      qrcode: "",
       search: "",
       startDate: "",
       endDate: "",
     });
   };
 
-  // Export to Excel
+  // Export to CSV
   const handleExportExcel = async () => {
     try {
-      const params = { ...filters };
-      params.limit = 10000; // Get all records
-      params.page = 1;
+      const params = { ...filters, limit: 100000, page: 1 };
+      const res = await axios.get("/fee", { params });
+      
+      if (!res.data.success || !res.data.data.length) {
+        showError("No data to export");
+        return;
+      }
 
-      const res = await axios.get("/fee/export", {
-        params,
-        responseType: "blob",
-      });
+      const data = res.data.data;
+      
+      // CSV headers
+      const headers = [
+        "Receipt No",
+        "Student Name",
+        "Mobile",
+        "Branch",
+        "Batch",
+        "Payment Date",
+        "Amount",
+        "Payment Type",
+        "Payment Mode",
+        "Total Fee",
+        "Discount",
+        "Final Fee",
+        "Due Amount",
+        "Paid Amount",
+        "QR Code",
+        "Transaction ID",
+        "Transaction Status",
+        "Remark"
+      ];
 
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      // CSV rows
+      const rows = data.map(row => [
+        row.receiptNo || "-",
+        row.registration?.studentName || "-",
+        row.registration?.mobile || "-",
+        row.registration?.branch?.name || "-",
+        row.registration?.batch?.name || "-",
+        row.paymentDate ? format(new Date(row.paymentDate), "dd-MM-yyyy HH:mm") : "-",
+        row.amount || 0,
+        row.paymentType || "-",
+        row.mode || "-",
+        row.totalFee || 0,
+        row.discount || 0,
+        row.finalFee || 0,
+        row.dueAmount || 0,
+        row.paidAmount || 0,
+        row.qrcode?.name || "-",
+        row.tnxId || "-",
+        row.tnxStatus || "-",
+        row.remark || "-"
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `fee-report-${format(new Date(), "dd-MM-yyyy")}.xlsx`
-      );
-      document.body.appendChild(link);
+      link.href = URL.createObjectURL(blob);
+      link.download = `fee-report-${format(new Date(), "dd-MM-yyyy")}.csv`;
       link.click();
-      link.remove();
 
-      toast.success("Report exported successfully");
+      showSuccess("Report exported successfully");
     } catch (error) {
-      toast.error("Failed to export report");
+      showError("Failed to export report");
       console.error(error);
     }
   };
@@ -203,6 +285,8 @@ function FeeReports() {
     });
   };
 
+  console.log("Filter Options:", filterOptions);
+
   // Columns configuration
   const columns = [
     {
@@ -233,7 +317,7 @@ function FeeReports() {
           size="small"
         />
       ),
-      filter: false,
+      filter: true,
       filterKey: "tnxStatus",
       filterOptions: filterOptions.tnxStatuses || [],
     },
@@ -245,21 +329,21 @@ function FeeReports() {
     },
     {
       label: "Student Name",
-      accessor: "registrationId.studentName",
-      Cell: ({ row }) => row.registrationId?.studentName || "N/A",
+      accessor: "registration.studentName",
+      Cell: ({ row }) => row.registration?.studentName || "-",
       filter: false,
       filterKey: "studentName",
     },
     {
       label: "Mobile",
-      accessor: "registrationId.mobile",
-      Cell: ({ row }) => row.registrationId?.mobile || "N/A",
+      accessor: "registration.mobile",
+      Cell: ({ row }) => row.registration?.mobile || "N/A",
       filter: false,
     },
     {
       label: "Branch",
-      accessor: "registrationId.branch.name",
-      Cell: ({ row }) => row.registrationId?.branch?.name || "N/A",
+      accessor: "registration.branch.name",
+      Cell: ({ row }) => row.registration?.branch?.name || "N/A",
       filter: true,
       filterKey: "branch",
       filterOptions: filterOptions.branches?.map(b => ({
@@ -269,8 +353,8 @@ function FeeReports() {
     },
     {
       label: "Batch",
-      accessor: "registrationId.batch.name",
-      Cell: ({ row }) => row.registrationId?.batch?.name || "N/A",
+      accessor: "registration.batch.name",
+      Cell: ({ row }) => row.registration?.batch?.name || "N/A",
       filter: true,
       filterKey: "batch",
       filterOptions: filterOptions.batches?.map(b => ({
@@ -293,14 +377,14 @@ function FeeReports() {
     {
       label: "Payment Type",
       accessor: "paymentType",
-      filter: false,
+      filter: true,
       filterKey: "paymentType",
       filterOptions: filterOptions.paymentTypes || [],
     },
     { 
       label: "Payment mode", 
       accessor: "mode",
-      filter: false,
+      filter: true,
       filterKey: "mode",
       filterOptions: filterOptions.modes || [],
     },
@@ -309,6 +393,17 @@ function FeeReports() {
     { label: "Final Fee", accessor: "finalFee", filter: false },
     { label: "Due Amount", accessor: "dueAmount", filter: false },
     { label: "Paid Amount", accessor: "paidAmount", filter: false },
+    {
+      label: "QR Code",
+      accessor: "qrcode.name",
+      Cell: ({ row }) => row.qrcode?.name || "-",
+      filter: true,
+      filterKey: "qrcode",
+      filterOptions: filterOptions.qrcodes?.map(q => ({
+        value: q._id,
+        label: q.name
+      })) || [],
+    },
     {
       label: "Tnx ID",
       accessor: "tnxId",
@@ -395,36 +490,78 @@ function FeeReports() {
         </Box>
       </div>
 
-      {/* Summary Cards */}
-      <Grid container spacing={2} className="mb-4">
+      {/* Summary Cards - Overall Stats */}
+      <div className="flex justify-around gap-4 mb-4 w-full">
         {[
           {
             title: "Total Fee Records",
-            value: totals.totalStudents,
+            value: overallStats.totalRecords,
             color: "blue",
-            sub: "In current filter",
+            sub: "All records",
           },
           {
             title: "Total Amount",
-            value: `₹${totals.totalAmount.toLocaleString()}`,
+            value: `₹${overallStats.totalAmount.toLocaleString()}`,
             color: "green",
-            sub: "Total transaction amount",
+            sub: "All transactions",
           },
           {
             title: "Total Paid",
-            value: `₹${totals.totalPaid.toLocaleString()}`,
+            value: `₹${overallStats.totalPaid.toLocaleString()}`,
             color: "purple",
-            sub: "Amount received",
+            sub: "Total received",
           },
           {
             title: "Total Due",
-            value: `₹${totals.totalDue.toLocaleString()}`,
+            value: `₹${overallStats.totalDue.toLocaleString()}`,
             color: "orange",
-            sub: "Pending amount",
+            sub: "Total pending",
           },
         ].map((item, i) => (
-          <Grid item xs={12} sm={6} md={3} key={i}>
-            <Paper className={`p-4 border-l-4 border-${item.color}-500 shadow-sm`}>
+          <Paper key={i} className={`p-4 border-l-4 border-${item.color}-500 shadow-sm flex-1`}>
+            <Typography variant="subtitle2" className="text-gray-600">
+              {item.title}
+            </Typography>
+            <Typography variant="h6" className={`font-bold text-${item.color}-600`}>
+              {item.value}
+            </Typography>
+            <Typography variant="caption" className="text-gray-500">
+              {item.sub}
+            </Typography>
+          </Paper>
+        ))}
+      </div>
+
+      {/* Summary Cards - Filtered Stats */}
+      {appliedFiltersCount > 0 && (
+        <div className="flex justify-around gap-4 mb-4 w-full">
+          {[
+            {
+              title: "Filtered Records",
+              value: totals.totalStudents,
+              color: "blue",
+              sub: "In current filter",
+            },
+            {
+              title: "Filtered Amount",
+              value: `₹${totals.totalAmount.toLocaleString()}`,
+              color: "green",
+              sub: "Filtered transactions",
+            },
+            {
+              title: "Filtered Paid",
+              value: `₹${totals.totalPaid.toLocaleString()}`,
+              color: "purple",
+              sub: "Filtered received",
+            },
+            {
+              title: "Filtered Due",
+              value: `₹${totals.totalDue.toLocaleString()}`,
+              color: "orange",
+              sub: "Filtered pending",
+            },
+          ].map((item, i) => (
+            <Paper key={`filtered-${i}`} className={`p-4 border-l-4 border-${item.color}-400 shadow-sm bg-${item.color}-50 flex-1`}>
               <Typography variant="subtitle2" className="text-gray-600">
                 {item.title}
               </Typography>
@@ -435,9 +572,9 @@ function FeeReports() {
                 {item.sub}
               </Typography>
             </Paper>
-          </Grid>
-        ))}
-      </Grid>
+          ))}
+        </div>
+      )}
 
       {/* DataTable */}
       <DataTable

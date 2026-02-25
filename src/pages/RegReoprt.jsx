@@ -31,7 +31,7 @@ import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 import { Close } from "@mui/icons-material";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import { format } from "date-fns";
 
 function RegReport() {
@@ -59,12 +59,43 @@ function RegReport() {
   const [colleges, setColleges] = useState([]);
   const [technologies, setTechnologies] = useState([]);
   const [hrNames, setHrNames] = useState([]);
+  const [qrcodes, setQrcodes] = useState([]);
+  const [overallStats, setOverallStats] = useState({
+    totalRecords: 0,
+    totalAmount: 0,
+    totalPaid: 0,
+    totalDue: 0,
+  });
 
   // Initial fetch with default filters for accepted registrations
   useEffect(() => {
     fetchStudents({
       forceRefresh: true,
     });
+  }, []);
+
+  // Fetch overall stats on mount
+  useEffect(() => {
+    const fetchOverallStats = async () => {
+      try {
+        const params = new URLSearchParams();
+        params.append("page", 1);
+        params.append("limit", 100000);
+        const res = await axios.get(`/registration/all?${params.toString()}`);
+        if (res.data.success) {
+          const allData = res.data.data;
+          setOverallStats({
+            totalRecords: res.data.pagination.totalRecords,
+            totalAmount: allData.reduce((sum, item) => sum + (item.amount || 0), 0),
+            totalPaid: allData.reduce((sum, item) => sum + (item.paidAmount || 0), 0),
+            totalDue: allData.reduce((sum, item) => sum + (item.dueAmount || 0), 0),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching overall stats:", error);
+      }
+    };
+    fetchOverallStats();
   }, []);
 
   // Fetch filter options
@@ -77,13 +108,16 @@ function RegReport() {
       }
       // Get HR names
       const hrRes = await axios.get("/hr");
-
-
       if (hrRes.data.success) {
         setHrNames(hrRes.data.data.filter((h) => h.isActive));
       }
+      // Get QR codes
+      const qrRes = await axios.get("/qrcode");
+      if (qrRes.data.success) {
+        setQrcodes(qrRes.data.data.filter((q) => q.isActive));
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error(error);
     }
   };
@@ -293,12 +327,13 @@ function RegReport() {
       label: "Payment Method",
       accessor: "paymentMethod",
       sortable: true,
-      filter: false,
+      filter: true,
       filterKey: "paymentMethod",
       filterOptions: [
         { label: "Cash", value: "cash" },
-        { label: "Online", value: "online" },
-        { label: "Cheque", value: "cheque" },
+        { label: "UPI QR", value: "upi_qr" },
+        { label: "POS", value: "pos" },
+        { label: "Payment Link", value: "payment_link" },
       ],
     },
     {
@@ -318,7 +353,10 @@ function RegReport() {
     },
     {
       label: "QR Code",
-      accessor: "qrcode",
+      accessor: "qrcode.name",
+      filter: true,
+      filterKey: "qrcode",
+      filterOptions: qrcodes.map((q) => ({ label: q.name, value: q._id })),
       Cell: ({ row }) => (
         <div
           className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[120px]"
@@ -372,32 +410,98 @@ function RegReport() {
   const appliedFilters = getUserAppliedFilters();
   const appliedFiltersCount = appliedFilters.length;
 
-  // Export to Excel function
+  // Export to CSV function
   const handleExportExcel = async () => {
     try {
-      const params = { ...filters };
-      params.limit = 10000; // Get all records
-      params.page = 1;
+      // Build query parameters same as hook
+      const params = new URLSearchParams();
+      params.append("page", 1);
+      params.append("limit", 100000);
+      
+      // Add search if exists
+      if (searchTerm && searchTerm.trim()) {
+        params.append("search", searchTerm);
+      }
 
-      const res = await axios.get("/registration/export", {
-        params,
-        responseType: "blob",
+      // Add all filters
+      Object.keys(filters).forEach((key) => {
+        if (filters[key] && filters[key] !== "All") {
+          if (key === 'startDate' || key === 'endDate') {
+            params.append(key, filters[key]);
+          } else {
+            const paramKey = key.includes(".") ? key.split(".")[0] : key;
+            params.append(paramKey, filters[key]);
+          }
+        }
       });
 
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `registration-report-${format(new Date(), "dd-MM-yyyy")}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const res = await axios.get(`/registration/all?${params.toString()}`);
+      
+      if (!res.data.success || !res.data.data.length) {
+        showError("No data to export");
+        return;
+      }
 
-      toast.success("Report exported successfully");
+      const data = res.data.data;
+      
+      // CSV headers
+      const headers = [
+        "Enroll ID",
+        "Student Name",
+        "Father Name",
+        "Mobile",
+        "College Name",
+        "Technology",
+        "Branch",
+        "Amount",
+        "Total Fee",
+        "Paid Amount",
+        "Due Amount",
+        "Training Fee Status",
+        "Transaction Status",
+        "Payment Method",
+        "Registration Date",
+        "HR Name",
+        "QR Code"
+      ];
+
+      // CSV rows
+      const rows = data.map(row => [
+        row.userid || "-",
+        row.studentName || "-",
+        row.fatherName || "-",
+        row.mobile || "-",
+        row.collegeName?.name || "-",
+        row.technology?.name || "-",
+        row.branch?.name || "-",
+        row.amount || 0,
+        row.totalFee || 0,
+        row.paidAmount || 0,
+        row.dueAmount || 0,
+        row.trainingFeeStatus || "pending",
+        row.tnxStatus || "pending",
+        row.paymentMethod || "-",
+        row.createdAt ? format(new Date(row.createdAt), "dd-MM-yyyy HH:mm") : "-",
+        row.hrName?.name || "-",
+        row.qrcode?.name || "-"
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ].join("\n");
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `registration-report-${format(new Date(), "dd-MM-yyyy")}.csv`;
+      link.click();
+
+      showSuccess("Report exported successfully");
     } catch (error) {
-      toast.error("Failed to export report");
+      showError("Failed to export report");
       console.error(error);
     }
   };
@@ -452,63 +556,91 @@ function RegReport() {
         </Box>
       </div>
 
-      {/* Summary Cards */}
-      <Grid
-        container
-        className="mb-4"
-        justifyContent="space-between"
-        sx={{ width: "100%" }}
-      >
+      {/* Summary Cards - Overall Stats */}
+      <div className="flex justify-around gap-4 mb-4 w-full">
         {[
           {
             title: "Total Registrations",
-            value: totals.totalStudents,
+            value: overallStats.totalRecords,
             color: "blue",
-            sub: "In current filter",
+            sub: "All records",
           },
           {
             title: "Total Amount",
-            value: `₹${totals.totalAmount.toLocaleString()}`,
+            value: `₹${overallStats.totalAmount.toLocaleString()}`,
             color: "green",
-            sub: "Total registration amount",
+            sub: "All transactions",
           },
           {
             title: "Total Paid",
-            value: `₹${totals.totalPaid.toLocaleString()}`,
+            value: `₹${overallStats.totalPaid.toLocaleString()}`,
             color: "purple",
-            sub: "Amount received",
+            sub: "Total received",
           },
           {
             title: "Total Due",
-            value: `₹${totals.totalDue.toLocaleString()}`,
+            value: `₹${overallStats.totalDue.toLocaleString()}`,
             color: "orange",
-            sub: "Pending amount",
+            sub: "Total pending",
           },
         ].map((item, i) => (
-          <Grid
-            key={i}
-            item
-            sx={{ width: "23%" }} // 👈 important
-          >
-            <Paper
-              className={`p-3 border-l-4 border-${item.color}-500 shadow-sm`}
-            >
+          <Paper key={i} className={`p-4 border-l-4 border-${item.color}-500 shadow-sm flex-1`}>
+            <Typography variant="subtitle2" className="text-gray-600">
+              {item.title}
+            </Typography>
+            <Typography variant="h6" className={`font-bold text-${item.color}-600`}>
+              {item.value}
+            </Typography>
+            <Typography variant="caption" className="text-gray-500">
+              {item.sub}
+            </Typography>
+          </Paper>
+        ))}
+      </div>
+
+      {/* Summary Cards - Filtered Stats */}
+      {appliedFiltersCount > 0 && (
+        <div className="flex justify-around gap-4 mb-4 w-full">
+          {[
+            {
+              title: "Filtered Registrations",
+              value: totals.totalStudents,
+              color: "blue",
+              sub: "In current filter",
+            },
+            {
+              title: "Filtered Amount",
+              value: `₹${totals.totalAmount.toLocaleString()}`,
+              color: "green",
+              sub: "Filtered transactions",
+            },
+            {
+              title: "Filtered Paid",
+              value: `₹${totals.totalPaid.toLocaleString()}`,
+              color: "purple",
+              sub: "Filtered received",
+            },
+            {
+              title: "Filtered Due",
+              value: `₹${totals.totalDue.toLocaleString()}`,
+              color: "orange",
+              sub: "Filtered pending",
+            },
+          ].map((item, i) => (
+            <Paper key={`filtered-${i}`} className={`p-4 border-l-4 border-${item.color}-400 shadow-sm bg-${item.color}-50 flex-1`}>
               <Typography variant="subtitle2" className="text-gray-600">
                 {item.title}
               </Typography>
-              <Typography
-                variant="h5"
-                className={`font-bold text-${item.color}-600`}
-              >
+              <Typography variant="h6" className={`font-bold text-${item.color}-600`}>
                 {item.value}
               </Typography>
               <Typography variant="caption" className="text-gray-500">
                 {item.sub}
               </Typography>
             </Paper>
-          </Grid>
-        ))}
-      </Grid>
+          ))}
+        </div>
+      )}
 
       {/* Active Filters Display */}
       {/* {(appliedFiltersCount > 0 || searchTerm) && (

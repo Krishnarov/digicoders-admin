@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import DataTable from "../components/DataTable";
 import Select from "react-select";
 import {
@@ -111,7 +111,7 @@ function JobApplications() {
         setApplications(res.data.data);
       }
     } catch (error) {
-      toast.error("Failed to fetch applications");
+      showError("Failed to fetch applications");
     } finally {
       setLoading(false);
     }
@@ -152,12 +152,12 @@ function JobApplications() {
         }
       );
       if (res.data.success) {
-        toast.success("Status updated successfully");
+        showSuccess("Status updated successfully");
         setStatusModalOpen(false);
         fetchApplications();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+      showError(error.response?.data?.message || "Failed to update status");
     }
   };
 
@@ -168,7 +168,7 @@ function JobApplications() {
         interviewData
       );
       if (res.data.success) {
-        toast.success("Interview scheduled successfully");
+        showSuccess("Interview scheduled successfully");
         setInterviewModalOpen(false);
         setInterviewData({
           date: "",
@@ -179,7 +179,7 @@ function JobApplications() {
         fetchApplications();
       }
     } catch (error) {
-      toast.error(
+      showError(
         error.response?.data?.message || "Failed to schedule interview"
       );
     }
@@ -190,7 +190,7 @@ function JobApplications() {
     // if (cvUri) {
     //   window.open(cvUri, "_blank");
     // } else {
-    //   toast.error("CV not available for download");
+    //   showError("CV not available for download");
     // }
   };
 
@@ -254,14 +254,14 @@ function JobApplications() {
         status: "selected",
       });
       if (res.data.success) {
-        toast.success("Status updated successfully");
+        showSuccess("Status updated successfully");
         setStatusModalOpen(false);
         fetchApplications();
       }
     } catch (error) {
       console.log(error);
 
-      toast.error(error.response?.data?.message || "Failed to update status");
+      showError(error.response?.data?.message || "Failed to update status");
     }
   };
   const handleRejectStatus = async (row) => {
@@ -270,12 +270,12 @@ function JobApplications() {
         status: "rejected",
       });
       if (res.data.success) {
-        toast.success("Status updated successfully");
+        showSuccess("Status updated successfully");
         setStatusModalOpen(false);
         fetchApplications();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+      showError(error.response?.data?.message || "Failed to update status");
     }
   };
   const columns = [

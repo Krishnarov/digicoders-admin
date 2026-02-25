@@ -54,7 +54,7 @@ import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
 
 function Assignments() {
@@ -90,7 +90,7 @@ function Assignments() {
         setAssignments(res.data.assignments || []);
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      showError(error.response.data.message || error.message);
       console.error(error);
     }
   };
@@ -103,7 +103,7 @@ function Assignments() {
         setBatches(res.data.batches || []);
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      showError(error.response.data.message || error.message);
       console.error(error);
     }
   };
@@ -252,7 +252,7 @@ function Assignments() {
       filter: true,
     },
     {
-      label: "Due Date",
+      label: "Submission Date",
       accessor: "dueDate",
       Cell: ({ row }) => (
         <div className="flex items-center">
@@ -332,7 +332,7 @@ function Assignments() {
       // Implement multiple file download logic here
       setTimeout(() => {
         setLoading("");
-        toast.success("Files downloaded successfully");
+        showSuccess("Files downloaded successfully");
       }, 1000);
     } else {
       toast.info("No files attached to this assignment");
@@ -364,10 +364,10 @@ function Assignments() {
       setLoading(`deleting-${id}`);
       const res = await axios.delete(`/assignments/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "Assignment deleted successfully");
+        showSuccess(res.data.message || "Assignment deleted successfully");
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      showError(error.response.data.message || error.message);
       console.error("Error deleting assignment:", error);
     } finally {
       setLoading("");
@@ -412,10 +412,10 @@ function Assignments() {
       }
 
       if (res.data.success) {
-        toast.success(res.data.message || "Assignment saved successfully");
+        showSuccess(res.data.message || "Assignment saved successfully");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);
@@ -728,7 +728,7 @@ function Assignments() {
             {/* Due Date */}
             <TextField
               type="datetime-local"
-              label="Due Date"
+              label="Submission Date"
               name="dueDate"
               fullWidth
               value={formData.dueDate}

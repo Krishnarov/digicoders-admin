@@ -51,7 +51,7 @@ import {
 } from "@mui/material";
 import DataTable from '../components/DataTable';
 import axios from '../axiosInstance';
-import { toast } from 'react-toastify';
+import { showSuccess, showError, apiWithToast } from '../utils/toast';
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from 'date-fns';
 
 function AttendencReports() {
@@ -148,7 +148,7 @@ function AttendencReports() {
       }
     } catch (error) {
       console.error('Error fetching attendance reports:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch attendance reports');
+      showError(error.response?.data?.message || 'Failed to fetch attendance reports');
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ function AttendencReports() {
       }
     } catch (error) {
       console.error('Error fetching student report:', error);
-      toast.error('Failed to fetch student report');
+      showError('Failed to fetch student report');
     }
   };
 

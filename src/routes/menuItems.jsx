@@ -1,333 +1,3 @@
-// import {
-//   Home,
-//   UserPlus,
-//   UserCheck,
-//   UserX,
-//   UsersIcon,
-//   CreditCard,
-//   Plus,
-//   CheckCircle,
-//   XCircle,
-//   GraduationCap,
-//   Video,
-//   UploadCloud,
-//   FileText,
-//   BadgePercent,
-//   PhoneCall,
-//   Projector,
-//   Image,
-//   Group,
-//   Star,
-//   ScrollText,
-//   Handshake,
-//   Trophy,
-//   ThumbsUp,
-//   Users,
-//   GalleryHorizontal,
-//   PartyPopper,
-//   AlertCircle,
-//   Building2,
-//   Newspaper,
-//   Settings,
-//   LogOut,
-//   MessageCircle,
-//   LayoutList,
-//   Send,
-//   BookUser,
-//   CircleFadingPlus,
-//   BadgePlus,
-//   QrCode,
-//   PointerOffIcon,
-//   CalendarCheck,
-//   ClipboardCheck,
-//   Eye,
-//   Clock,
-//   Cpu,
-//   BookOpen,
-//   UserCog,
-//   Briefcase,
-//   MapPin,
-//   Layers,
-//   BarChart3,
-//   ClipboardList,
-//   User,
-// } from "lucide-react";
-
-// export const menuItems = [
-//   {
-//     path: "/dashboard",
-//     icon: Home,
-//     label: "Dashboard",
-//     active: true,
-//     roles: ["Admin", "Employee"],
-//   },
-//   {
-//     key: "students",
-//     icon: UserPlus,
-//     label: "Registrations",
-//     hasSubmenu: true,
-//     roles: ["Admin", "Employee"],
-//     submenu: [
-//       {
-//         path: "/AddStudent",
-//         label: "Add Student",
-//         icon: Plus,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "new",
-//         path: "/new",
-//         label: "New",
-//         icon: BadgePlus,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "accepted",
-//         path: "/accepted",
-//         label: "Accepted",
-//         icon: UserCheck,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "rejected",
-//         path: "/rejected",
-//         label: "Rejected",
-//         icon: UserX,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "all",
-//         path: "/all-students",
-//         label: "All Students",
-//         icon: UsersIcon,
-//         roles: ["Admin", "Employee"],
-//       },
-//     ],
-//   },
-
-//   {
-//     key: "fees",
-//     icon: CreditCard,
-//     label: "Fee Payments",
-//     hasSubmenu: true,
-//     roles: ["Admin", "Employee"],
-//     submenu: [
-//       {
-//         path: "/pay-fee",
-//         label: "Pay Fee",
-//         icon: CreditCard,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "new",
-//         path: "/new-fee",
-//         label: "New",
-//         icon: Plus,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "accepted",
-//         path: "/accepted-fee",
-//         label: "Accepted",
-//         icon: CheckCircle,
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         key: "rejected",
-//         path: "/rejected-fee",
-//         label: "Rejected",
-//         icon: XCircle,
-//         roles: ["Admin", "Employee"],
-//       },
-//     ],
-//   },
-//   {
-//     key: "attendance",
-//     icon: CalendarCheck,
-//     label: "Manage Attendance",
-//     hasSubmenu: true,
-//     roles: ["Admin", "Employee", "Intern"],
-//     submenu: [
-//       {
-//         path: "/attendance-marking",
-//         icon: ClipboardCheck,
-//         label: "Attendance Marking",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/attendance-viwe",
-//         icon: Eye,
-//         label: "Attendance View",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//     ],
-//   },
-//   {
-//     key: "setting",
-//     icon: Settings,
-//     label: "Manage Settings",
-//     hasSubmenu: true,
-//     roles: ["Admin"],
-//     submenu: [
-//       {
-//         path: "/duration",
-//         icon: Clock,
-//         label: "Training Duration",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/tranning",
-//         icon: Projector,
-//         label: "Tranning Type",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/technology",
-//         icon: Cpu,
-//         label: "Technology",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/education",
-//         icon: GraduationCap,
-//         label: "Education",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/course",
-//         icon: BookOpen,
-//         label: "Course",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/collages",
-//         icon: Building2,
-//         label: "Collages",
-//         roles: ["Admin", "Employee"],
-//       },
-
-//       {
-//         path: "/manage-hr",
-//         icon: UserCog,
-//         label: "Manage Hr",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/qr-code",
-//         icon: QrCode,
-//         label: "Qr Code",
-//         roles: ["Admin"],
-//       },
-//       {
-//         path: "/employee",
-//         icon: Users,
-//         label: "Manage Employee",
-//         roles: ["Admin"],
-//       },
-//       {
-//         path: "/teacher",
-//         icon: User,
-//         label: "Manage Teacher",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/branchs",
-//         icon: MapPin,
-//         label: "Manage Branches",
-//         roles: ["Admin", "Employee"],
-//       },
-//       {
-//         path: "/batchs",
-//         icon: Layers,
-//         label: "Manage Batchs",
-//         roles: ["Admin", "Employee"],
-//       },
-//     ],
-//   },
-//   {
-//     key: "Jobs",
-//     icon: Briefcase,
-//     label: "Manage Jobs",
-//     hasSubmenu: true,
-//     roles: ["Admin", "Employee", "Intern"],
-//     submenu: [
-//       {
-//         path: "/create-company",
-//         icon: Building2,
-//         label: "Manage Company",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/create-jobs",
-//         icon: Briefcase,
-//         label: "Manage Jobs",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/student-assing-job",
-//         icon: Handshake,
-//         label: "Student Assign Jobs",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/job-applications",
-//         icon: FileText,
-//         label: "Job Applications",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//     ],
-//   },
-//   {
-//     key: "Reports",
-//     icon: BarChart3,
-//     label: "Reports",
-//     hasSubmenu: true,
-//     roles: ["Admin", "Employee", "Intern"],
-//     submenu: [
-//       {
-//         path: "/reg-reoprts",
-//         icon: FileText,
-//         label: "Registration",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/fee-reports",
-//         icon: FileText,
-//         label: "Fee",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/absent-stu-reports",
-//         icon: UserX,
-//         label: "Absent Student",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//       {
-//         path: "/attendenc-reports",
-//         icon: ClipboardList,
-//         label: "Attendenc Reports",
-//         roles: ["Admin", "Employee", "Intern"],
-//       },
-//     ],
-//   },
-//   {
-//     path: "/assignments",
-//     icon: ClipboardList,
-//     label: "Manage Assignments",
-//     roles: ["Admin", "Employee"],
-//   },
-//   {
-//     path: "/profile",
-//     icon: User,
-//     label: "Profile",
-//     roles: ["Admin", "Employee"],
-//   },
-//   {
-//     path: "/",
-//     icon: LogOut,
-//     label: "Log Out",
-//   },
-// ];
 
 import {
   Home,
@@ -420,6 +90,14 @@ export const menuItems = [
         requiredPermission: "view_registrations"
       },
       {
+        key: "pending",
+        path: "/pending",
+        label: "Pending Payments",
+        icon: Clock,
+        roles: ["Super Admin", "Admin", "Employee"],
+        requiredPermission: "view_registrations"
+      },
+      {
         key: "accepted",
         path: "/accepted",
         label: "Accepted",
@@ -506,7 +184,7 @@ export const menuItems = [
         requiredPermission: "mark_attendance"
       },
       {
-        path: "/attendance-viwe",
+        path: "/attendance-view",
         icon: Eye,
         label: "View Attendance",
         roles: ["Super Admin", "Admin", "Employee"],
@@ -514,6 +192,15 @@ export const menuItems = [
       },
     ],
   },
+
+  {
+    path: "/batchs",
+    icon: Layers,
+    label: "Batches",
+    roles: ["Super Admin", "Admin", "Employee"],
+    requiredPermission: "manage_batch"
+  },
+
 
   // Assignments - Super Admin, Admin, Employee (with permissions)
   {
@@ -668,19 +355,26 @@ export const menuItems = [
         requiredPermission: "manage_tags"
       },
       {
+        path: "/industries",
+        icon: Building2,
+        label: "Industries",
+        roles: ["Super Admin", "Admin", "Employee"],
+        requiredPermission: "manage_tags"
+      },
+      {
         path: "/teacher",
         icon: User,
         label: "Teachers",
         roles: ["Super Admin", "Admin", "Employee"],
         requiredPermission: "manage_teacher"
       },
-      {
-        path: "/batchs",
-        icon: Layers,
-        label: "Batches",
-        roles: ["Super Admin", "Admin", "Employee"],
-        requiredPermission: "manage_batch"
-      },
+      // {
+      //   path: "/batchs",
+      //   icon: Layers,
+      //   label: "Batches",
+      //   roles: ["Super Admin", "Admin", "Employee"],
+      //   requiredPermission: "manage_batch"
+      // },
 
       // Super Admin Only
       {

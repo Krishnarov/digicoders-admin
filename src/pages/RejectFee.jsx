@@ -25,7 +25,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetFee from "../hooks/useGetFee";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import { Close } from "@mui/icons-material";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
@@ -289,10 +289,10 @@ function RejectFee() {
       setLoading(`deleting-${id}`);
       const res = await axios.delete(`/fee/delete/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "successfull");
+        showSuccess(res.data.message || "successfull");
       }
     } catch (error) {
-      toast.error(error.response.data.message || error.message);
+      showError(error.response.data.message || error.message);
       console.error("Error accepting payment:", error);
     } finally {
       setLoading(false);

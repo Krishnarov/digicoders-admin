@@ -109,16 +109,15 @@ function AttendanceView() {
     totalPages: 0,
   });
 
-  // Filtering
+  // Filtering and Tabs
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Date Range Filter
+  const [activeTab, setActiveTab] = useState(0);
   const [dateRange, setDateRange] = useState({
     startDate: "",
     endDate: "",
   });
 
-  // Chart Data States
+  // Chart and Analytics Data States
   const [dailyAttendance, setDailyAttendance] = useState([]);
   const [studentPerformance, setStudentPerformance] = useState([]);
   const [overallChartData, setOverallChartData] = useState([]);
@@ -140,6 +139,31 @@ function AttendanceView() {
     presentStudents: [],
     absentStudents: [],
   });
+
+  // Memos for Filtered Data
+  const filteredAttendanceData = useMemo(() => {
+    if (!searchTerm) return attendanceData;
+    const lower = searchTerm.toLowerCase();
+    return attendanceData.filter(record =>
+      new Date(record.date).toLocaleDateString("en-IN", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).toLowerCase().includes(lower) ||
+      record.attendBy?.name?.toLowerCase().includes(lower)
+    );
+  }, [attendanceData, searchTerm]);
+
+  const filteredStudentPerformance = useMemo(() => {
+    if (!searchTerm) return studentPerformance;
+    const lower = searchTerm.toLowerCase();
+    return studentPerformance.filter(s =>
+      s.name?.toLowerCase().includes(lower) ||
+      s.enrollmentNo?.toLowerCase().includes(lower) ||
+      s.fatherName?.toLowerCase().includes(lower)
+    );
+  }, [studentPerformance, searchTerm]);
 
   // Fetch batches on component mount
   useEffect(() => {
@@ -370,8 +394,8 @@ function AttendanceView() {
   };
 
   // Handle batch selection
-  const handleBatchChange = (e) => {
-    const batchId = e.target.value;
+  const handleBatchSelectChange = (selectedOption) => {
+    const batchId = selectedOption ? selectedOption.value : "";
     setSelectedBatch(batchId);
     // Reset pagination when batch changes
     setPagination({
@@ -381,6 +405,11 @@ function AttendanceView() {
       totalPages: 0,
     });
   };
+
+  const selectedBatchName = useMemo(() => {
+    const batch = batches.find((b) => b._id === selectedBatch);
+    return batch ? batch.batchName : "";
+  }, [batches, selectedBatch]);
 
   // Handle date range change
   const handleDateChange = (e) => {
@@ -430,17 +459,6 @@ function AttendanceView() {
       zIndex: 9999,
     }),
   });
-
-  const handleBatchSelectChange = (opt) => {
-    const batchId = opt?.value || "";
-    setSelectedBatch(batchId);
-    setPagination({
-      page: 1,
-      limit: 10,
-      total: 0,
-      totalPages: 0,
-    });
-  };
 
   // Clear all filters
   const clearFilters = () => {
@@ -602,9 +620,6 @@ function AttendanceView() {
     }
   };
 
-  // Get selected batch name
-  const selectedBatchName = batches.find((b) => b._id === selectedBatch)?.batchName || "";
-
   // DataTable columns for attendance
   const attendanceColumns = useMemo(() => [
     {
@@ -738,6 +753,79 @@ function AttendanceView() {
           </Button>
         );
       },
+    },
+  ], []);
+
+  const studentPerformanceColumns = useMemo(() => [
+    {
+      accessor: "name",
+      label: "Student Name",
+      Cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Avatar sx={{ width: 32, height: 32 }} className="bg-blue-100 text-blue-800">
+            {row.name?.charAt(0) || "?"}
+          </Avatar>
+          <div>
+            <Typography variant="body2" className="font-bold">
+              {row.name}
+            </Typography>
+            <Typography variant="caption" className="text-gray-500">
+              {row.enrollmentNo || "No Enrollment"}
+            </Typography>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessor: "fatherName",
+      label: "Father Name",
+      Cell: ({ row }) => row.fatherName || "N/A",
+    },
+    {
+      accessor: "total",
+      label: "Total Days",
+      align: "center",
+    },
+    {
+      accessor: "present",
+      label: "Present",
+      align: "center",
+      Cell: ({ row }) => (
+        <Typography variant="body2" className="text-green-600 font-medium">
+          {row.present}
+        </Typography>
+      ),
+    },
+    {
+      accessor: "absent",
+      label: "Absent",
+      align: "center",
+      Cell: ({ row }) => (
+        <Typography variant="body2" className="text-red-600 font-medium">
+          {row.absent}
+        </Typography>
+      ),
+    },
+    {
+      accessor: "attendance",
+      label: "Attendance %",
+      align: "center",
+      Cell: ({ row }) => (
+        <Box className="flex flex-col items-center">
+          <Typography
+            variant="body2"
+            className={`font-bold ${row.attendance >= 75 ? "text-green-600" : row.attendance >= 60 ? "text-yellow-600" : "text-red-600"}`}
+          >
+            {row.attendance}%
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={row.attendance}
+            className="w-20 mt-1"
+            color={row.attendance >= 75 ? "success" : row.attendance >= 60 ? "warning" : "error"}
+          />
+        </Box>
+      ),
     },
   ], []);
 
@@ -876,14 +964,26 @@ function AttendanceView() {
           />
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             <Button variant="outlined" startIcon={<FilterAlt />} onClick={clearFilters} size="small">
               Clear Filters
             </Button>
+            {selectedBatch && (
+              <Box className="ml-auto w-full md:w-64">
+                <TextField
+                  placeholder="Search students or dates..."
+                  size="small"
+                  fullWidth
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: <Search className="text-gray-400 mr-2" size={18} />,
+                  }}
+                />
+              </Box>
+            )}
           </div>
         </div>
-
-
       </Paper>
 
       {/* Summary Cards - Show only when batch is selected */}
@@ -973,50 +1073,88 @@ function AttendanceView() {
         </div>
       )}
 
-      {/* Attendance Data Table - Show only when batch is selected */}
+      {/* Attendance Content - Show only when batch is selected */}
       {selectedBatch && (
         <>
-          {/* Daily Attendance Table */}
-          <Paper className="shadow-lg rounded-xl overflow-hidden mb-6">
-            <div className="p-4 bg-gray-50 border-b">
-              <Typography variant="h6" className="font-bold">
-                Daily Attendance Records - {selectedBatchName}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Click on "View Details" to see student-wise attendance
-              </Typography>
-            </div>
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            className="mb-6 bg-white rounded-lg shadow-sm"
+            indicatorColor="primary"
+            textColor="primary"
+            variant="fullWidth"
+          >
+            <Tab icon={<CalendarMonth />} label="Daily Attendance Records" />
+            <Tab icon={<Person />} label="Student-wise Analytics" />
+          </Tabs>
 
-            <DataTable
-              columns={attendanceColumns}
-              data={attendanceData}
-              loading={loading.attendance}
-              pagination={true}
-              page={pagination.page}
-              limit={pagination.limit}
-              total={pagination.total}
-              totalPages={pagination.totalPages}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
-              showDateFilter={false}
-              filters={dateRange}
-              onFilterChange={(filters) => {
-                setDateRange(filters);
-                setPagination(prev => ({ ...prev, page: 1 }));
-              }}
-              emptyMessage={
-                <div className="p-8 text-center">
-                  <CalendarMonth className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <Typography variant="h6" className="text-gray-600 mb-2">
-                    No attendance records found
+          {activeTab === 0 ? (
+            <Paper className="shadow-lg rounded-xl overflow-hidden mb-6">
+              <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                <div>
+                  <Typography variant="h6" className="font-bold">
+                    Daily Attendance Records - {selectedBatchName}
                   </Typography>
-                  <Typography variant="body2" className="text-gray-500">
-                    Try adjusting your filters or check back later.
+                  <Typography variant="body2" color="textSecondary">
+                    Click on "View Details" to see student-wise attendance
                   </Typography>
                 </div>
-              }
-            />
-          </Paper>
+              </div>
+
+              <DataTable
+                columns={attendanceColumns}
+                data={filteredAttendanceData}
+                loading={loading.attendance}
+                pagination={true}
+                page={pagination.page}
+                limit={pagination.limit}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
+                showDateFilter={false}
+                search={false}
+                emptyMessage={
+                  <div className="p-8 text-center">
+                    <CalendarMonth className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <Typography variant="h6" className="text-gray-600 mb-2">
+                      No attendance records found
+                    </Typography>
+                    <Typography variant="body2" className="text-gray-500">
+                      Try adjusting your filters or search terms.
+                    </Typography>
+                  </div>
+                }
+              />
+            </Paper>
+          ) : (
+            <Paper className="shadow-lg rounded-xl overflow-hidden mb-6">
+              <div className="p-4 bg-gray-50 border-b">
+                <Typography variant="h6" className="font-bold">
+                  Student-wise Attendance Analytics - {selectedBatchName}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Detailed performance analysis for each student in the batch
+                </Typography>
+              </div>
+
+              <DataTable
+                columns={studentPerformanceColumns}
+                data={filteredStudentPerformance}
+                loading={loading.attendance}
+                pagination={false}
+                search={false}
+                emptyMessage={
+                  <div className="p-8 text-center">
+                    <Person className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <Typography variant="h6" className="text-gray-600 mb-2">
+                      No student data found
+                    </Typography>
+                  </div>
+                }
+              />
+            </Paper>
+          )}
         </>
       )}
 
@@ -1045,23 +1183,6 @@ function AttendanceView() {
         </DialogTitle>
 
         <DialogContent dividers className="p-0">
-          <div className="border-b flex gap-5">
-
-            <Badge badgeContent={detailsModal.presentStudents.length} color="success">
-              Present Students
-            </Badge>
-
-
-            <Badge badgeContent={detailsModal.absentStudents.length} color="error">
-              Absent Students
-            </Badge>
-
-            <Badge badgeContent={detailsModal.students.length} color="primary">
-              All Students
-            </Badge>
-
-          </div>
-
           <div className="p-4">
             {/* Present Students Table */}
             <div className="mb-6">
@@ -1075,7 +1196,6 @@ function AttendanceView() {
                       <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell>Father Name</TableCell>
-                        {/* <TableCell>Enrollment No</TableCell> */}
                         <TableCell>Status</TableCell>
                       </TableRow>
                     </TableHead>
@@ -1097,11 +1217,6 @@ function AttendanceView() {
                               {student.studentId?.fatherName || "N/A"}
                             </Typography>
                           </TableCell>
-                          {/* <TableCell>
-                            <Typography variant="body2">
-                              {student.studentId?.enrollmentNo || "N/A"}
-                            </Typography>
-                          </TableCell> */}
                           <TableCell>
                             <Chip
                               icon={<CheckCircle />}
@@ -1136,7 +1251,6 @@ function AttendanceView() {
                       <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell>Father Name</TableCell>
-                        {/* <TableCell>Enrollment No</TableCell> */}
                         <TableCell>Status</TableCell>
                       </TableRow>
                     </TableHead>
@@ -1158,11 +1272,6 @@ function AttendanceView() {
                               {student.studentId?.fatherName || "N/A"}
                             </Typography>
                           </TableCell>
-                          {/* <TableCell>
-                            <Typography variant="body2">
-                              {student.studentId?.enrollmentNo || "N/A"}
-                            </Typography>
-                          </TableCell> */}
                           <TableCell>
                             <Chip
                               icon={<Cancel />}

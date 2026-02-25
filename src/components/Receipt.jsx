@@ -7,6 +7,7 @@ import { QRCodeSVG } from "qrcode.react";
 import jsPDF from "jspdf";
 import { Button } from "@mui/material";
 import {
+  CloudCog,
   FileText,
   Image,
   ImageDown,
@@ -94,7 +95,7 @@ function Receipt() {
     str +=
       n[5] != 0
         ? (str != "" ? "AND " : "") +
-        (a[Number(n[5])] || b[n[5][0]] + " " + a[n[5][1]])
+          (a[Number(n[5])] || b[n[5][0]] + " " + a[n[5][1]])
         : "";
     return str.trim() + " RUPEES";
   }
@@ -157,7 +158,7 @@ Thank you for your payment 🙏`;
 
     // WhatsApp API link
     const url = `https://wa.me/91${whatsappNumber}?text=${encodeURIComponent(
-      message
+      message,
     )}`;
     window.open(url, "_blank");
   };
@@ -165,8 +166,7 @@ Thank you for your payment 🙏`;
   const capitalizeFirst = (text = "") =>
     text.charAt(0).toUpperCase() + text.slice(1);
 
-
-
+  console.log(feeData);
 
   return (
     <div className="p-2 max-w-3xl mx-auto text-xs">
@@ -217,7 +217,7 @@ Thank you for your payment 🙏`;
 
       <div
         id="receipt"
-        className="bg-white p-3 border border-gray-200"
+        className="bg-white p-3 border border-gray-200 relative"
         style={{ width: "210mm" }}
       >
         {/* Header Section */}
@@ -294,7 +294,9 @@ Thank you for your payment 🙏`;
               </span>
             </div>
             <div className="flex items-center w-[30%]">
-              <span className="font-semibold w-10 shrink-0">Year:</span>
+              <span className="font-semibold w-26 shrink-0">
+                Academic Year:
+              </span>
               <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
                 {feeData.registrationId?.eduYear}
               </span>
@@ -302,7 +304,9 @@ Thank you for your payment 🙏`;
           </div>
           <div className="mb-3 flex gap-4">
             <div className="flex items-center w-[70%]">
-              <span className="font-semibold w-30 shrink-0">Account Of:</span>
+              <span className="font-semibold w-30 shrink-0">
+                Registered For :
+              </span>
               <span className="flex-1 block min-w-0 border-b border-black  pb-0.5">
                 {feeData.registrationId?.training?.name}
               </span>
@@ -319,8 +323,8 @@ Thank you for your payment 🙏`;
         {/* Payment Mode Section */}
         <div className="mb-3 flex items-center">
           <h3 className="font-semibold mb-1">Payment Mode:</h3>
-          <div className="flex space-x-10 ml-7">
-            {["cash", "online"].map((mode) => (
+          {/* <div className="flex space-x-10 ml-7">
+            {["cash", "upi_qr", "pos", "payment_link"].map((mode) => (
               <div key={mode} className="flex items-center">
                 <input
                   type="checkbox"
@@ -328,11 +332,34 @@ Thank you for your payment 🙏`;
                   readOnly
                   className="mr-1"
                 />
-                <span>{mode}</span>
+                <span>{mode === "cash" ? "Cash":"Online" }</span>
               </div>
             ))}
+          </div> */}
+          <div className="flex space-x-10 ml-7">
+            {/* Cash */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={feeData.mode === "cash"}
+                readOnly
+                className="mr-1"
+              />
+              <span>Cash</span>
+            </div>
+
+            {/* Online */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={feeData.mode !== "cash"}
+                readOnly
+                className="mr-1"
+              />
+              <span>Online</span>
+            </div>
           </div>
-          {feeData.mode === "online" && (
+          {["upi_qr", "pos", "payment_link"].includes(feeData.mode) && (
             <div className="flex items-center ml-7">
               <h3 className="font-semibold mb-1">UTR No:</h3>
               <span className="flex-1 block min-w-0 border-b border-black ml-3 pb-0.5">
@@ -361,7 +388,8 @@ Thank you for your payment 🙏`;
                     type="checkbox"
                     checked={
                       (item === "Training Fee" &&
-                        feeData.paymentType === "installment" || feeData.paymentType === "full") ||
+                        feeData.paymentType === "installment") ||
+                      feeData.paymentType === "full" ||
                       (item === "Registration Fee" &&
                         feeData.paymentType === "registration")
                     }
@@ -411,14 +439,15 @@ Thank you for your payment 🙏`;
               <p>
                 <span>Payment Status : </span>{" "}
                 <span
-                  className={`uppercase ${feeData?.tnxStatus === "paid"
-                    ? "text-green-600"
-                    : feeData.tnxStatus === "full paid"
+                  className={`uppercase ${
+                    feeData?.tnxStatus === "paid"
                       ? "text-green-600"
-                      : feeData.tnxStatus === "failed"
-                        ? "text-red-600"
-                        : "text-orange-400"
-                    }`}
+                      : feeData.tnxStatus === "full paid"
+                        ? "text-green-600"
+                        : feeData.tnxStatus === "failed"
+                          ? "text-red-600"
+                          : "text-orange-400"
+                  }`}
                 >
                   {feeData?.tnxStatus}
                 </span>
@@ -461,6 +490,11 @@ Thank you for your payment 🙏`;
             </div>
           </div>
         </div>
+        <img
+          src="/img/digicoders-logo.png"
+          className=" absolute top-[20%] opacity-[5%]"
+          alt=""
+        />
       </div>
     </div>
   );

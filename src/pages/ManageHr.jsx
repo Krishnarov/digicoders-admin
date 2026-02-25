@@ -14,7 +14,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
 
 function ManageHr() {
@@ -80,7 +80,7 @@ function ManageHr() {
           }));
         }
       } catch (error) {
-        toast.error(error.response?.data?.message || error.message);
+        showError(error.response?.data?.message || error.message);
         console.error("Error fetching HR data:", error);
       } finally {
         setTableLoading(false);
@@ -96,7 +96,7 @@ function ManageHr() {
         setBranches(res.data.data.filter((b) => b.isActive));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error(error);
     }
   };
@@ -224,11 +224,11 @@ function ManageHr() {
       setLoading(`deleting-${id}`);
       const res = await axios.delete(`/hr/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "HR deleted successfully");
+        showSuccess(res.data.message || "HR deleted successfully");
         fetchHr();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error deleting HR:", error);
     } finally {
       setLoading("");
@@ -243,11 +243,11 @@ function ManageHr() {
       });
 
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         fetchHr();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading("");
@@ -263,7 +263,7 @@ function ManageHr() {
       !formData.officeNo.trim() ||
       !formData.branch
     ) {
-      toast.error("Please fill all required fields");
+      showError("Please fill all required fields");
       return;
     }
 
@@ -276,12 +276,12 @@ function ManageHr() {
         res = await axios.post("/hr", formData);
       }
       if (res.data.success) {
-        toast.success(res.data.message || "Operation successful");
+        showSuccess(res.data.message || "Operation successful");
         fetchHr();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);

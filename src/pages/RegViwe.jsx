@@ -40,7 +40,7 @@ import {
 } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import CustomModal from "../components/CustomModal";
 
 function RegView() {
@@ -115,9 +115,8 @@ function RegView() {
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-medium border ${
-          statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
-        }`}
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
+          }`}
       >
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
@@ -133,14 +132,24 @@ function RegView() {
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-medium border ${
-          statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
-        }`}
+        className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || "bg-gray-100 text-gray-800 border-gray-200"
+          }`}
       >
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
     );
   };
+  const handleSendSmsReminder = async () => {
+    try {
+
+      const res = await axiosInstance.get(`/reminders/pending/fees/${studentData._id}`);
+      if (res.data) {
+        showSuccess("Reminder sent successfully");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   const handleSendReminder = (type) => {
     let defaultMessage = "";
@@ -186,13 +195,13 @@ support@digicoders.in | www.digicoders.in`;
       const response = await axiosInstance.post("/reminders/send", payload);
 
       if (response.data.success) {
-        toast.success(`Reminder sent successfully via ${reminderDialog.type}`);
+        showSuccess(`Reminder sent successfully via ${reminderDialog.type}`);
       } else {
         alert("Failed to send reminder");
       }
     } catch (error) {
       console.error("Error sending reminder:", error);
-      toast.error("Error sending reminder");
+      showError("Error sending reminder");
     } finally {
       setSendingReminder(false);
       setReminderDialog({ open: false, type: "", message: "" });
@@ -200,15 +209,12 @@ support@digicoders.in | www.digicoders.in`;
   };
   const handleSendReminderPendingFee = async (row) => {
     try {
-      const res = await axiosInstance.post(`/fee/reminder`, {
-        mobile: studentData.mobile,
-        email: studentData.email,
-        paymentLink: row.paymentLink,
-        studentName: studentData.studentName,
-        amount: row.amount,
-      });
+
+      const res = await axiosInstance.get(`/reminders/pending/registrationfee/${row.registrationId}`);
+console.log(res);
+      
       if (res.data.success) {
-        toast.success("Reminder Send Successfully");
+        showSuccess("Reminder Send Successfully");
       }
     } catch (error) {
       console.log(error);
@@ -417,7 +423,7 @@ support@digicoders.in | www.digicoders.in`;
           <Button
             variant="outlined"
             startIcon={<PhoneIcon />}
-            onClick={() => handleSendReminder("sms")}
+            onClick={() => handleSendSmsReminder()}
             className="text-blue-600 border-blue-600 hover:bg-blue-50"
           >
             Send SMS Reminder
@@ -774,7 +780,7 @@ support@digicoders.in | www.digicoders.in`;
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">
                   Transaction ID
@@ -1047,9 +1053,8 @@ support@digicoders.in | www.digicoders.in`;
                 </label>
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${studentData?.isLogin ? "bg-green-500" : "bg-gray-400"
+                      }`}
                   ></div>
                   <span className="text-gray-900">
                     {studentData?.isLogin ? "Online" : "Offline"}
@@ -1062,9 +1067,8 @@ support@digicoders.in | www.digicoders.in`;
                 </label>
                 <div className="flex items-center space-x-2">
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      studentData?.isStatus ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${studentData?.isStatus ? "bg-green-500" : "bg-red-500"
+                      }`}
                   ></div>
                   <span className="text-gray-900">
                     {studentData?.isStatus ? "Active" : "Inactive"}

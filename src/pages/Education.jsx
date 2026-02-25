@@ -9,7 +9,7 @@ import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetEducations from "../hooks/useGetEducations";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function Education() {
   const { data: educations, pagination: paginationData } = useSelector((state) => state.education);
@@ -60,7 +60,7 @@ function Education() {
       });
     } catch (error) {
       console.error("Error loading education data:", error);
-      toast.error("Failed to load education data");
+      showError("Failed to load education data");
     } finally {
       setLoading(prev => ({ ...prev, table: false }));
     }
@@ -176,12 +176,12 @@ function Education() {
       const res = await axios.delete(`/education/${id}?action=delete`);
 
       if (res.data.success) {
-        toast.success(res.data.message || "Deleted successfully");
+        showSuccess(res.data.message || "Deleted successfully");
         // Refresh data immediately after delete
         await loadData();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to delete");
+      showError(error.response?.data?.message || error.message || "Failed to delete");
       console.error("Error deleting education:", error);
     } finally {
       setLoading(prev => ({ ...prev, delete: null }));
@@ -197,12 +197,12 @@ function Education() {
       });
 
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         // Refresh data immediately after status change
         await loadData();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to update status");
+      showError(error.response?.data?.message || error.message || "Failed to update status");
       console.error("Error toggling status:", error);
     } finally {
       setLoading(prev => ({ ...prev, status: null }));
@@ -218,7 +218,7 @@ function Education() {
 
       // Validate form data
       if (!formData.name.trim()) {
-        toast.error("Please enter education name");
+        showError("Please enter education name");
         return;
       }
 
@@ -230,13 +230,13 @@ function Education() {
       }
 
       if (res.data.success) {
-        toast.success(res.data.message || "Saved successfully");
+        showSuccess(res.data.message || "Saved successfully");
         // Refresh data immediately after save
         await loadData();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to save");
+      showError(error.response?.data?.message || error.message || "Failed to save");
       console.error("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);

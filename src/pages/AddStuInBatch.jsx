@@ -19,7 +19,7 @@ import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 import useGetTechnology from "../hooks/useGetTechnology";
 import useGetTranning from "../hooks/useGetTranning";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function AddStuInBatch() {
   const { batchId } = useParams();
@@ -75,7 +75,7 @@ function AddStuInBatch() {
         setSelectedStudents(batchStudentIds);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error(error);
     } finally {
       setLoading("");
@@ -164,11 +164,11 @@ function AddStuInBatch() {
         studentIds: selectedStudents,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Students updated successfully");
+        showSuccess(res.data.message || "Students updated successfully");
         navigate("/batchs");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error saving students:", error);
     } finally {
       setLoading("");

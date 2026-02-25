@@ -39,7 +39,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function Jobs() {
   const [loading, setLoading] = useState("");
@@ -71,14 +71,14 @@ function Jobs() {
   });
 
   const [editId, setEditId] = useState(null);
-  
+
   // State for pagination and filters
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
   });
-  
+
   const [tableLoading, setTableLoading] = useState(false);
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({});
@@ -122,7 +122,7 @@ function Jobs() {
         }));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch jobs");
+      showError(error.response?.data?.message || "Failed to fetch jobs");
     } finally {
       setTableLoading(false);
     }
@@ -144,7 +144,7 @@ function Jobs() {
         setTableLoading(false);
       }
     };
-    
+
     loadData();
   }, [fetchJobs]);
 
@@ -155,7 +155,7 @@ function Jobs() {
         setCompanies(res.data.data);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch companies");
+      showError(error.response?.data?.message || "Failed to fetch companies");
     }
   };
 
@@ -166,12 +166,12 @@ function Jobs() {
         setBatches(res.data.batches);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch batches");
+      showError(error.response?.data?.message || "Failed to fetch batches");
     }
   };
 
   const handleStudentSelect = (student) => {
-    if (!selectedStudents.some((s) => s._id === student._id)) {
+    if (!selectedStudents.some((s) => s.id === student.id || s._id === student._id)) {
       setSelectedStudents([...selectedStudents, student]);
     }
     setSearchTerm("");
@@ -192,13 +192,13 @@ function Jobs() {
     if (tempSelectedStudents.length === students.length) {
       setTempSelectedStudents([]);
     } else {
-      setTempSelectedStudents(students.map((student) => student._id));
+      setTempSelectedStudents(students.map((student) => student.id || student._id));
     }
   };
 
   const addSelectedStudentsToJob = () => {
     const studentsToAdd = students.filter((student) =>
-      tempSelectedStudents.includes(student._id)
+      tempSelectedStudents.includes(student.id || student._id)
     );
 
     setSelectedStudents([...selectedStudents, ...studentsToAdd]);
@@ -208,13 +208,13 @@ function Jobs() {
   };
 
   const removeStudent = (studentId) => {
-    setSelectedStudents(selectedStudents.filter((s) => s._id !== studentId));
+    setSelectedStudents(selectedStudents.filter((s) => (s.id || s._id) !== studentId));
   };
 
   const handleSubmit = async () => {
     // Validation
     if (!formData.title.trim() || !formData.company || !formData.location || !formData.salary.trim()) {
-      toast.error("Please fill all required fields (Title, Company, Location, Salary)");
+      showError("Please fill all required fields (Title, Company, Location, Salary)");
       return;
     }
 
@@ -223,7 +223,7 @@ function Jobs() {
       let res;
       const submitData = {
         ...formData,
-        assignedStudents: selectedStudents.map(student => student._id)
+        assignedStudents: selectedStudents.map(student => student.id || student._id)
       };
 
       if (editId) {
@@ -231,14 +231,14 @@ function Jobs() {
       } else {
         res = await axios.post("/jobs", submitData);
       }
-      
+
       if (res.data.success) {
-        toast.success(res.data.message || "Job saved successfully");
+        showSuccess(res.data.message || "Job saved successfully");
         handleClose();
         fetchJobs();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to save job");
+      showError(error.response?.data?.message || "Failed to save job");
     } finally {
       setLoading("");
     }
@@ -266,7 +266,7 @@ function Jobs() {
       setSelectedStudents(job.assignedStudents);
     }
 
-    setEditId(job._id);
+    setEditId(job.id || job._id);
     setOpen(true);
   };
 
@@ -275,11 +275,11 @@ function Jobs() {
     try {
       const res = await axios.delete(`/jobs/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "Job deleted successfully");
+        showSuccess(res.data.message || "Job deleted successfully");
         fetchJobs();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete job");
+      showError(error.response?.data?.message || "Failed to delete job");
     } finally {
       setLoading("");
     }
@@ -287,18 +287,19 @@ function Jobs() {
 
   const toggleStatus = async (job) => {
     try {
-      setLoading(`status-${job._id}`);
+      const jobId = job.id || job._id;
+      setLoading(`status-${jobId}`);
       const newStatus = job.status === "active" ? "inactive" : "active";
 
-      const res = await axios.patch(`/jobs/${job._id}/status`, {
+      const res = await axios.patch(`/jobs/${jobId}/status`, {
         status: newStatus,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         fetchJobs();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+      showError(error.response?.data?.message || "Failed to update status");
     } finally {
       setLoading("");
     }
@@ -391,9 +392,9 @@ function Jobs() {
             placement="top"
           >
             <Link
-              to={`/student-assing-job/${row._id}`}
+              to={`/student-assing-job/${row.id || row._id}`}
               className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
-              disabled={loading === `status-${row._id}`}
+              disabled={loading === `status-${row.id || row._id}`}
             >
               <UserPlus size={20} />
             </Link>
@@ -405,27 +406,27 @@ function Jobs() {
             <button
               className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
               onClick={() => handleEdit(row)}
-              disabled={loading === `status-${row._id}` || loading === `deleting-${row._id}`}
+              disabled={loading === `status-${row.id || row._id}` || loading === `deleting-${row.id || row._id}`}
             >
               <Edit2 size={20} />
             </button>
           </Tooltip>
 
           <DeleteConfirmationModal
-            id={row._id}
+            id={row.id || row._id}
             itemName={row.title}
-            onConfirm={() => handleDelete(row._id)}
-            loading={loading === `deleting-${row._id}`}
+            onConfirm={() => handleDelete(row.id || row._id)}
+            loading={loading === `deleting-${row.id || row._id}`}
           >
             <Tooltip
               title={<span className="font-bold">Delete</span>}
               placement="top"
             >
-              <button 
+              <button
                 className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
-                disabled={loading === `deleting-${row._id}` || loading === `status-${row._id}`}
+                disabled={loading === `deleting-${row.id || row._id}` || loading === `status-${row.id || row._id}`}
               >
-                {loading === `deleting-${row._id}` ? (
+                {loading === `deleting-${row.id || row._id}` ? (
                   <Loader2 className="animate-spin" />
                 ) : (
                   <Trash2 size={20} />
@@ -436,10 +437,10 @@ function Jobs() {
         </div>
       ),
     },
-    { 
-      label: "Job Title", 
+    {
+      label: "Job Title",
       accessor: "title",
-      sortable: true 
+      sortable: true
     },
     {
       label: "Company",
@@ -448,20 +449,20 @@ function Jobs() {
       filter: true,
       Cell: ({ row }) => row.company?.name || "N/A",
     },
-    { 
-      label: "Location", 
+    {
+      label: "Location",
       accessor: "location",
       sortable: true,
       filter: true,
     },
-    { 
-      label: "Type", 
+    {
+      label: "Type",
       accessor: "jobType",
       sortable: true,
       filter: true,
     },
-    { 
-      label: "Salary", 
+    {
+      label: "Salary",
       accessor: "salary",
       sortable: true,
       filter: true,
@@ -471,10 +472,10 @@ function Jobs() {
       accessor: "assignedStudents",
       sortable: true,
       Cell: ({ row }) => (
-        <Chip 
-          label={row.assignedStudents?.length || 0} 
-          color={row.assignedStudents?.length > 0 ? "primary" : "default"} 
-          size="small" 
+        <Chip
+          label={row.assignedStudents?.length || 0}
+          color={row.assignedStudents?.length > 0 ? "primary" : "default"}
+          size="small"
         />
       ),
     },
@@ -490,17 +491,15 @@ function Jobs() {
           </span>
           <button
             onClick={() => toggleStatus(row)}
-            disabled={loading === `status-${row._id}`}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
-              row.status === "active" ? "bg-green-500" : "bg-gray-300"
-            }`}
+            disabled={loading === `status-${row.id || row._id}`}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${row.status === "active" ? "bg-green-500" : "bg-gray-300"
+              }`}
           >
             <span
-              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${
-                row.status === "active" ? "translate-x-6" : "translate-x-1"
-              }`}
+              className={`inline-block w-4 h-4 transform transition-transform rounded-full bg-white shadow-md ${row.status === "active" ? "translate-x-6" : "translate-x-1"
+                }`}
             >
-              {loading === `status-${row._id}` && (
+              {loading === `status-${row.id || row._id}` && (
                 <Loader2 className="animate-spin w-4 h-4" />
               )}
             </span>
@@ -592,7 +591,7 @@ function Jobs() {
               <em>- Select Company -</em>
             </MenuItem>
             {companies.map((company) => (
-              <MenuItem key={company._id} value={company._id}>
+              <MenuItem key={company.id || company._id} value={company.id || company._id}>
                 {company.name}
               </MenuItem>
             ))}
@@ -729,10 +728,10 @@ function Jobs() {
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {selectedStudents.map((student) => (
                 <Chip
-                  key={student._id}
+                  key={student.id || student._id}
                   avatar={<Avatar>{student.studentName?.charAt(0) || "S"}</Avatar>}
                   label={student.studentName || "Unknown"}
-                  onDelete={() => removeStudent(student._id)}
+                  onDelete={() => removeStudent(student.id || student._id)}
                   variant="outlined"
                   disabled={loading === "Save"}
                 />

@@ -25,6 +25,9 @@ import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetFee from "../hooks/useGetFee";
 import { Close } from "@mui/icons-material";
+import { ActionButton } from "../components/LoadingComponents";
+import { showSuccess, showError } from "../utils/toast";
+import { useLoading } from "../hooks/useLoading";
 
 function AcceptFee() {
   const defaultFilters = useMemo(() => ({ status: "accepted" }), []);
@@ -40,7 +43,7 @@ function AcceptFee() {
     clearFilters,
   } = useGetFee(defaultFilters);
   const [actionLoading, setActionLoading] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { loading: rejectLoading, startLoading, stopLoading, isLoading } = useLoading();
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -69,17 +72,16 @@ function AcceptFee() {
             title={<span className="font-bold ">Reject</span>}
             placement="top"
           >
-            <button
+            <ActionButton
               className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
               onClick={() => handleReject(row._id)}
               disabled={row.status === "rejected"}
-            >
-              {loading === `Reject-${row._id}` ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <X size={20} />
-              )}
-            </button>
+              loading={rejectLoading}
+              loadingKey={`Reject-${row._id}`}
+              currentLoadingKey={actionLoading}
+              icon={X}
+              size={20}
+            />
           </Tooltip>
           <Tooltip
             title={<span className="font-bold ">Print</span>}
@@ -290,12 +292,20 @@ function AcceptFee() {
 
   const handleReject = async (id) => {
     try {
-      setLoading(`Reject-${id}`);
-      await axios.patch(`/fee/status/${id}`, { status: "rejected" });
+      setActionLoading(`Reject-${id}`);
+      startLoading(`Reject-${id}`);
+      const response = await axios.patch(`/fee/status/${id}`, { status: "rejected" });
+      
+      if (response.data.success) {
+        showSuccess(response.data.message || "Payment rejected successfully");
+      } else {
+        showError(response.data.message || "Failed to reject payment");
+      }
     } catch (error) {
-      console.error("Error rejecting payment:", error);
+      showError(error?.response?.data?.message || error?.message || "Error rejecting payment");
     } finally {
-      setLoading(false);
+      setActionLoading("");
+      stopLoading();
     }
   };
 

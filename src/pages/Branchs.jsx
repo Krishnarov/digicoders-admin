@@ -7,7 +7,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function Branchs() {
   const [branches, setBranches] = useState([]);
@@ -65,7 +65,7 @@ function Branchs() {
         }));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error fetching branches:", error);
     } finally {
       setTableLoading(false);
@@ -172,11 +172,11 @@ function Branchs() {
       setLoading(`deleting-${id}`);
       const res = await axios.delete(`/branches/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "Branch deleted successfully");
+        showSuccess(res.data.message || "Branch deleted successfully");
         fetchBranches();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error deleting branch:", error);
     } finally {
       setLoading("");
@@ -191,11 +191,11 @@ function Branchs() {
         isActive: !row.isActive,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         fetchBranches();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading("");
@@ -206,7 +206,7 @@ function Branchs() {
   const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim()) {
-      toast.error("Branch name is required");
+      showError("Branch name is required");
       return;
     }
 
@@ -220,12 +220,12 @@ function Branchs() {
       }
       
       if (res.data.success) {
-        toast.success(res.data.message || "Operation successful");
+        showSuccess(res.data.message || "Operation successful");
         fetchBranches();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);

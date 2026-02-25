@@ -28,7 +28,7 @@ import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import useGetStudents from "../hooks/useGetStudent";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
 import moment from "moment";
 
@@ -107,7 +107,7 @@ function Batchs() {
         }));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to load batches");
+      showError(error.response?.data?.message || error.message || "Failed to load batches");
       console.error(error);
     } finally {
       setTableLoading(false);
@@ -123,7 +123,7 @@ function Batchs() {
         setTeachers(res.data.teacher || []);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to load teachers");
+      showError(error.response?.data?.message || error.message || "Failed to load teachers");
       console.error(error);
     }
   }, [formData.branch]);
@@ -136,7 +136,7 @@ function Batchs() {
         setBranches(res.data.data.filter((b) => b.isActive) || []);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to load branches");
+      showError(error.response?.data?.message || error.message || "Failed to load branches");
       console.error(error);
     }
   }, []);
@@ -367,10 +367,10 @@ function Batchs() {
       const data = new Blob([excelBuffer], { type: "application/octet-stream" });
       saveAs(data, `${batch.batchName.replace(/\s+/g, '_')}_Students.xlsx`);
 
-      toast.success("Excel file downloaded successfully");
+      showSuccess("Excel file downloaded successfully");
     } catch (error) {
       console.error("Error exporting to Excel:", error);
-      toast.error("Failed to export Excel file");
+      showError("Failed to export Excel file");
     } finally {
       setLoading(prev => ({ ...prev, export: null }));
     }
@@ -381,12 +381,12 @@ function Batchs() {
       setLoading(prev => ({ ...prev, status: batch._id }));
       const res = await axios.patch(`/batches/updatestatus/${batch._id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         // Refresh data immediately
         await getAllBatches();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to update status");
+      showError(error.response?.data?.message || error.message || "Failed to update status");
       console.error("Error toggling status:", error);
     } finally {
       setLoading(prev => ({ ...prev, status: null }));
@@ -415,12 +415,12 @@ function Batchs() {
       setLoading(prev => ({ ...prev, delete: id }));
       const res = await axios.delete(`/batches/${id}`);
       if (res.data.success) {
-        toast.success(res.data.message || "Deleted successfully");
+        showSuccess(res.data.message || "Deleted successfully");
         // Refresh data immediately after delete
         await getAllBatches();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to delete");
+      showError(error.response?.data?.message || error.message || "Failed to delete");
       console.error("Error deleting batch:", error);
     } finally {
       setLoading(prev => ({ ...prev, delete: null }));
@@ -438,23 +438,23 @@ function Batchs() {
 
       // Validate form data
       if (!formData.batchName.trim()) {
-        toast.error("Please enter batch name");
+        showError("Please enter batch name");
         return;
       }
       if (!formData.branch) {
-        toast.error("Please select branch");
+        showError("Please select branch");
         return;
       }
       if (!formData.startDate) {
-        toast.error("Please select start date");
+        showError("Please select start date");
         return;
       }
       if (!formData.classTime.trim()) {
-        toast.error("Please enter class time");
+        showError("Please enter class time");
         return;
       }
       if (!formData.subject.trim()) {
-        toast.error("Please enter subject");
+        showError("Please enter subject");
         return;
       }
 
@@ -471,13 +471,13 @@ function Batchs() {
       }
 
       if (res.data.success) {
-        toast.success(res.data.message || "Saved successfully");
+        showSuccess(res.data.message || "Saved successfully");
         // Refresh data immediately after save
         await getAllBatches();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to save");
+      showError(error.response?.data?.message || error.message || "Failed to save");
       console.error("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);

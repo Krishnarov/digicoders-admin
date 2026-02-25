@@ -7,7 +7,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function QrCode() {
   const [loading, setLoading] = useState("");
@@ -71,7 +71,7 @@ function QrCode() {
         }));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.log(error);
     } finally {
       setTableLoading(false);
@@ -208,11 +208,11 @@ function QrCode() {
       const res = await axios.delete(`/qrcode/${id}`);
       
       if (res.data.success) {
-        toast.success(res.data.message || "QR Code deleted successfully");
+        showSuccess(res.data.message || "QR Code deleted successfully");
         getAllQrCodes();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error deleting QR code:", error);
     } finally {
       setLoading("");
@@ -226,11 +226,11 @@ function QrCode() {
         isActive: !data.isActive,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         getAllQrCodes();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading("");
@@ -240,7 +240,7 @@ function QrCode() {
   const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim() || !formData.bankName.trim() || !formData.upi.trim()) {
-      toast.error("Please fill all required fields");
+      showError("Please fill all required fields");
       return;
     }
 
@@ -271,12 +271,12 @@ function QrCode() {
       }
       
       if (res.data.success) {
-        toast.success(res.data.message || "Operation successful");
+        showSuccess(res.data.message || "Operation successful");
         getAllQrCodes();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);

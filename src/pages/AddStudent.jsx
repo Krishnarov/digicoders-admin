@@ -13,7 +13,7 @@ import {
 import { useSelector } from "react-redux";
 import axios from "../axiosInstance";
 import Select from "react-select";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 import useGetTranning from "../hooks/useGetTranning";
 import useGetTechnology from "../hooks/useGetTechnology";
@@ -209,10 +209,10 @@ const AddStudent = () => {
         setSelectedQrCode(selectedQr.image.url);
         setQrModalOpen(true);
       } else {
-        toast.error("QR code not found or image not available");
+        showError("QR code not found or image not available");
       }
     } else {
-      toast.error("Please select a QR code first");
+      showError("Please select a QR code first");
     }
   };
   const handleQrModalClose = () => {
@@ -320,12 +320,12 @@ const AddStudent = () => {
         if (response.data.success) {
           populateFormData(response.data.data);
         } else {
-          toast.error("Failed to load student data");
+          showError("Failed to load student data");
           navigate("/accepted");
         }
       } catch (error) {
         console.error("Error loading student data:", error);
-        toast.error("Error loading student data");
+        showError("Error loading student data");
         navigate("/accepted");
       } finally {
         setIsLoading(false);
@@ -555,7 +555,7 @@ const AddStudent = () => {
               paymentMethod: stu.paymentMethod || "cash",
               remark: stu.remark || "",
             }));
-            toast.success("Student found!");
+            showSuccess("Student found!");
           } else if (res.data.data.length === 0) {
             // No enrollments found, show modal to add
             setFormData((prev) => ({
@@ -599,10 +599,10 @@ const AddStudent = () => {
             paymentMethod: stu.paymentMethod || "cash",
             remark: stu.remark || "",
           }));
-          toast.success("Student found!");
+          showSuccess("Student found!");
         }
       } else {
-        toast.error("Student not found");
+        showError("Student not found");
         resetForm();
       }
     } catch (error) {
@@ -640,7 +640,7 @@ const AddStudent = () => {
       remark: enrollment.remark,
     }));
     setShowEnrollmentsModal(false);
-    toast.success("Enrollment selected!");
+    showSuccess("Enrollment selected!");
   };
 
   // Main form submission
@@ -692,14 +692,14 @@ const AddStudent = () => {
           success: true,
           message: "Student updated successfully!",
         });
-        toast.success("Student updated successfully!");
+        showSuccess("Student updated successfully!");
       } else {
         res = await axios.post(`/registration/register`, registrationData);
         setRegistrationStatus({
           success: true,
           message: "Student registered successfully!",
         });
-        toast.success("Registration successful!");
+        showSuccess("Registration successful!");
       }
 
       if (res.data.success) {
@@ -727,7 +727,7 @@ const AddStudent = () => {
             ? "Update failed. Please try again."
             : "Registration failed. Please try again."),
       });
-      toast.error(
+      showError(
         error.response?.data?.message ||
         (isEditMode
           ? "Update failed. Please try again."
@@ -878,7 +878,7 @@ const AddStudent = () => {
           {/* Student Email ID */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student Email ID *
+              Student Email ID (Optional)
             </label>
             <input
               type="email"

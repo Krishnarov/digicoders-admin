@@ -31,7 +31,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
 
 const ITEM_HEIGHT = 48;
@@ -113,7 +113,7 @@ function Collages() {
       }
     } catch (error) {
       console.error("Error fetching colleges:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch colleges");
+      showError(error.response?.data?.message || "Failed to fetch colleges");
     } finally {
       setTableLoading(false);
     }
@@ -129,7 +129,7 @@ function Collages() {
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch courses");
+      showError(error.response?.data?.message || "Failed to fetch courses");
     }
   }, []);
 
@@ -300,11 +300,11 @@ function Collages() {
       setLoading(true);
       const res = await axios.delete(`/college/${id}`);
       if (res.data.success) {
-        toast.success("College deleted successfully");
+        showSuccess("College deleted successfully");
         fetchCollegeNames();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete college");
+      showError(error.response?.data?.message || "Failed to delete college");
     } finally {
       setLoading(false);
     }
@@ -317,11 +317,11 @@ function Collages() {
       const res = await axios.patch(`/college/${row._id}/${endpoint}`);
 
       if (res.data.success) {
-        toast.success("Status updated successfully");
+        showSuccess("Status updated successfully");
         fetchCollegeNames();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+      showError(error.response?.data?.message || "Failed to update status");
     } finally {
       setLoading(false);
     }
@@ -329,7 +329,7 @@ function Collages() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      toast.error("College name is required");
+      showError("College name is required");
       return;
     }
 
@@ -340,12 +340,12 @@ function Collages() {
         : await axios.post("/college", formData);
 
       if (res.data.success) {
-        toast.success(editId ? "College updated" : "College created");
+        showSuccess(editId ? "College updated" : "College created");
         fetchCollegeNames();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Operation failed");
+      showError(error.response?.data?.message || "Operation failed");
     } finally {
       setLoading(false);
     }

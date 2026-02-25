@@ -23,8 +23,10 @@ import CustomModal from "../components/CustomModal";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import useGetFee from "../hooks/useGetFee";
-import { toast } from "react-toastify";
 import { Close } from "@mui/icons-material";
+import { ActionButton } from "../components/LoadingComponents";
+import { showSuccess, showError } from "../utils/toast";
+import { useLoading } from "../hooks/useLoading";
 
 function NewFee() {
   // Use custom hook for fee data with default status "new"
@@ -42,6 +44,7 @@ function NewFee() {
   } = useGetFee(defaultFilters); // Pass default status as "new"
 
   const [actionLoading, setActionLoading] = useState("");
+  const { loading: buttonLoading, startLoading, stopLoading } = useLoading();
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -95,19 +98,20 @@ function NewFee() {
   const handleAccept = async (id) => {
     try {
       setActionLoading(`Accept-${id}`);
+      startLoading(`Accept-${id}`);
       const res = await axios.patch(`/fee/status/${id}`, {
         status: "accepted",
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Payment accepted successfully");
+        showSuccess(res.data.message || "Payment accepted successfully");
         // Refresh data
         updateFilters({}); // This will trigger a refetch
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-      console.error("Error accepting payment:", error);
+      showError(error?.response?.data?.message || error?.message || "Error accepting payment");
     } finally {
       setActionLoading("");
+      stopLoading();
     }
   };
 
@@ -115,19 +119,20 @@ function NewFee() {
   const handleReject = async (id) => {
     try {
       setActionLoading(`Reject-${id}`);
+      startLoading(`Reject-${id}`);
       const res = await axios.patch(`/fee/status/${id}`, {
         status: "rejected",
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Payment rejected successfully");
+        showSuccess(res.data.message || "Payment rejected successfully");
         // Refresh data
         updateFilters({});
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-      console.error("Error rejecting payment:", error);
+      showError(error?.response?.data?.message || error?.message || "Error rejecting payment");
     } finally {
       setActionLoading("");
+      stopLoading();
     }
   };
 
@@ -165,40 +170,34 @@ function NewFee() {
       sortable: false,
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          {/* <Tooltip title={<span className="font-bold">View</span>} placement="top">
-            <button
-              className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600"
-              onClick={() => handleView(row)}
-            >
-              <Eye size={20} />
-            </button>
-          </Tooltip> */}
-          <Tooltip title={<span className="font-bold">Accept</span>} placement="top">
-            <button
-              className="px-2 py-1 rounded-md hover:bg-green-100 transition-colors border text-green-600"
-              onClick={() => handleAccept(row._id)}
-              disabled={row.status === "accepted"}
-            >
-              {actionLoading === `Accept-${row._id}` ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <Check size={20} />
-              )}
-            </button>
-          </Tooltip>
-          <Tooltip title={<span className="font-bold">Reject</span>} placement="top">
-            <button
-              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
-              onClick={() => handleReject(row._id)}
-              disabled={row.status === "rejected"}
-            >
-              {actionLoading === `Reject-${row._id}` ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <X size={20} />
-              )}
-            </button>
-          </Tooltip>
+          {row.mode !== "payment_link" && (
+            <>
+              <Tooltip title={<span className="font-bold">Accept</span>} placement="top">
+                <ActionButton
+                  className="px-2 py-1 rounded-md hover:bg-green-100 transition-colors border text-green-600"
+                  onClick={() => handleAccept(row._id)}
+                  disabled={row.status === "accepted"}
+                  loading={buttonLoading}
+                  loadingKey={`Accept-${row._id}`}
+                  currentLoadingKey={actionLoading}
+                  icon={Check}
+                  size={20}
+                />
+              </Tooltip>
+              <Tooltip title={<span className="font-bold">Reject</span>} placement="top">
+                <ActionButton
+                  className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+                  onClick={() => handleReject(row._id)}
+                  disabled={row.status === "rejected"}
+                  loading={buttonLoading}
+                  loadingKey={`Reject-${row._id}`}
+                  currentLoadingKey={actionLoading}
+                  icon={X}
+                  size={20}
+                />
+              </Tooltip>
+            </>
+          )}
           <Tooltip title={<span className="font-bold">Print</span>} placement="top">
             <button
               className="px-2 py-1 rounded-md hover:bg-purple-100 transition-colors border text-purple-600"

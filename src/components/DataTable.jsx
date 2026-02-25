@@ -22,6 +22,7 @@ import {
   Skeleton,
   Button,
 } from "@mui/material";
+import { TableSkeleton } from "./LoadingComponents";
 import { Calendar, X } from "lucide-react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -406,15 +407,7 @@ function DataTable({
 
             <TableBody>
               {loading ? (
-                Array.from(new Array(limit)).map((_, index) => (
-                  <TableRow key={index}>
-                    {columns.map((col, colIndex) => (
-                      <TableCell key={colIndex}>
-                        <Skeleton animation="wave" height={24} />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                <TableSkeleton columns={columns.filter(col => col.show !== false)} rows={limit} />
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell

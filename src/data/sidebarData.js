@@ -168,7 +168,7 @@ export const menuItems = [
                 requiredPermission: "mark_attendance"
             },
             {
-                path: "/attendance-viwe",
+                path: "/attendance-view",
                 icon: Eye,
                 label: "View Attendance",
                 roles: ["Super Admin", "Admin", "Employee"],

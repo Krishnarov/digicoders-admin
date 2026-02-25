@@ -35,7 +35,7 @@ import { useSelector } from "react-redux";
 import useGetTranning from "../hooks/useGetTranning";
 import useGetTechnology from "../hooks/useGetTechnology";
 import useGetEducations from "../hooks/useGetEducations";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
 import CustomModal from "../components/CustomModal";
 
@@ -624,10 +624,10 @@ function UpdateStudent() {
 
       if (response.data.success) {
 
-        toast.success("Student data updated successfully!")
+        showSuccess("Student data updated successfully!")
         navigate("/accepted");
       } else {
-        toast.error("Failed to update student: " + response.data.message)
+        showError("Failed to update student: " + response.data.message)
         alert("Failed to update student: " + response.data.message);
       }
     } catch (error) {

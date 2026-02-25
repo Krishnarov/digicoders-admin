@@ -15,7 +15,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function Teacher() {
   const [loading, setLoading] = useState("");
@@ -81,7 +81,7 @@ function Teacher() {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
     } finally {
       setTableLoading(false);
     }
@@ -95,7 +95,7 @@ function Teacher() {
         setBranches(res.data.data.filter((b) => b.isActive));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error(error);
     }
   };
@@ -211,11 +211,11 @@ function Teacher() {
       });
 
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         getAllTeachers();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error toggling status:", error);
     } finally {
       setLoading("");
@@ -240,11 +240,11 @@ function Teacher() {
       const res = await axios.delete(`/teachers/${id}`);
 
       if (res.data.success) {
-        toast.success(res.data.message || "Teacher deleted successfully");
+        showSuccess(res.data.message || "Teacher deleted successfully");
         getAllTeachers();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error deleting teacher:", error);
     } finally {
       setLoading("");
@@ -255,7 +255,7 @@ function Teacher() {
   const handleSubmit = async () => {
     // Validation
     if (!formData.name.trim() || !formData.phone.trim()) {
-      toast.error("Please fill all required fields");
+      showError("Please fill all required fields");
       return;
     }
 
@@ -269,12 +269,12 @@ function Teacher() {
       }
 
       if (res.data.success) {
-        toast.success(res.data.message || "Operation successful");
+        showSuccess(res.data.message || "Operation successful");
         getAllTeachers();
         handleClose();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error("Error submitting form:", error);
     } finally {
       setLoading(false);

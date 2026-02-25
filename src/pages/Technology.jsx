@@ -22,7 +22,7 @@ import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import useGetTechnology from "../hooks/useGetTechnology";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function Technology() {
   /* ================= HOOK ================= */
@@ -63,11 +63,11 @@ function Technology() {
       if (response.data.success) {
         setDurations(response.data.data || []);
       } else {
-        toast.error(response.data.message || "Failed to fetch durations");
+        showError(response.data.message || "Failed to fetch durations");
       }
     } catch (error) {
       console.error("Error fetching durations:", error);
-      toast.error(error.response?.data?.message || "Failed to load duration data");
+      showError(error.response?.data?.message || "Failed to load duration data");
     }
   };
 
@@ -216,10 +216,10 @@ function Technology() {
       await axios.delete(`/technology/delete/${id}`, {
         withCredentials: true,
       });
-      toast.success("Deleted successfully");
+      showSuccess("Deleted successfully");
       refreshTechnology();
     } catch (err) {
-      toast.error("Delete failed");
+      showError("Delete failed");
     } finally {
       setLoading((p) => ({ ...p, delete: null }));
     }
@@ -234,10 +234,10 @@ function Technology() {
         { isActive: !item.isActive },
         { withCredentials: true }
       );
-      toast.success("Status updated");
+      showSuccess("Status updated");
       refreshTechnology();
     } catch {
-      toast.error("Status update failed");
+      showError("Status update failed");
     } finally {
       setLoading((p) => ({ ...p, status: null }));
     }
@@ -250,7 +250,7 @@ function Technology() {
       setLoading((p) => ({ ...p, save: true }));
 
       if (!formData.name || !formData.duration || !formData.price) {
-        toast.error("All fields required");
+        showError("All fields required");
         return;
       }
 
@@ -269,10 +269,10 @@ function Technology() {
         });
       }
 
-      toast.success("Saved successfully");
+      showSuccess("Saved successfully");
       handleClose();
     } catch {
-      toast.error("Save failed");
+      showError("Save failed");
     } finally {
       refreshTechnology();
       setIsSubmitting(false);

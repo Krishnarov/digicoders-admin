@@ -71,7 +71,7 @@ const checkMenuItemPermission = (menuItem, permissions) => {
 
         // Attendance
         '/attendance-marking': 'mark_attendance',
-        '/attendance-viwe': 'view_attendance',
+        '/attendance-view': 'view_attendance',
 
         // Assignments
         '/assignments': ['create_assignment', 'view_assignment'],
@@ -131,7 +131,7 @@ export const checkRouteAccess = (path, user) => {
             '/accepted-fee': 'approve_fee',
             '/rejected-fee': 'reject_fee',
             '/attendance-marking': 'mark_attendance',
-            '/attendance-viwe': 'view_attendance',
+            '/attendance-view': 'view_attendance',
             '/assignments': ['create_assignment', 'view_assignment'],
             '/reg-reoprts': 'view_registration_report',
             '/fee-reports': 'view_fee_report',

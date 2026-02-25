@@ -34,7 +34,7 @@ import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 import useGetCount from "../hooks/useGetCount";
 import { Close } from "@mui/icons-material";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import useGetTechnology from "../hooks/useGetTechnology";
 
 function NewReg() {
@@ -90,7 +90,7 @@ function NewReg() {
         setBranches(res.data.data.filter((b) => b.isActive));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
       console.error(error);
     }
   };
@@ -393,13 +393,13 @@ function NewReg() {
         status: "accepted",
       });
       if (res.data.success) {
-        toast.success("Registration accepted successfully");
+        showSuccess("Registration accepted successfully");
         fetchCount();
         // Refresh current page with same filters
         fetchStudents({ forceRefresh: true });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
     } finally {
       setActionLoading(null);
     }
@@ -412,13 +412,13 @@ function NewReg() {
         status: "rejected",
       });
       if (res.data.success) {
-        toast.success("Registration rejected successfully");
+        showSuccess("Registration rejected successfully");
         fetchCount();
         // Refresh current page with same filters
         fetchStudents({ forceRefresh: true });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      showError(error.response?.data?.message || error.message);
     } finally {
       setActionLoading(null);
     }
@@ -449,6 +449,7 @@ function NewReg() {
 
   const appliedFilters = getUserAppliedFilters();
   const appliedFiltersCount = appliedFilters.length;
+
 
   return (
     <div className="max-w-sm md:max-w-6xl mx-auto px-2">

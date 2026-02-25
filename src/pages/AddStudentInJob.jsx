@@ -22,7 +22,7 @@ import { Home, ChevronRight, Users, UserPlus, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DataTable from "../components/DataTable";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
 
 function AddStudentInJob() {
@@ -56,7 +56,7 @@ function AddStudentInJob() {
         setBatches(res.data.batches || []);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch batches");
+      showError(error.response?.data?.message || "Failed to fetch batches");
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ function AddStudentInJob() {
         setJobs(res.data.data || []);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch jobs");
+      showError(error.response?.data?.message || "Failed to fetch jobs");
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ function AddStudentInJob() {
       setStudents(batchStudents);
       setTempSelectedStudents([]);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch students");
+      showError(error.response?.data?.message || "Failed to fetch students");
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ function AddStudentInJob() {
 
   const addSelectedStudentsToJob = async () => {
     if (!selectedJob) {
-      toast.error("Please select a job first");
+      showError("Please select a job first");
       return;
     }
 
@@ -182,7 +182,7 @@ function AddStudentInJob() {
       });
 
       if (res.data.success) {
-        toast.success(res.data.message || "Students added to job successfully");
+        showSuccess(res.data.message || "Students added to job successfully");
         setSelectedStudents([...selectedStudents, ...studentsToAdd]);
         setTempSelectedStudents([]);
         setSnackbar({
@@ -197,7 +197,7 @@ function AddStudentInJob() {
         setSelectedJob("");
       }
     } catch (error) {
-      toast.error(
+      showError(
         error.response?.data?.message || "Failed to add students to job"
       );
       setSnackbar({

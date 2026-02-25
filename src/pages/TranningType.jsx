@@ -15,7 +15,7 @@ import { debounce } from "lodash";
 import useGetTranning from "../hooks/useGetTranning";
 import { useSelector } from "react-redux";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 
 function TrainingType() {
   const data = useSelector((state) => state.tranning.data);
@@ -71,7 +71,7 @@ function TrainingType() {
       });
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Failed to load training data");
+      showError("Failed to load training data");
     } finally {
       setLoading(prev => ({ ...prev, table: false }));
     }
@@ -104,11 +104,11 @@ function TrainingType() {
       if (response.data.success) {
         setDurations(response.data.data || []);
       } else {
-        toast.error(response.data.message || "Failed to fetch durations");
+        showError(response.data.message || "Failed to fetch durations");
       }
     } catch (error) {
       console.error("Error fetching durations:", error);
-      toast.error(error.response?.data?.message || "Failed to load duration data");
+      showError(error.response?.data?.message || "Failed to load duration data");
     }
   };
 
@@ -167,13 +167,13 @@ function TrainingType() {
         withCredentials: true,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Deleted successfully");
+        showSuccess(res.data.message || "Deleted successfully");
         // Refresh data immediately after delete
         await loadData();
       }
     } catch (error) {
       console.error("Error deleting item:", error);
-      toast.error(error.response?.data?.message || error.message || "Failed to delete");
+      showError(error.response?.data?.message || error.message || "Failed to delete");
     } finally {
       setLoading(prev => ({ ...prev, delete: null }));
     }
@@ -195,13 +195,13 @@ function TrainingType() {
         }
       );
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         // Refresh data immediately after status change
         await loadData();
       }
     } catch (error) {
       console.error("Error toggling status:", error);
-      toast.error(error.response?.data?.message || error.message || "Failed to update status");
+      showError(error.response?.data?.message || error.message || "Failed to update status");
     } finally {
       setLoading(prev => ({ ...prev, status: null }));
     }
@@ -216,15 +216,15 @@ function TrainingType() {
 
       // Validate form data
       if (!formData.name.trim()) {
-        toast.error("Please enter training name");
+        showError("Please enter training name");
         return;
       }
       if (!formData.duration) {
-        toast.error("Please select duration");
+        showError("Please select duration");
         return;
       }
       if (!formData.registrationAmount) {
-        toast.error("Please enter registration amount");
+        showError("Please enter registration amount");
         return;
       }
 
@@ -242,14 +242,14 @@ function TrainingType() {
       }
 
       if (res.data.success) {
-        toast.success(res.data.message || "Saved successfully");
+        showSuccess(res.data.message || "Saved successfully");
         // Refresh data immediately after save
         await loadData();
         handleClose();
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(error.response?.data?.message || error.message || "Failed to save");
+      showError(error.response?.data?.message || error.message || "Failed to save");
     } finally {
       setIsSubmitting(false);
       setLoading(prev => ({ ...prev, save: false }));

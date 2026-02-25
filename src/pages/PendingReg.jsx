@@ -1,6 +1,10 @@
-
-
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   Home,
   ChevronRight,
@@ -11,7 +15,6 @@ import {
   Loader2,
   Filter,
   XCircle,
-  Edit2,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -25,19 +28,18 @@ import {
   Typography,
   Badge,
 } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import { useSelector } from "react-redux";
 import useGetStudents from "../hooks/useGetStudent";
 import useGetCount from "../hooks/useGetCount";
 import { Close } from "@mui/icons-material";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import useGetTechnology from "../hooks/useGetTechnology";
-import { ActionButton } from "../components/LoadingComponents";
-import { showSuccess, showError } from "../utils/toast";
-import { useLoading } from "../hooks/useLoading";
 
-function AllStudentReg() {
-
+function PendingReg() {
+  // Default filter for new registrations - ALWAYS applied
+  const defaultFilters = useMemo(() => ({ tnxStatus: "pending" }), []);
 
   const {
     fetchStudents,
@@ -48,17 +50,23 @@ function AllStudentReg() {
     changeSearch,
     clearAllFilters,
     currentState,
-    defaultFilters: hookDefaults
-  } = useGetStudents();
-  const { techState, fetchTechnology } = useGetTechnology()
-  const { data: students, pagination, loading, filters, searchTerm } = currentState;
+    defaultFilters: hookDefaults,
+  } = useGetStudents(defaultFilters);
+  const { techState, fetchTechnology } = useGetTechnology();
+
+  const {
+    data: students,
+    pagination,
+    loading,
+    filters,
+    searchTerm,
+  } = currentState;
   const [actionLoading, setActionLoading] = useState(null);
-  const { loading: buttonLoading, startLoading, stopLoading } = useLoading();
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrCode, setSelectedQrCode] = useState(null);
   const [branches, setBranches] = useState([]);
   const fetchCount = useGetCount();
-  const navigate = useNavigate();
+
   const didFetch = useRef(false);
 
   useEffect(() => {
@@ -67,13 +75,13 @@ function AllStudentReg() {
 
     const fetchInitialData = async () => {
       await fetchStudents({ forceRefresh: true, filters: {} });
+
       await fetchTechnology();
       await getAllBranches();
     };
 
     fetchInitialData();
   }, [fetchStudents]);
-
 
   const getAllBranches = async () => {
     try {
@@ -82,10 +90,10 @@ function AllStudentReg() {
         setBranches(res.data.data.filter((b) => b.isActive));
       }
     } catch (error) {
-      showError(error?.response?.data?.message || error?.message || "Error fetching branches");
+      showError(error.response?.data?.message || error.message);
+      console.error(error);
     }
   };
-
 
   const handlePrint = (student) => {
     window.open(`/receipt/${student._id}`, "_blank");
@@ -97,10 +105,7 @@ function AllStudentReg() {
       setQrModalOpen(true);
     }
   };
-  const handleEdit = (row) => {
-    // navigate(`/AddStudent/${row._id}`);
-    navigate(`/update-student/${row._id}`);
-  };
+
   const handleQrModalClose = () => {
     setQrModalOpen(false);
     setSelectedQrCode(null);
@@ -110,29 +115,52 @@ function AllStudentReg() {
 
   const columns = [
     {
-      label: "Action",
+      label: "Actions",
       accessor: "action",
+      sortable: false,
+      show: true,
       Cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <Link to={`/reg-student/${row._id}`}>
-            <Tooltip
-              title={<span className="font-bold ">View</span>}
-              placement="top"
-            >
+            <Tooltip title="View" placement="top">
               <button className="px-2 py-1 rounded-md hover:bg-blue-100 transition-colors border text-blue-600">
                 <Eye size={20} />
               </button>
             </Tooltip>
           </Link>
-          <Tooltip
-            title={<span className="font-bold ">Edit</span>}
-            placement="top"
-          >
+          <Tooltip title="Accept" placement="top">
             <button
-              className="px-2 py-1 rounded-md hover:bg-gray-100 transition-colors border text-gray-600"
-              onClick={() => handleEdit(row)}
+              className="px-2 py-1 rounded-md hover:bg-green-100 transition-colors border text-green-600"
+              onClick={() => handleAccept(row._id)}
+              disabled={row.status === "accepted" || actionLoading}
             >
-              <Edit2 size={20} />
+              {actionLoading === `Accept-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <Check size={20} />
+              )}
+            </button>
+          </Tooltip>
+          <Tooltip title="Reject" placement="top">
+            <button
+              className="px-2 py-1 rounded-md hover:bg-red-100 transition-colors border text-red-600"
+              onClick={() => handleReject(row._id)}
+              disabled={row.status === "rejected" || actionLoading}
+            >
+              {actionLoading === `Reject-${row._id}` ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <X size={20} />
+              )}
+            </button>
+          </Tooltip>
+          <Tooltip title="Print" placement="top">
+            <button
+              className="px-2 py-1 rounded-md hover:bg-purple-100 transition-colors border text-purple-600"
+              onClick={() => handlePrint(row)}
+              disabled={actionLoading}
+            >
+              <Printer size={20} />
             </button>
           </Tooltip>
         </div>
@@ -162,7 +190,7 @@ function AllStudentReg() {
       Cell: ({ row }) => (
         <Chip
           label={capitalizeFirst(row.tnxStatus || "pending")}
-          color={row.tnxStatus === "paid" ? row.tnxStatus === "full paid" ? "success" : "success" : "warning"}
+          color={row.tnxStatus === "paid" ? "success" : "warning"}
           variant="outlined"
           size="small"
         />
@@ -271,6 +299,12 @@ function AllStudentReg() {
       Cell: ({ row }) => (<span>{capitalizeFirst(row.fatherName)}</span>),
       sortable: true,
     },
+    {
+      label: "Tag",
+      accessor: "tag",
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.tag?.name)}</span>),
+      sortable: true,
+    },
 
     {
       label: "College Name",
@@ -349,14 +383,12 @@ function AllStudentReg() {
     {
       label: "Remark",
       accessor: "remark",
-
     },
   ];
 
   const handleAccept = async (id) => {
     try {
       setActionLoading(`Accept-${id}`);
-      startLoading(`Accept-${id}`);
       const res = await axios.patch(`/registration/status/${id}`, {
         status: "accepted",
       });
@@ -367,17 +399,15 @@ function AllStudentReg() {
         fetchStudents({ forceRefresh: true });
       }
     } catch (error) {
-      showError(error?.response?.data?.message || error?.message || "Error accepting registration");
+      showError(error.response?.data?.message || error.message);
     } finally {
       setActionLoading(null);
-      stopLoading();
     }
   };
 
   const handleReject = async (id) => {
     try {
       setActionLoading(`Reject-${id}`);
-      startLoading(`Reject-${id}`);
       const res = await axios.patch(`/registration/status/${id}`, {
         status: "rejected",
       });
@@ -388,10 +418,9 @@ function AllStudentReg() {
         fetchStudents({ forceRefresh: true });
       }
     } catch (error) {
-      showError(error?.response?.data?.message || error?.message || "Error rejecting registration");
+      showError(error.response?.data?.message || error.message);
     } finally {
       setActionLoading(null);
-      stopLoading();
     }
   };
 
@@ -409,7 +438,9 @@ function AllStudentReg() {
   const getUserAppliedFilters = () => {
     const userFilters = { ...filters };
     // Remove default filters
-
+    Object.keys(defaultFilters).forEach((key) => {
+      delete userFilters[key];
+    });
 
     return Object.entries(userFilters)
       .filter(([key, value]) => value && value !== "All")
@@ -419,13 +450,14 @@ function AllStudentReg() {
   const appliedFilters = getUserAppliedFilters();
   const appliedFiltersCount = appliedFilters.length;
 
+
   return (
     <div className="max-w-sm md:max-w-6xl mx-auto px-2">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <div className="flex items-center">
           <h1 className="text-2xl font-semibold text-gray-800 border-r-2 border-gray-300 pr-4 mr-4">
-            All Registerd Student
+            Pending Payments
           </h1>
           <Link
             to="/dashboard"
@@ -439,7 +471,6 @@ function AllStudentReg() {
 
         {/* Applied Filters Badge */}
         <Box className="flex items-center gap-2">
-
           {appliedFiltersCount > 0 && (
             <Button
               variant="outlined"
@@ -453,8 +484,6 @@ function AllStudentReg() {
           )}
         </Box>
       </div>
-
-
 
       {/* DataTable */}
       <DataTable
@@ -501,4 +530,4 @@ function AllStudentReg() {
   );
 }
 
-export default AllStudentReg;
+export default PendingReg;

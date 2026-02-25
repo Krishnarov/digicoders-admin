@@ -33,7 +33,7 @@ import { Stack } from "@mui/system";
 import { Link } from "react-router-dom";
 import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import { useSelector } from "react-redux";
 
 function Employee() {
@@ -89,7 +89,7 @@ function Employee() {
       }
     } catch (error) {
       console.error("Error fetching branches:", error);
-      toast.error("Failed to fetch branches");
+      showError("Failed to fetch branches");
     }
   };
 
@@ -136,7 +136,7 @@ function Employee() {
       }
     } catch (error) {
       console.error("Error fetching employees:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch employees");
+      showError(error.response?.data?.message || "Failed to fetch employees");
     } finally {
       setTableLoading(false);
     }
@@ -154,7 +154,7 @@ function Employee() {
       }
     } catch (error) {
       console.error("Error fetching permissions:", error);
-      toast.error("Failed to fetch permissions");
+      showError("Failed to fetch permissions");
     } finally {
       setPermissionLoading(false);
     }
@@ -172,7 +172,7 @@ function Employee() {
       }
     } catch (error) {
       console.error("Error fetching employee permissions:", error);
-      toast.error("Failed to fetch employee permissions");
+      showError("Failed to fetch employee permissions");
     }
   };
 
@@ -216,12 +216,12 @@ function Employee() {
 
 
       if (response.data.success) {
-        toast.success(response.data.message || "Permissions updated successfully");
+        showSuccess(response.data.message || "Permissions updated successfully");
         handleClosePermissionModal();
       }
     } catch (error) {
       console.error("Error saving permissions:", error.response?.data || error.message);
-      toast.error(error.response?.data?.message || "Failed to update permissions");
+      showError(error.response?.data?.message || "Failed to update permissions");
     } finally {
       setSavingPermissions(false);
     }
@@ -416,12 +416,12 @@ function Employee() {
       const res = await axios.delete(`/auth/delete/${id}`);
 
       if (res.data.success) {
-        toast.success(res.data.message || "Employee deleted successfully");
+        showSuccess(res.data.message || "Employee deleted successfully");
         getAllEmployees();
       }
     } catch (error) {
       console.error("Error deleting employee:", error);
-      toast.error(error.response?.data?.message || "Failed to delete employee");
+      showError(error.response?.data?.message || "Failed to delete employee");
     } finally {
       setLoading("");
     }
@@ -434,11 +434,11 @@ function Employee() {
         isActive: !data.isActive,
       });
       if (res.data.success) {
-        toast.success(res.data.message || "Status updated successfully");
+        showSuccess(res.data.message || "Status updated successfully");
         getAllEmployees();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update status");
+      showError(error.response?.data?.message || "Failed to update status");
       console.error("Error toggling status:", error);
     } finally {
       setLoading("");
@@ -447,17 +447,17 @@ function Employee() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.email.trim() || !formData.role.trim()) {
-      toast.error("Please fill all required fields");
+      showError("Please fill all required fields");
       return;
     }
 
     if (!editId && !formData.password.trim()) {
-      toast.error("Password is required for new employees");
+      showError("Password is required for new employees");
       return;
     }
 
     if (user?.role === "Admin" && formData.role !== "Employee") {
-      toast.error("Admin can only create Employee role");
+      showError("Admin can only create Employee role");
       return;
     }
 
@@ -493,13 +493,13 @@ function Employee() {
       }
 
       if (res.data.success) {
-        toast.success(res.data.message || "Operation successful");
+        showSuccess(res.data.message || "Operation successful");
         getAllEmployees();
         handleClose();
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(error.response?.data?.message || "Failed to save employee");
+      showError(error.response?.data?.message || "Failed to save employee");
     } finally {
       setLoading("");
     }
@@ -526,12 +526,12 @@ function Employee() {
       const file = files[0];
       if (file) {
         if (!file.type.startsWith('image/')) {
-          toast.error("Please select an image file");
+          showError("Please select an image file");
           return;
         }
 
         if (file.size > 5 * 1024 * 1024) {
-          toast.error("Image size should be less than 5MB");
+          showError("Image size should be less than 5MB");
           return;
         }
 
@@ -545,7 +545,7 @@ function Employee() {
       }
     } else if (name === "role") {
       if (user?.role === "Admin" && value !== "Employee") {
-        toast.error("Admin can only create Employee role");
+        showError("Admin can only create Employee role");
         return;
       }
       setFormData(prev => ({ ...prev, [name]: value }));

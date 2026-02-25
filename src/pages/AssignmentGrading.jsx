@@ -43,7 +43,7 @@ import {
 } from "@mui/material";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "../axiosInstance";
-import { toast } from "react-toastify";
+import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import DataTable from "../components/DataTable";
 import Select from "react-select";
 
@@ -85,7 +85,7 @@ function AssignmentGrading() {
         loadSubmissions(res.data.assignment);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch assignment");
+      showError(error.response?.data?.message || "Failed to fetch assignment");
       console.error("Error fetching assignment:", error);
     } finally {
       setLoading(false);
@@ -120,7 +120,7 @@ function AssignmentGrading() {
         setGrades(gradesMap);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch students");
+      showError(error.response?.data?.message || "Failed to fetch students");
       console.error("Error fetching students:", error);
     } finally {
       setLoading(false);
@@ -189,12 +189,12 @@ function AssignmentGrading() {
       });
 
       if (res.data.success) {
-        toast.success("Grades saved successfully");
+        showSuccess("Grades saved successfully");
         // Update submissions with new data
         loadSubmissions(res.data.assignment || assignment);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to save grades");
+      showError(error.response?.data?.message || "Failed to save grades");
       console.error("Error saving grades:", error);
     } finally {
       setSaving(false);
@@ -237,7 +237,7 @@ function AssignmentGrading() {
       });
 
       if (res.data.success) {
-        toast.success("Mark saved successfully");
+        showSuccess("Mark saved successfully");
         setMarkModalOpen(false);
         // Update submissions with new data
         loadSubmissions(res.data.assignment || assignment);
@@ -248,7 +248,7 @@ function AssignmentGrading() {
         }));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to save mark");
+      showError(error.response?.data?.message || "Failed to save mark");
       console.error("Error saving mark:", error);
     } finally {
       setSaving(false);

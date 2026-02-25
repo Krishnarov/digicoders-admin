@@ -2,7 +2,7 @@ import { useState } from "react";
 import Header from "../components/Header";
 import Sidenav from "../components/Sidenave";
 import { useSelector } from "react-redux";
-import { ToastContainer } from "react-toastify";
+
 function MainLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -13,7 +13,6 @@ function MainLayout({ children }) {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <ToastContainer />
 
       {/* Sidebar */}
       <Sidenav isOpen={isSidebarOpen} closeSidebar={closeSidebar} user={user} />

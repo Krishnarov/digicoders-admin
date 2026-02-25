@@ -38,7 +38,7 @@ import {
 } from "@mui/material";
 import DataTable from '../components/DataTable';
 import axios from '../axiosInstance';
-import { toast } from 'react-toastify';
+import { showSuccess, showError, apiWithToast } from '../utils/toast';
 import { format, parseISO, differenceInDays } from 'date-fns';
 
 function AbsentsReports() {
@@ -116,7 +116,7 @@ function AbsentsReports() {
       }
     } catch (error) {
       console.error('Error fetching absent reports:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch absent reports');
+      showError(error.response?.data?.message || 'Failed to fetch absent reports');
     } finally {
       setLoading(false);
     }
@@ -132,7 +132,7 @@ function AbsentsReports() {
       }
     } catch (error) {
       console.error('Error fetching student details:', error);
-      toast.error('Failed to fetch student details');
+      showError('Failed to fetch student details');
     }
   };
 
