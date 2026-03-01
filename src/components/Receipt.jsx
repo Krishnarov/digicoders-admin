@@ -359,14 +359,14 @@ Thank you for your payment 🙏`;
               <span>Online</span>
             </div>
           </div>
-          {["upi_qr", "pos", "payment_link"].includes(feeData.mode) && (
+          {/* {["upi_qr", "pos", "payment_link"].includes(feeData.mode) && (
             <div className="flex items-center ml-7">
               <h3 className="font-semibold mb-1">UTR No:</h3>
               <span className="flex-1 block min-w-0 border-b border-black ml-3 pb-0.5">
                 {feeData?.tnxId}
               </span>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Amount Section */}
