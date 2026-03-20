@@ -73,11 +73,22 @@ const PermissionManager = ({ employee, visible, onClose }) => {
                 permissionIds.push(...categoryPerms);
             });
 
+            let userId = null;
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    userId = user?._id;
+                }
+            } catch (e) {
+                console.error("Error parsing user from localStorage", e);
+            }
+
             await axios.post('/api/permissions/assign', {
                 employeeId: employee._id,
                 permissionIds: permissionIds,
                 branch: employee.branch,
-                assignedBy: JSON.parse(localStorage.getItem('user'))._id
+                assignedBy: userId
             });
 
             message.success('Permissions updated successfully');

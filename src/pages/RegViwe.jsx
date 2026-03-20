@@ -141,45 +141,32 @@ function RegView() {
   };
   const handleSendSmsReminder = async () => {
     try {
-
+      setSendingReminder('sms');
       const res = await axiosInstance.get(`/reminders/pending/fees/${studentData._id}`);
       if (res.data) {
-        showSuccess("Reminder sent successfully");
+        showSuccess("SMS reminder sent successfully");
       }
     } catch (error) {
       console.log(error);
+      showError("Failed to send SMS reminder");
+    } finally {
+      setSendingReminder(null);
     }
-  }
+  };
 
-  const handleSendReminder = (type) => {
-    let defaultMessage = "";
-
-    if (type === "whatsapp") {
-      defaultMessage = `Dear ${studentData.studentName}, this is a reminder about your pending fee of ₹${studentData.dueAmount} for ${studentData.training?.name} training. Please complete the payment at your earliest convenience.`;
-    } else if (type === "sms") {
-      defaultMessage = `Fee Reminder: ${studentData.studentName}, your pending fee is ₹${studentData.dueAmount} for ${studentData.training?.name}. Kindly make the payment soon.`;
-    } else if (type === "email") {
-      setEmailSubject(`Fee Payment Reminder - DigiCoders Technologies`);
-      defaultMessage = `Dear ${studentData.studentName},
-
-We hope you are doing well. This is a gentle reminder from DigiCoders Technologies regarding your pending fee of ₹${studentData.dueAmount} for the ${studentData.training?.name} training program.
-
-📌 Training Details:
-- Training Program: ${studentData.training?.name}
-- Duration: ${studentData.training?.duration?.name || "N/A"}
-- Start Date: ${formatSimpleDate(studentData?.joiningData)}
-
-👉 Please complete your payment at the earliest to ensure uninterrupted access to training sessions and mentorship support.
-
-If you have already completed the payment, kindly ignore this message.
-
-Best regards,  
-**Digicoders Training Department**  
-support@digicoders.in | www.digicoders.in`;
+  const handleSendEmailReminder = async () => {
+    try {
+      setSendingReminder('email');
+      const res = await axiosInstance.get(`/reminders/pending/fees/email/${studentData._id}`);
+      if (res.data) {
+        showSuccess("Email reminder sent successfully!");
+      }
+    } catch (error) {
+      console.log(error);
+      showError("Failed to send email reminder");
+    } finally {
+      setSendingReminder(null);
     }
-
-    setCustomMessage(defaultMessage);
-    setReminderDialog({ open: true, type });
   };
 
   const confirmSendReminder = async () => {
@@ -209,15 +196,16 @@ support@digicoders.in | www.digicoders.in`;
   };
   const handleSendReminderPendingFee = async (row) => {
     try {
-
+      setSendingReminder(row._id);
       const res = await axiosInstance.get(`/reminders/pending/registrationfee/${row.registrationId}`);
-console.log(res);
-      
       if (res.data.success) {
-        showSuccess("Reminder Send Successfully");
+        showSuccess("Fee reminder sent successfully");
       }
     } catch (error) {
       console.log(error);
+      showError("Failed to send fee reminder");
+    } finally {
+      setSendingReminder(null);
     }
   };
 
@@ -246,10 +234,11 @@ console.log(res);
               placement="top"
             >
               <button
-                className="px-2 py-1 rounded-md hover:bg-indigo-100 transition-colors border text-indigo-800"
+                className="px-2 py-1 rounded-md hover:bg-indigo-100 transition-colors border text-indigo-800 disabled:opacity-50"
                 onClick={() => handleSendReminderPendingFee(row)}
+                disabled={sendingReminder === row._id}
               >
-                <Bell size={20} />
+                {sendingReminder === row._id ? <CircularProgress size={20} color="inherit" /> : <Bell size={20} />}
               </button>
             </Tooltip>
           )}
@@ -414,27 +403,21 @@ console.log(res);
         <div className="mt-4 flex flex-wrap gap-3">
           <Button
             variant="outlined"
-            startIcon={<MessageSquare />}
-            onClick={() => handleSendReminder("whatsapp")}
-            className="text-green-600 border-green-600 hover:bg-green-50"
-          >
-            Send WhatsApp Reminder
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<PhoneIcon />}
+            startIcon={sendingReminder === 'sms' ? <CircularProgress size={20} color="inherit" /> : <PhoneIcon />}
             onClick={() => handleSendSmsReminder()}
-            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            disabled={sendingReminder === 'sms' || studentData.trainingFeeStatus === 'full paid' || studentData.dueAmount === 0}
+            className="text-blue-600 border-blue-600 hover:bg-blue-50 disabled:opacity-50"
           >
-            Send SMS Reminder
+            {sendingReminder === 'sms' ? "Sending..." : "Send SMS Reminder"}
           </Button>
           <Button
             variant="outlined"
-            startIcon={<MailIcon />}
-            onClick={() => handleSendReminder("email")}
-            className="text-red-600 border-red-600 hover:bg-red-50"
+            startIcon={sendingReminder === 'email' ? <CircularProgress size={20} color="inherit" /> : <MailIcon />}
+            onClick={() => handleSendEmailReminder()}
+            disabled={sendingReminder === 'email' || studentData.trainingFeeStatus === 'full paid' || studentData.dueAmount === 0}
+            className="text-red-600 border-red-600 hover:bg-red-50 disabled:opacity-50"
           >
-            Send Email Reminder
+            {sendingReminder === 'email' ? "Sending..." : "Send Email Reminder"}
           </Button>
         </div>
       </div>

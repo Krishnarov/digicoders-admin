@@ -12,6 +12,7 @@ import {
   Filter,
   XCircle,
   Edit2,
+  Download,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -34,6 +35,7 @@ import { Close } from "@mui/icons-material";
 import useGetTechnology from "../hooks/useGetTechnology";
 import { ActionButton } from "../components/LoadingComponents";
 import { showSuccess, showError } from "../utils/toast";
+import * as XLSX from "xlsx";
 import { useLoading } from "../hooks/useLoading";
 
 function AllStudentReg() {
@@ -60,6 +62,7 @@ function AllStudentReg() {
   const fetchCount = useGetCount();
   const navigate = useNavigate();
   const didFetch = useRef(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     if (didFetch.current) return;
@@ -275,7 +278,7 @@ function AllStudentReg() {
     {
       label: "College Name",
       accessor: "collegeName",
-      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName.name)}</span>),
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName?.name)}</span>),
       sortable: true,
       filter: false,
       filterKey: "collegeName",
@@ -295,7 +298,7 @@ function AllStudentReg() {
       label: "Training",
       accessor: "training.name",
       sortable: true,
-      Cell: ({ row }) => (<span>{capitalizeFirst(row.training.name)}</span>),
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.training?.name)}</span>),
     },
 
     {
@@ -419,6 +422,65 @@ function AllStudentReg() {
   const appliedFilters = getUserAppliedFilters();
   const appliedFiltersCount = appliedFilters.length;
 
+  const exportToExcel = async () => {
+    try {
+      setExportLoading(true);
+      
+      const params = {
+        limit: 100000,
+        page: 1,
+        ...filters,
+      };
+
+      const response = await axios.get("/registration", { params });
+      
+      if (!response.data.success || !response.data.data) {
+        showError("No data to export");
+        return;
+      }
+
+      const exportData = response.data.data.map(student => ({
+        "Enroll ID": student.userid || "",
+        "Student Name": capitalizeFirst(student.studentName || ""),
+        "Mobile": student.mobile || "",
+        "Email": student.email || "",
+        "Father Name": capitalizeFirst(student.fatherName || ""),
+        "College Name": capitalizeFirst(student.collegeName?.name || ""),
+        "Education": student.education?.name || "",
+        "Edu Year": student.eduYear || "",
+        "Training": capitalizeFirst(student.training?.name || ""),
+        "Technology": capitalizeFirst(student.technology?.name || "N/A"),
+        "Branch": capitalizeFirst(student.branch?.name || "N/A"),
+        "Batch": student.batch?.map(b => capitalizeFirst(b.batchName)).join(", ") || "",
+        "Registration Amount": student.amount || "",
+        "Total Fee": student.totalFee || "",
+        "Discount Fee": student.discount || "",
+        "Final Fee": student.finalFee || "",
+        "Paid Amount": student.paidAmount || "",
+        "Due Amount": student.dueAmount || "",
+        "Training Fee Status": capitalizeFirst(student.trainingFeeStatus || "pending"),
+        "Transaction Status": capitalizeFirst(student.tnxStatus || "pending"),
+        "Payment Method": capitalizeFirst(student.paymentMethod || ""),
+        "Payment Type": capitalizeFirst(student.paymentType || ""),
+        "UTR No": student.tnxId || "",
+        "HR Name": capitalizeFirst(student.hrName?.name || "N/A"),
+        "Registration Date": formatDate(student.createdAt),
+        "Remark": student.remark || "",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+      XLSX.writeFile(workbook, `student_registration_${new Date().getTime()}.xlsx`);
+      showSuccess(`Exported ${exportData.length} records successfully`);
+    } catch (error) {
+      showError(error?.response?.data?.message || "Failed to export data");
+      console.error("Export error:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-sm md:max-w-6xl mx-auto px-2">
       {/* Header */}
@@ -439,6 +501,15 @@ function AllStudentReg() {
 
         {/* Applied Filters Badge */}
         <Box className="flex items-center gap-2">
+          <Button
+            variant="outlined"
+            onClick={exportToExcel}
+            disabled={exportLoading || students.length === 0}
+            startIcon={exportLoading ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+            size="small"
+          >
+            {exportLoading ? "Exporting..." : "Export"}
+          </Button>
 
           {appliedFiltersCount > 0 && (
             <Button

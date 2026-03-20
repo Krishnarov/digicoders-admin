@@ -8,6 +8,8 @@ import {
   Eye,
   X,
   Building2,
+  Download,
+  Upload,
 } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
@@ -33,6 +35,7 @@ import axios from "../axiosInstance";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { showSuccess, showError, apiWithToast } from "../utils/toast";
 import Select from "react-select";
+import * as XLSX from "xlsx";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -428,6 +431,104 @@ function Collages() {
     setPagination(prev => ({ ...prev, limit, page: 1 }));
   };
 
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        "College Name": "Example College",
+        "District": "District Name",
+        "State": "State Name",
+        "Address": "College Address",
+        "Course": "Course1, Course2",
+        "HOD Number": "9876543210",
+        "TPO Contact 1": "9876543210",
+        "TPO Contact 2": "9876543210",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Colleges");
+    XLSX.writeFile(workbook, "college_template.xlsx");
+    showSuccess("Template downloaded successfully");
+  };
+
+  const exportToExcel = () => {
+    const exportData = collegeNames.map(college => ({
+      "College Name": college.name,
+      "District": college.district || "",
+      "State": college.state || "",
+      "Address": college.address || "",
+      "Course": Array.isArray(college.course) ? college.course.join(", ") : college.course || "",
+      "HOD Number": college.hodNo || "",
+      "TPO Contact 1": college.tpoNo1 || "",
+      "TPO Contact 2": college.tpoNo2 || "",
+      "Status": college.isActive ? "Active" : "Inactive",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Colleges");
+    XLSX.writeFile(workbook, "colleges.xlsx");
+    showSuccess("Excel file downloaded successfully");
+  };
+
+  const handleImportExcel = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        showError("Excel file is empty");
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const row of jsonData) {
+        const collegeName = row["College Name"]?.trim();
+        if (!collegeName) {
+          errorCount++;
+          continue;
+        }
+
+        const collegeData = {
+          name: collegeName,
+          district: row["District"]?.trim() || "",
+          state: row["State"]?.trim() || "",
+          address: row["Address"]?.trim() || "",
+          course: row["Course"]?.trim() ? row["Course"].split(",").map(c => c.trim()) : [],
+          hodNo: row["HOD Number"]?.toString().trim() || "",
+          tpoNo1: row["TPO Contact 1"]?.toString().trim() || "",
+          tpoNo2: row["TPO Contact 2"]?.toString().trim() || "",
+        };
+
+        try {
+          await axios.post("/college", collegeData);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(`Error importing ${collegeName}:`, error);
+        }
+      }
+
+      showSuccess(`Import completed: ${successCount} added, ${errorCount} failed`);
+      fetchCollegeNames();
+    } catch (error) {
+      showError("Failed to import Excel file");
+      console.error("Import error:", error);
+    } finally {
+      setLoading(false);
+      event.target.value = "";
+    }
+  };
+
   return (
     <div className="max-w-sm md:max-w-6xl mx-auto px-2 py-4">
       {/* Header */}
@@ -445,13 +546,46 @@ function Collages() {
             <span>Dashboard</span>
           </Link>
         </div>
-        <Button
-          variant="contained"
-          onClick={() => setOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          Add New College
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outlined"
+            onClick={downloadTemplate}
+            startIcon={<Download size={18} />}
+          >
+            Template
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={exportToExcel}
+            disabled={loading || collegeNames.length === 0}
+            startIcon={<Download size={18} />}
+          >
+            Export
+          </Button>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleImportExcel}
+            disabled={loading}
+            style={{ display: "none" }}
+            id="excel-import"
+          />
+          <Button
+            variant="outlined"
+            onClick={() => document.getElementById("excel-import").click()}
+            disabled={loading}
+            startIcon={<Upload size={18} />}
+          >
+            Import
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => setOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Add New College
+          </Button>
+        </div>
       </div>
 
       {/* DataTable */}

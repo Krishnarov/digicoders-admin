@@ -304,7 +304,7 @@ function AcceptReg() {
       label: "Training",
       accessor: "training.name",
       sortable: true,
-      Cell: ({ row }) => (<span>{capitalizeFirst(row.training.name)}</span>),
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.training?.name)}</span>),
     },
 
     {

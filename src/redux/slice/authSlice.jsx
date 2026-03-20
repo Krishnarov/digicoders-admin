@@ -5,10 +5,26 @@ const getInitialState = () => {
   const token = localStorage.getItem('token');
   const user = localStorage.getItem('user');
 
+  let parsedUser = null;
+  if (user) {
+    try {
+      if (user === '[object Object]') {
+        localStorage.removeItem('user');
+        parsedUser = null;
+      } else {
+        parsedUser = JSON.parse(user);
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage", e);
+      localStorage.removeItem('user');
+      parsedUser = null;
+    }
+  }
+
   return {
-    user: user ? JSON.parse(user) : null,
+    user: parsedUser,
     token: token || null,
-    isLoggedIn: !!token,
+    isLoggedIn: !!token && !!parsedUser,
     loading: false,
     error: null,
     isTwoFactor: false,

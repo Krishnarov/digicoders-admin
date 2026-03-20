@@ -298,7 +298,7 @@ function RejectReg() {
     {
       label: "College Name",
       accessor: "collegeName",
-      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName.name)}</span>),
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.collegeName?.name)}</span>),
       sortable: true,
       filter: false,
       filterKey: "collegeName",
@@ -318,7 +318,7 @@ function RejectReg() {
       label: "Training",
       accessor: "training.name",
       sortable: true,
-      Cell: ({ row }) => (<span>{capitalizeFirst(row.training.name)}</span>),
+      Cell: ({ row }) => (<span>{capitalizeFirst(row.training?.name)}</span>),
     },
 
     {

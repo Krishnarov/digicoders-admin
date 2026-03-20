@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Edit2, Trash2, Home, ChevronRight, Loader2 } from "lucide-react";
+import { Edit2, Trash2, Home, ChevronRight, Loader2, Download, Upload } from "lucide-react";
 import DataTable from "../components/DataTable";
 import {
   Button,
@@ -16,6 +16,7 @@ import useGetTranning from "../hooks/useGetTranning";
 import { useSelector } from "react-redux";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 import { showSuccess, showError, apiWithToast } from "../utils/toast";
+import * as XLSX from "xlsx";
 
 function TrainingType() {
   const data = useSelector((state) => state.tranning.data);
@@ -26,7 +27,8 @@ function TrainingType() {
     table: false,
     save: false,
     delete: null,
-    status: null
+    status: null,
+    import: false
   });
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", duration: "", registrationAmount: "" });
@@ -295,6 +297,101 @@ function TrainingType() {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
   };
 
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        "Training Name": "Example Training",
+        "Duration": "Duration Name",
+        "Registration Amount": "5000",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Training");
+    XLSX.writeFile(workbook, "training_template.xlsx");
+    showSuccess("Template downloaded successfully");
+  };
+
+  const exportToExcel = () => {
+    const exportData = data.map(training => ({
+      "Training Name": training.name,
+      "Duration": training.duration?.name || "",
+      "Registration Amount": training.registrationAmount || "",
+      "Status": training.isActive ? "Active" : "Inactive",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Training");
+    XLSX.writeFile(workbook, "training_data.xlsx");
+    showSuccess("Excel file downloaded successfully");
+  };
+
+  const handleImportExcel = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(prev => ({ ...prev, import: true }));
+      const fileData = await file.arrayBuffer();
+      const workbook = XLSX.read(fileData);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        showError("Excel file is empty");
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const row of jsonData) {
+        const trainingName = row["Training Name"]?.trim();
+        const durationName = row["Duration"]?.trim();
+        const registrationAmount = row["Registration Amount"]?.toString().trim();
+
+        if (!trainingName) {
+          errorCount++;
+          continue;
+        }
+
+        const durationObj = durations.find(d => d.name === durationName);
+        if (!durationObj) {
+          errorCount++;
+          console.error(`Duration not found: ${durationName}`);
+          continue;
+        }
+
+        const trainingData = {
+          name: trainingName,
+          duration: durationObj._id,
+          registrationAmount: registrationAmount || "0",
+        };
+
+        try {
+          await axios.post("/training/create", trainingData, {
+            withCredentials: true,
+          });
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(`Error importing ${trainingName}:`, error);
+        }
+      }
+
+      showSuccess(`Import completed: ${successCount} added, ${errorCount} failed`);
+      await loadData();
+    } catch (error) {
+      showError("Failed to import Excel file");
+      console.error("Import error:", error);
+    } finally {
+      setLoading(prev => ({ ...prev, import: false }));
+      event.target.value = "";
+    }
+  };
+
 
   const columns = [
     {
@@ -406,10 +503,43 @@ function TrainingType() {
               <span className="text-gray-800">Dashboard</span>
             </Link>
           </div>
-          <div>
+          <div className="flex gap-2">
+            <Button
+              variant="outlined"
+              onClick={downloadTemplate}
+              disabled={loading.import}
+              startIcon={<Download size={18} />}
+            >
+              Template
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={exportToExcel}
+              disabled={loading.import || data.length === 0}
+              startIcon={<Download size={18} />}
+            >
+              Export
+            </Button>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleImportExcel}
+              disabled={loading.import}
+              style={{ display: "none" }}
+              id="excel-import"
+            />
+            <Button
+              variant="outlined"
+              onClick={() => document.getElementById("excel-import").click()}
+              disabled={loading.import}
+              startIcon={loading.import ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+            >
+              {loading.import ? "Importing..." : "Import"}
+            </Button>
             <Button
               variant="contained"
               onClick={handleOpen}
+              disabled={loading.import}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Add New

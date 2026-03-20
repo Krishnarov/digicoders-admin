@@ -282,7 +282,7 @@ Thank you for your payment 🙏`;
           <div className="mb-3 flex">
             <span className="font-semibold w-30">College:</span>
             <span className="border-b border-black flex-1">
-              {feeData.registrationId?.collegeName.name}
+              {feeData.registrationId?.collegeName?.name}
             </span>
           </div>
           <div className="mb-3 flex gap-4">

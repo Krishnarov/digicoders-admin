@@ -10,6 +10,14 @@ import { useSelector } from "react-redux";
 function Sidenav({ isOpen, closeSidebar, user }) {
   const { logout } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogoutClick = () => setShowLogoutConfirm(true);
+  const handleLogoutCancel = () => setShowLogoutConfirm(false);
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
+    logout();
+  };
   const location = useLocation();
   const counts = useSelector((state) => state.count.data) || {};
   const fetchCount = useGetCount();
@@ -174,25 +182,52 @@ function Sidenav({ isOpen, closeSidebar, user }) {
         </nav>
 
         <div className="flex-shrink-0 absolute bottom-0 left-0 right-0 py-4 px-1 border-t border-gray-700 bg-gray-900">
-          <div className="flex items-center gap-3" onClick={logout}>
+          <div className="flex items-center gap-3" >
             <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
               <User size={20} className="text-gray-300" />
             </div>
             <div>
               <div className="text-sm font-medium">
                 {user?.name}
-                {user?.isSuperAdmin && " (Super Admin)"}
               </div>
               <div className="text-xs text-gray-400">
-                {user?.email} | Role: {user?.role}
+                {user?.email} <br />
+                Role: {user?.role}
               </div>
             </div>
-            <div className="w-10 h-10 flex items-center justify-end ">
+            <div className="w-10 h-10 flex items-center justify-end cursor-pointer " onClick={handleLogoutClick}>
               <LogOut size={20} className="text-red-500" />
             </div>
           </div>
         </div>
       </aside>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-80 text-center">
+            <div className="flex items-center justify-center w-14 h-14 bg-red-100 rounded-full mx-auto mb-4">
+              <LogOut size={26} className="text-red-500" />
+            </div>
+            <h2 className="text-gray-800 text-lg font-semibold mb-1">Logout?</h2>
+            <p className="text-gray-500 text-sm mb-6">Are you sure you want to logout from your account?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleLogoutCancel}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
